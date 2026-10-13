@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { descargarPDF, descargarWord } from "@/lib/descargar";
+import { descargarInformePDF, descargarInformeWord } from "@/lib/informe";
 
 const OPCIONES = [
   {
@@ -167,8 +167,9 @@ const ITEMS = (() => {
 const DATOS = [
   { id: "dato-nombreUsuario", campo: "nombreUsuario", etiqueta: "Nombre del Usuario/a", tipo: "text", requerido: true },
   { id: "dato-edad", campo: "edad", etiqueta: "Edad", tipo: "number", requerido: true },
-  { id: "dato-escuela", campo: "escuela", etiqueta: "Escuela/Agencia", tipo: "text", requerido: false },
-  { id: "dato-grado", campo: "grado", etiqueta: "Grado Escolar", tipo: "text", requerido: false },
+  { id: "dato-escuela", campo: "escuela", etiqueta: "Escuela/Agencia", tipo: "text", requerido: true },
+  { id: "dato-grado", campo: "grado", etiqueta: "Grado Escolar", tipo: "text", requerido: true },
+  { id: "dato-profesional", campo: "profesional", etiqueta: "Nombre del/la Profesional", tipo: "text", requerido: true },
 ];
 
 const DATOS_INICIALES = {
@@ -176,6 +177,7 @@ const DATOS_INICIALES = {
   edad: "",
   escuela: "",
   grado: "",
+  profesional: "",
 };
 
 export default function FormularioSPM2AutoinformeAdolescente() {
@@ -251,15 +253,14 @@ export default function FormularioSPM2AutoinformeAdolescente() {
   }
 
   if (verResumen && resultado) {
-    const descarga = {
-      nombreArchivo: "SPM-2-AUTOINFORME-Adolescente-12-21",
-      titulo: "SPM-2 AUTOINFORME",
-      subtitulo: "Adolescente 12 - 21",
+    const informe = {
+      nombreArchivo: "Informe-SPM-2-AUTOINFORME-Adolescente-12-21",
+      instrumento: "SPM-2 AUTOINFORME · Adolescente 12 - 21",
+      norma: "adolescenteAuto",
       datos: DATOS.map((d) => ({ etiqueta: d.etiqueta, valor: datos[d.campo] })),
       secciones: SECCIONES,
       respuestas,
       opciones: OPCIONES,
-      resultado,
     };
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
@@ -308,17 +309,17 @@ export default function FormularioSPM2AutoinformeAdolescente() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarPDF(descarga)}
+              onClick={() => descargarInformePDF(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
-              Descargar PDF
+              Descargar informe PDF
             </button>
             <button
               type="button"
-              onClick={() => descargarWord(descarga)}
+              onClick={() => descargarInformeWord(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
-              Descargar Word
+              Descargar informe Word
             </button>
             <button
               type="button"
@@ -465,7 +466,7 @@ export default function FormularioSPM2AutoinformeAdolescente() {
                           return (
                             <label
                               key={o.valor}
-                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                              className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-2 py-2 text-center text-xs font-medium leading-tight transition-colors sm:text-sm ${
                                 seleccionado
                                   ? "border-indigo-500 bg-indigo-50 text-indigo-900 dark:bg-indigo-500/15 dark:text-indigo-200"
                                   : "border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
@@ -477,7 +478,7 @@ export default function FormularioSPM2AutoinformeAdolescente() {
                                 value={o.valor}
                                 checked={seleccionado}
                                 onChange={() => responder(numero, o.valor)}
-                                className="accent-indigo-600"
+                                className="accent-indigo-600 shrink-0"
                               />
                               {o.etiqueta}
                             </label>
