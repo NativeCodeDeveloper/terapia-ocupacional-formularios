@@ -38,7 +38,7 @@ const ETIQUETAS_ESCALA = {
   SOC: "Participación Social (SOC)",
 };
 
-const SENSORIALES = ["VIS", "HEA", "TOU", "TS", "BOD", "BAL"];
+export const SENSORIALES = ["VIS", "HEA", "TOU", "TS", "BOD", "BAL"];
 
 function sumaSeccion(secciones, respuestas, definicion) {
   const candidatos = [definicion.titulo, ...(definicion.alias ?? [])];
@@ -140,7 +140,7 @@ const TEXTOS_ESCALA = {
 
 const CLAVE_RANGO = { Típico: "tipico", "Dificultades moderadas": "moderado", "Dificultades severas": "severo" };
 
-function textoInterpretacion(escala, rango) {
+export function textoInterpretacion(escala, rango) {
   return TEXTOS_ESCALA[escala]?.[CLAVE_RANGO[rango]] ?? "";
 }
 
@@ -189,7 +189,7 @@ function escaparHTML(texto) {
     .replaceAll('"', "&quot;");
 }
 
-function parrafoDiagnostico(escalas) {
+export function parrafoDiagnostico(escalas) {
   const porRango = (rango) => escalas.filter((e) => e.rango === rango).map((e) => e.etiqueta);
   const severas = porRango("Dificultades severas");
   const moderadas = porRango("Dificultades moderadas");
@@ -197,7 +197,7 @@ function parrafoDiagnostico(escalas) {
 
   const partes = [];
   partes.push(
-    `Con los resultados obtenidos, ${severas.length} escala(s) se ubican en el rango de dificultades severas (T ≥ 70), ${moderadas.length} en dificultades moderadas (T 60-69) y ${tipicas.length} en el rango típico (T 40-59).`
+    `Con los resultados obtenidos, ${severas.length} escala(s) se ubican en el rango de dificultades severas (T 70 o más), ${moderadas.length} en dificultades moderadas (T 60-69) y ${tipicas.length} en el rango típico (T 40-59).`
   );
   if (severas.length) partes.push(`Escalas con dificultades severas: ${severas.join("; ")}.`);
   if (moderadas.length) partes.push(`Escalas con dificultades moderadas: ${moderadas.join("; ")}.`);
@@ -266,13 +266,32 @@ export function descargarInformePDF(config) {
   );
 
   // ---- Tabla de puntajes ----
-  const colEscala = 190;
-  const colRaw = 72;
-  const colT = 72;
-  const colPct = 72;
-  const colRango = anchoUtil - colEscala - colRaw - colT - colPct;
-  const altoFila = 22;
-  const altoTabla = (escalas.length + 1) * altoFila;
+  const colAnchos = [140, 55, 62, 48, anchoUtil - 305];
+  const xCols = [margen];
+  for (const w of colAnchos) xCols.push(xCols[xCols.length - 1] + w);
+  const encabezadosTabla = ["ESCALA", "P. BRUTO", "PUNTAJE T", "%IL", "RANGO DE INTERPRETACIÓN"];
+
+  const celdasDe = (e) => [
+    { texto: e.etiqueta, alinear: "izquierda" },
+    { texto: String(e.raw), alinear: "centro" },
+    { texto: e.t != null ? String(e.t) : "—", alinear: "centro" },
+    { texto: String(e.pct ?? "—"), alinear: "centro" },
+    { texto: e.rango ?? "—", alinear: "izquierda" },
+  ];
+
+  const lineasDe = (texto, ancho, { tamano = 10, negrita = false } = {}) => {
+    doc.setFont("helvetica", negrita ? "bold" : "normal");
+    doc.setFontSize(tamano);
+    return doc.splitTextToSize(texto, ancho - 12);
+  };
+
+  const interlineado = 12;
+  const lineasFilas = escalas.map((e) =>
+    celdasDe(e).map((c, i) => lineasDe(c.texto, colAnchos[i], { negrita: i === 4 }))
+  );
+  const altosFilas = lineasFilas.map((ls) => Math.max(1, ...ls.map((l) => l.length)) * interlineado + 10);
+  const altoEncabezado = 24;
+  const altoTabla = altoEncabezado + altosFilas.reduce((a, b) => a + b, 0);
   if (y + altoTabla > altoPagina - margen) {
     doc.addPage();
     y = margen;
@@ -281,46 +300,57 @@ export function descargarInformePDF(config) {
   const tablaX = margen;
   const verde = [139, 178, 90];
 
+  // Encabezado de la tabla
   doc.setFillColor(...verde);
-  doc.rect(tablaX, tablaY, anchoUtil, altoFila, "F");
+  doc.rect(tablaX, tablaY, anchoUtil, altoEncabezado, "F");
   doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("ESCALA", tablaX + 8, tablaY + 14);
-  doc.text("P. BRUTO", tablaX + colEscala + colRaw / 2, tablaY + 14, { align: "center" });
-  doc.text("PUNTAJE T", tablaX + colEscala + colRaw + colT / 2, tablaY + 14, { align: "center" });
-  doc.text("%IL", tablaX + colEscala + colRaw + colT + colPct / 2, tablaY + 14, { align: "center" });
-  doc.text("RANGO DE INTERPRETACIÓN", tablaX + colEscala + colRaw + colT + colPct + 8, tablaY + 14);
+  encabezadosTabla.forEach((h, i) => {
+    const alinearCentro = i === 1 || i === 2 || i === 3;
+    const cx = alinearCentro ? xCols[i] + colAnchos[i] / 2 : xCols[i] + 6;
+    doc.text(h, cx, tablaY + 15, { align: alinearCentro ? "center" : "left" });
+  });
 
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(25);
+  // Filas
+  let filaY = tablaY + altoEncabezado;
   escalas.forEach((e, i) => {
-    const filaY = tablaY + (i + 1) * altoFila;
+    const alto = altosFilas[i];
     const esST = e.escala === "ST";
     if (esST) {
       doc.setFillColor(234, 240, 226);
-      doc.rect(tablaX, filaY, anchoUtil, altoFila, "F");
+      doc.rect(tablaX, filaY, anchoUtil, alto, "F");
     }
-    doc.setFont("helvetica", esST ? "bold" : "normal");
-    doc.text(e.etiqueta, tablaX + 8, filaY + 14);
-    doc.text(String(e.raw), tablaX + colEscala + colRaw / 2, filaY + 14, { align: "center" });
-    doc.text(e.t != null ? String(e.t) : "—", tablaX + colEscala + colRaw + colT / 2, filaY + 14, { align: "center" });
-    doc.text(String(e.pct ?? "—"), tablaX + colEscala + colRaw + colT + colPct / 2, filaY + 14, { align: "center" });
-    doc.setFont("helvetica", "bold");
-    doc.text(e.rango ?? "—", tablaX + colEscala + colRaw + colT + colPct + 8, filaY + 14);
-    doc.setFont("helvetica", "normal");
+    celdasDe(e).forEach((c, ci) => {
+      const lineas = lineasFilas[i][ci];
+      doc.setFont("helvetica", esST || ci === 4 ? "bold" : "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(25);
+      const bloque = lineas.length * interlineado;
+      let ty = filaY + (alto - bloque) / 2 + 9;
+      for (const linea of lineas) {
+        const alinearCentro = c.alinear === "centro";
+        const cx = alinearCentro ? xCols[ci] + colAnchos[ci] / 2 : xCols[ci] + 6;
+        doc.text(linea, cx, ty, { align: alinearCentro ? "center" : "left" });
+        ty += interlineado;
+      }
+    });
+    filaY += alto;
   });
 
+  // Bordes
   doc.setDrawColor(120);
   doc.setLineWidth(0.6);
   doc.rect(tablaX, tablaY, anchoUtil, altoTabla);
-  for (let i = 1; i <= escalas.length; i++) {
-    doc.line(tablaX, tablaY + i * altoFila, tablaX + anchoUtil, tablaY + i * altoFila);
+  let bordeY = tablaY + altoEncabezado;
+  doc.line(tablaX, bordeY, tablaX + anchoUtil, bordeY);
+  for (const alto of altosFilas) {
+    bordeY += alto;
+    doc.line(tablaX, bordeY, tablaX + anchoUtil, bordeY);
   }
-  doc.line(tablaX + colEscala, tablaY, tablaX + colEscala, tablaY + altoTabla);
-  doc.line(tablaX + colEscala + colRaw, tablaY, tablaX + colEscala + colRaw, tablaY + altoTabla);
-  doc.line(tablaX + colEscala + colRaw + colT, tablaY, tablaX + colEscala + colRaw + colT, tablaY + altoTabla);
-  doc.line(tablaX + colEscala + colRaw + colT + colPct, tablaY, tablaX + colEscala + colRaw + colT + colPct, tablaY + altoTabla);
+  for (const x of xCols.slice(1, -1)) {
+    doc.line(x, tablaY, x, tablaY + altoTabla);
+  }
 
   y = tablaY + altoTabla + 20;
 
@@ -409,7 +439,10 @@ export function descargarInformeWord(config) {
     .join("\n");
 
   const tablaHTML = `
-<table cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:10pt;">
+<table cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:10pt;table-layout:fixed;">
+  <colgroup>
+    <col style="width:30%" /><col style="width:12%" /><col style="width:14%" /><col style="width:11%" /><col style="width:33%" />
+  </colgroup>
   <tr>
     <th align="left" style="border:1px solid #666;background:#8bb25a;color:#fff;">ESCALA</th>
     <th style="border:1px solid #666;background:#8bb25a;color:#fff;">P. BRUTO</th>
