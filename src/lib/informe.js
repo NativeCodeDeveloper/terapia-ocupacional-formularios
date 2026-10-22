@@ -57,8 +57,8 @@ export function calcularPuntuacion(config) {
   let tablaNorma = norma;
   if (norma === "preescolar") {
     // La tabla del Preescolar se divide entre 2-4 años y 5 años
-    const edad = parseInt(datos.find((d) => d.etiqueta === "Edad")?.valor ?? "", 10);
-    tablaNorma = edad >= 5 ? "preescolar5" : "preescolar24";
+    const edad = Number(datos.find((d) => d.etiqueta === "Edad")?.valor ?? "");
+    tablaNorma = edad === 5 ? "preescolar5" : "preescolar24";
   }
   const mapa = TABLAS_NORMAS[tablaNorma];
 

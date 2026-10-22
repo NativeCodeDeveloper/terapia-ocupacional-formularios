@@ -512,6 +512,7 @@ export function construirInformePDFHogarPreescolar(config) {
     const pie = `SPM-2 · Formulario HOGAR · Preescolar (2 a 5 años)${nombre ? ` · ${nombre}` : ""}`;
     doc.text(doc.splitTextToSize(pie, anchoUtil - 90)[0], margen, altoPagina - 28);
     doc.text(`Página ${i} de ${totalPaginas}`, anchoPagina - margen, altoPagina - 28, { align: "right" });
+    doc.text("Generado por teraocupame", anchoPagina / 2, altoPagina - 16, { align: "center" });
   }
 
   return doc;

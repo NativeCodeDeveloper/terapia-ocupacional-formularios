@@ -223,6 +223,10 @@ export default function FormularioSPM2Hogar() {
     for (const d of DATOS) {
       if (!datos[d.campo].toString().trim()) nuevosErrores.add(d.id);
     }
+    const edad = Number(datos.edad);
+    if (!Number.isInteger(edad) || edad < 2 || edad > 5) {
+      nuevosErrores.add("dato-edad");
+    }
     for (const item of ITEMS) {
       if (!respuestas[item.numero]) nuevosErrores.add(`q${item.numero}`);
     }
@@ -411,6 +415,9 @@ export default function FormularioSPM2Hogar() {
                   type={d.tipo}
                   value={datos[d.campo]}
                   onChange={(e) => actualizarDato(d.campo, e.target.value)}
+                  min={d.campo === "edad" ? 2 : undefined}
+                  max={d.campo === "edad" ? 5 : undefined}
+                  step={d.campo === "edad" ? 1 : undefined}
                   required
                   aria-invalid={conError}
                   className={`w-full max-w-md rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${
@@ -421,7 +428,9 @@ export default function FormularioSPM2Hogar() {
                 />
                 {conError && (
                   <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                    Esta pregunta es obligatoria.
+                    {d.campo === "edad"
+                      ? "Ingresa una edad entera entre 2 y 5 años."
+                      : "Este campo es obligatorio."}
                   </p>
                 )}
               </div>
