@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { descargarInformePDF, descargarInformeWord } from "@/lib/informe";
+import { descargarInformePDFHogarNinos } from "@/lib/informe-hogar-ninos";
 
 const OPCIONES = [
   {
@@ -309,17 +309,10 @@ export default function FormularioSPM2Hogar512() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarInformePDF(informe)}
+              onClick={() => descargarInformePDFHogarNinos(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
               Descargar informe PDF
-            </button>
-            <button
-              type="button"
-              onClick={() => descargarInformeWord(informe)}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Descargar informe Word
             </button>
             <button
               type="button"
