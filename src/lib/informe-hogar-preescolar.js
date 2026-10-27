@@ -11,10 +11,19 @@ import { construirInformeHogar } from "./informe-hogar.js";
    ============================================================ */
 
 const VERSION = {
-  rangoEdad: "2 a 5 años",
+  intro:
+    "Este informe presenta los resultados de la aplicación del SPM-2, Formulario HOGAR para niños y niñas de 2 a 5 años. El instrumento lo completa el padre, la madre o el cuidador sobre la conducta típica del niño o la niña durante el último mes y consta de 80 preguntas agrupadas en ocho dimensiones: Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal, Equilibrio y Movimiento, Planificación e Ideas y Participación Social. Las seis primeras dimensiones se suman en el Total Sensorial (ST).",
   lineaEdad: "Preescolar — Niños y niñas de 2 a 5 años · Español",
   autores:
     "H. Kuhaneck, PhD, OTR/L, FAOTA · L. D. Parham, PhD, OTR/L, FAOTA · C. L. Ecker, MA, OTR/L · T. J. Glennon, EdD, OTR/L, FAOTA · D. A. Henry, MS, OTR/L, FAOTA",
+  celdasId: [
+    { etiqueta: "NOMBRE DEL/DE LA NIÑO/A", dato: "Nombre del Niño o Niña", fraccion: 0.58 },
+    { etiqueta: "EDAD", dato: "Edad", fraccion: 0.42 },
+    { etiqueta: "NOMBRE DE QUIÉN RESPONDE", dato: "Nombre de quién responde", fraccion: 0.5 },
+    { etiqueta: "RELACIÓN CON EL NIÑO O NIÑA", dato: "Relación con el niño o niña", fraccion: 0.5 },
+    { etiqueta: "NOMBRE DEL/LA PROFESIONAL", dato: "Nombre del/la Profesional", fraccion: 0.58 },
+  ],
+  datoNombre: "Nombre del Niño o Niña",
   etiquetasTablaNorma: {
     preescolar24: "Edades 2 a 4 años",
     preescolar5: "5 años",

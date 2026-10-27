@@ -150,9 +150,14 @@ test("adolescente y adulto: la SOC se invierte solo en los ítems positivos", ()
   const auto = calcularPuntuacion(config("adolescenteAuto", "15", respuestasAuto));
   assert.equal(auto.escalas.find((e) => e.escala === "SOC").raw, 25);
 
-  // adolescenteHogar: invertidos 71-78; directos 79-80
+  // adolescenteHogar (W-707E): invertidos 71-73, 76 y 77; directos 74, 75, 78-80
   const hogar = calcularPuntuacion(config("adolescenteHogar", "15", todas("nunca")));
-  assert.equal(hogar.escalas.find((e) => e.escala === "SOC").raw, 8 * 4 + 2 * 1);
+  assert.equal(hogar.escalas.find((e) => e.escala === "SOC").raw, 5 * 4 + 5 * 1);
+  // el ítem 74 es directo: "Siempre" suma 4, no 1
+  const respuestasHogar = todas("nunca");
+  respuestasHogar[74] = "siempre";
+  const hogar74 = calcularPuntuacion(config("adolescenteHogar", "15", respuestasHogar));
+  assert.equal(hogar74.escalas.find((e) => e.escala === "SOC").raw, 5 * 4 + 4 + 4 * 1);
 
   // adultoEvaluador: invertidos 71-72 y 74-79; directos 73 y 80
   const evaluador = calcularPuntuacion(config("adultoEvaluador", "30", todas("nunca")));

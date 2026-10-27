@@ -27,7 +27,7 @@ const PUNTAJES_OPCION = { nunca: 1, ocasionalmente: 2, frecuentemente: 3, siempr
 const ITEMS_SOC_INVERTIDOS = {
   preescolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   child: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
-  adolescenteHogar: [71, 72, 73, 74, 75, 76, 77, 78],
+  adolescenteHogar: [71, 72, 73, 76, 77],
   adolescenteAuto: [71, 72, 73, 74, 77],
   adultoEvaluador: [71, 72, 74, 75, 76, 77, 78, 79],
   adultoAuto: [71, 72, 74, 75, 80],

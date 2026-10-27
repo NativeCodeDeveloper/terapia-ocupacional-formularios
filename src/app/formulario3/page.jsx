@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { descargarInformePDF, descargarInformeWord } from "@/lib/informe";
+import { descargarInformePDFHogarAdolescente } from "@/lib/informe-hogar-adolescente";
 
 const OPCIONES = [
   {
@@ -49,15 +49,15 @@ const SECCIONES = [
   {
     titulo: "OÍDO",
     preguntas: [
-      "Se fastidia tanto con los sonidos fuertes, como el de una aspiradora, que tiene que irse del sitio o hacer callar la fuente del algún modo.",
+      "Se fastidia tanto con los sonidos fuertes, como el de una aspiradora, que tiene que irse del sitio o hacer callar el sonido de algún modo.",
       "No nota los sonidos que otros notan.",
       "Nota o se fastidia con los sonidos que los demás no notan.",
       "Se distrae fácilmente con ruidos sutiles en el ambiente como el ruido del aire acondicionado o del refrigerador.",
       "Tiene dificultad para determinar de dónde provienen los sonidos o las voces.",
       "Tiene dificultad para enfocarse en una película cuando hay sonidos como gente abriendo envases de comida cerca de él/ella.",
       "No responde cuando llaman su nombre.",
-      "Se fastidia con los sonidos agudos cómo los de silbatos o los de aparatos para hacer bulla en las fiestas.",
-      "Se fija en sonidos a los que la mayoría de la gente no les presta atención.",
+      "Se fastidia con los sonidos agudos como los de silbatos o los de aparatos para hacer bulla en las fiestas.",
+      "Se interesa en sonidos a los que la mayoría de la gente no les presta atención.",
       "Oye cosas que otras personas no oyen.",
     ],
   },
@@ -95,7 +95,7 @@ const SECCIONES = [
     titulo: "CONCIENCIA CORPORAL",
     preguntas: [
       "Usa demasiada fuerza para ciertas cosas, por ejemplo tira las puertas o presiona el teclado muy fuerte.",
-      "Tiende a derramar o tirar las cosas que lleva en un azafate.",
+      "Tiende a derramar o derribar las cosas que lleva en un azafate.",
       "Muerde cosas como lápices o ropa repetidamente.",
       "Maneja los recipientes tan bruscamente o tan fuerte que se abollan, se rompen, o se derraman.",
       "Agarra las cosas de un modo tan suelto que se le caen de la mano.",
@@ -109,11 +109,11 @@ const SECCIONES = [
   {
     titulo: "EQUILIBRIO Y MOVIMIENTO",
     preguntas: [
-      "Se disgusta al echar su cabeza hacia atrás, como cuando mira algo que está encima de él/ella o cuando se enjuaga el cabello.",
+      "Se disgusta al echar su cabeza hacia atrás, como cuando mira algo que esté encima de él/ella o cuando se enjuaga el cabello.",
       "Se disgusta al subir en ascensores o en escaleras mecánicas debido al movimiento.",
-      "Evita caminar sobre superficies disparejas que requieren equilibrio como la tierra o el pasto.",
+      "Evita caminar sobre superficies desiguales que requieran equilibrio como la tierra o el pasto.",
       "Se tropieza, se cae, o pierde el equilibrio al correr o hacer deportes.",
-      "Se siente incómodo(a) en escaleras o escalones.",
+      "Se siente incómodo/a en escaleras o escaleras de mano.",
       "Tiene que apoyarse en algo cuando se sienta en el suelo.",
       "No se sujeta cuando se está cayendo.",
       "Pierde el equilibrio cuando se agacha.",
@@ -142,12 +142,12 @@ const SECCIONES = [
       "Se lleva bien con sus amigos, con facilidad, sin hacer dramas o discutir.",
       "Se lleva bien con los adultos que no son parte de la familia.",
       "Participa en actividades sociales fuera de la escuela.",
-      "Muestra interés en hacer contacto visual con la gente cuando les habla.",
-      "No se pone nervioso(a) cuando está rodeado de gente.",
+      "Tiene dificultad en hacer contacto visual con la gente cuando les habla.",
+      "Se para o se sienta demasiado cerca de la gente.",
       "Busca actividades extracurriculares como los deportes organizados o clubes de intereses especializados.",
-      "Hace cosas para agradar a sus amigos.",
-      "Luce como si siempre estuviera limpio/a y bien arreglado/a, hasta el punto que sus amigos y su familia se quejan.",
-      "Parece que ignora a la gente.",
+      "Elige estar con amigos cuando sea posible.",
+      "No anda suficientemente limpio/a o bien arreglado/a, hasta tal punto que sus amigos y su familia se quejan.",
+      "Parece ignorar a la gente.",
       "Habla demasiado suavemente o con voz demasiado alta.",
     ],
   },
@@ -309,17 +309,10 @@ export default function FormularioSPM2HogarAdolescente() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarInformePDF(informe)}
+              onClick={() => descargarInformePDFHogarAdolescente(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
               Descargar informe PDF
-            </button>
-            <button
-              type="button"
-              onClick={() => descargarInformeWord(informe)}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Descargar informe Word
             </button>
             <button
               type="button"

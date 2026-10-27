@@ -21,9 +21,12 @@ import {
      5. Detalle de las 80 respuestas por dimensión.
      6. Escala de respuesta, nota y firma.
    Los textos propios de cada versión llegan en `version`:
-     - rangoEdad: "2 a 5 años" / "5 a 12 años" (frase de intro).
+     - intro: párrafo de introducción del informe.
      - lineaEdad: subtítulo bajo el título del informe.
      - autores: línea de autores del formulario oficial.
+     - celdasId: celdas de identificación (etiqueta impresa, clave
+       del dato del formulario y fracción del ancho).
+     - datoNombre: clave del dato con el nombre para el pie.
      - etiquetasTablaNorma: etiqueta de cada tabla normativa
        aplicable, por clave de norma.
      - etiquetaTablaNormaPorDefecto: etiqueta si la clave no
@@ -116,14 +119,12 @@ export function construirInformeHogar(config, version) {
 
   /* ---- Franja de datos de identificación ---- */
 
-  const celdasId = [
-    { etiqueta: "NOMBRE DEL/DE LA NIÑO/A", valor: valorDato("Nombre del Niño o Niña"), fraccion: 0.58 },
-    { etiqueta: "EDAD", valor: conAnios(valorDato("Edad")), fraccion: 0.42 },
-    { etiqueta: "NOMBRE DE QUIÉN RESPONDE", valor: valorDato("Nombre de quién responde"), fraccion: 0.5 },
-    { etiqueta: "RELACIÓN CON EL NIÑO O NIÑA", valor: valorDato("Relación con el niño o niña"), fraccion: 0.5 },
-    { etiqueta: "NOMBRE DEL/LA PROFESIONAL", valor: valorDato("Nombre del/la Profesional"), fraccion: 0.58 },
-    { etiqueta: "FECHA DE APLICACIÓN", valor: fechaCorta(), fraccion: 0.42 },
-  ];
+  const celdasId = version.celdasId.map((celda) => ({
+    etiqueta: celda.etiqueta,
+    valor: celda.dato === "Edad" ? conAnios(valorDato(celda.dato)) : valorDato(celda.dato),
+    fraccion: celda.fraccion,
+  }));
+  celdasId.push({ etiqueta: "FECHA DE APLICACIÓN", valor: fechaCorta(), fraccion: 0.42 });
 
   const altoCeldaId = 34;
   for (let i = 0; i < celdasId.length; i += 2) {
@@ -150,10 +151,7 @@ export function construirInformeHogar(config, version) {
   }
   y += 8;
 
-  escribir(
-    `Este informe presenta los resultados de la aplicación del SPM-2, Formulario HOGAR para niños y niñas de ${version.rangoEdad}. El instrumento lo completa el padre, la madre o el cuidador sobre la conducta típica del niño o la niña durante el último mes y consta de 80 preguntas agrupadas en ocho dimensiones: Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal, Equilibrio y Movimiento, Planificación e Ideas y Participación Social. Las seis primeras dimensiones se suman en el Total Sensorial (ST).`,
-    { espacio: 8 }
-  );
+  escribir(version.intro, { espacio: 8 });
   escribir(
     "A continuación se presenta la hoja de resumen de puntuación con el puntaje bruto de cada dimensión, su conversión a puntaje T y percentil según la tabla normativa correspondiente a la edad, y el rango de interpretación oficial.",
     { espacio: 12 }
@@ -267,7 +265,7 @@ export function construirInformeHogar(config, version) {
 
     y = filaY + 10;
     escribir(
-      "P. bruto: suma de los puntajes de los 10 ítems de la dimensión (N = 1, O = 2, F = 3, S = 4; rango 10-40). ST (Total Sensorial): suma de las dimensiones Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal y Equilibrio y Movimiento (rango 60-240).",
+      "P. bruto: suma de los puntajes de los 10 ítems de la dimensión (N = 1, O = 2, F = 3, S = 4; rango 10-40). Los ítems 71-80 de Participación Social redactados en positivo se puntúan invertidos (N = 4, O = 3, F = 2, S = 1). ST (Total Sensorial): suma de las dimensiones Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal y Equilibrio y Movimiento (rango 60-240).",
       { tamano: 8, gris: true, espacio: 2 }
     );
     escribir(
@@ -497,7 +495,7 @@ export function construirInformeHogar(config, version) {
 
   /* ---- Pie de página y numeración ---- */
 
-  const nombre = valorDato("Nombre del Niño o Niña");
+  const nombre = valorDato(version.datoNombre);
   const totalPaginas = doc.getNumberOfPages();
   for (let i = 1; i <= totalPaginas; i++) {
     doc.setPage(i);
