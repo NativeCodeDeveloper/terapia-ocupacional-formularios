@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { descargarInformePDF, descargarInformeWord } from "@/lib/informe";
+import { descargarInformePDFEvaluadorAdulto } from "@/lib/informe-evaluador-adulto";
 
 const OPCIONES = [
   {
@@ -36,7 +36,7 @@ const SECCIONES = [
     preguntas: [
       "Se fastidia con la luz brillante.",
       "Se distrae con cosas que están a la vista cerca de él/ella, como objetos en la pared o gente moviéndose alrededor.",
-      "Tiene dificultad para entender diagramas (esquemas).",
+      "Tiene dificultad para entender diagramas.",
       "Tiene dificultad para seguir a objetos que se mueven con la vista.",
       "Tiene dificultad para entender relatos que estén en forma visual como las revistas de historietas o las novelas gráficas.",
       "Se fastidia cuando el alumbrado que generalmente hay en un ambiente familiar cambia.",
@@ -55,7 +55,7 @@ const SECCIONES = [
       "Necesita estar en un lugar muy silencioso para poder hacer cualquiera de sus tareas.",
       "Tiene dificultad para determinar de dónde provienen los sonidos o las voces.",
       "Oye cosas que otras personas no oyen.",
-      "Se interesa en sonidos a los que la mayoría de la gente no les presta atención.",
+      "Se interesa en sonidos a los que la mayoría de la gente no les prestan atención.",
       "Evita los lugares donde hay música o ruido fuerte.",
       "Tiene dificultad para enfocarse en una película cuando hay sonidos como gente abriendo envases de comida cerca de él/ella.",
       "Se fastidia con los sonidos agudos como los de silbatos o los aparatos para hacer bulla en las fiestas.",
@@ -99,7 +99,7 @@ const SECCIONES = [
       "Maneja los recipientes tan bruscamente o tan fuerte que se abollan, se rompen, o se derraman.",
       "Vuelca las cosas por accidente.",
       "Empuja, pega, o abraza tan fuerte que los demás se quejan.",
-      "Tira la pelota con demasiado o con muy poca fuerza para embocarla.",
+      "Tira la pelota con demasiada o con muy poca fuerza para embocarla.",
       "Agarra las cosas de un modo tan suelto que se le caen de la mano.",
       "Camina haciendo ruido, pisando fuerte o arrastrando los pies.",
       "Abre las puertas con tanta fuerza que la puerta golpea la pared o golpea a los demás.",
@@ -109,14 +109,14 @@ const SECCIONES = [
   {
     titulo: "EQUILIBRIO Y MOVIMIENTO",
     preguntas: [
-      "Evita caminar sobre superficies desiguales que requieren equilibrio como la tierra o el pasto.",
+      "Evita caminar sobre superficies desiguales que requieran equilibrio como la tierra o el pasto.",
       "No se sujeta cuando se está cayendo.",
       "Evita sentarse en asientos que no tienen respaldo.",
       "Pierde el equilibrio cuando se agacha.",
       "Se desploma, se inclina, o necesita algo en que apoyarse cuando está sentado/a.",
       "Usa las paredes o los muebles para mantener el equilibrio cuando camina.",
       "Se disgusta al entrar o desplazarse dentro de una habitación oscura o malumbrada.",
-      "Se disgusta al echar su cabeza hacia atrás, como cuando mira algo que está encima de él/ella o cuando se enjuaga el cabello.",
+      "Se disgusta al echar su cabeza hacia atrás, como cuando mira algo que esté encima de él/ella o cuando se enjuaga el cabello.",
       "Se disgusta al subir en ascensores o en escaleras mecánicas debido al movimiento.",
       "Se siente incómodo/a en escaleras o escaleras de mano.",
     ],
@@ -125,15 +125,15 @@ const SECCIONES = [
     titulo: "PLANIFICACIÓN E IDEAS",
     preguntas: [
       "Tiene problemas imitando acciones que se le demuestran como un nuevo paso de baile o el uso de una herramienta nueva.",
-      "Tiene problemas siguiendo las instrucciones de un diagrama (esquema) para armar algo.",
+      "Tiene problemas siguiendo las instrucciones de un diagrama para armar algo.",
       "Necesita más práctica que los demás para adquirir una habilidad nueva.",
       "Prefiere repetir actividades una y otra vez de la misma forma en vez de cambiar algo en la actividad o cambiar a una nueva actividad.",
       "Tiene dificultad para planear como cargar varias cosas al mismo tiempo.",
-      "Tiene problemas para generar ideas durante juegos como charadas (juego de adivinanza).",
+      "Tiene problemas para generar ideas durante juegos como charadas.",
       "Tiene problemas para completar los pasos de las rutinas familiares en el orden correcto.",
       "Tiene problemas para generar ideas para nuevas actividades.",
       "Tiene dificultad para calcular una ruta hacia un lugar nuevo.",
-      "Toma más tiempo que los demás en completar las tareas necesarias para salir de la casa.",
+      "Toma más tiempo que los demás en completar las tareas necesarias.",
     ],
   },
   {
@@ -309,17 +309,10 @@ export default function FormularioSPM2AdultoEvaluador() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarInformePDF(informe)}
+              onClick={() => descargarInformePDFEvaluadorAdulto(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
               Descargar informe PDF
-            </button>
-            <button
-              type="button"
-              onClick={() => descargarInformeWord(informe)}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Descargar informe Word
             </button>
             <button
               type="button"
