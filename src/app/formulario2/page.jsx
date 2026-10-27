@@ -50,7 +50,7 @@ const SECCIONES = [
     titulo: "OÍDO",
     preguntas: [
       "Se fastidia con los sonidos caseros comunes como el de una aspiradora.",
-      "Responde a los ruidos fuertes escampándose, llorando, o poniéndose las manos sobre los oídos.",
+      "Responde a los ruidos fuertes escapándose, llorando, o poniéndose las manos sobre los oídos.",
       "No nota los sonidos que otros notan.",
       "Parece estar intensamente interesado/a en sonidos que otros no notan.",
       "Se asusta con sonidos que a los demás no les molestan.",
@@ -111,7 +111,7 @@ const SECCIONES = [
     preguntas: [
       "Le tiene miedo a ciertos movimientos como el de columpiarse o deslizarse en el tobogán.",
       "No mantiene bien el equilibrio.",
-      "Evita caminar sobre superficies disiguales que requieren equilibrio como la tierra o el pasto.",
+      "Evita caminar sobre superficies desiguales que requieran equilibrio como la tierra o el pasto.",
       "Se cae de la silla cuando cambia de posición.",
       "No le gusta echar su cabeza hacia atrás como cuando mira algo que esté encima de él/ella o cuando se enjuaga el cabello.",
       "Muestra poca coordinación en el uso de los dos lados de su cuerpo como al cruzar un pie sobre los dos pies al mismo tiempo o para sacar algo de una esquina con una cuchara.",
@@ -374,10 +374,10 @@ export default function FormularioSPM2Hogar512() {
           ))}
         </ul>
         <p className="mt-4 text-sm leading-relaxed">
-          Algunas preguntas inquireren acerca de que si este/a niño/a se &ldquo;angustia&rdquo; en
+          Algunas preguntas inquieren acerca de que si este/a niño/a se &ldquo;angustia&rdquo; en
           ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando,
           gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando
-          alguna cosa, escampándose, haciendo gestos de dolor, azotando).
+          alguna cosa, escapándose, haciendo gestos de dolor, azotando).
         </p>
         <p className="mt-4 text-xs text-red-600 dark:text-red-400">
           * Indica que la pregunta es obligatoria.

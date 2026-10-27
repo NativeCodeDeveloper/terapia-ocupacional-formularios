@@ -1,11 +1,15 @@
 import { jsPDF } from "jspdf";
-import { TABLAS_NORMAS, rangoDeT } from "./normas-spm2";
+import { TABLAS_NORMAS, rangoDeT } from "./normas-spm2.js";
 
 /* ============================================================
    PUNTUACIÓN OFICIAL SPM-2
    - Cada escala (VIS, HEA, TOU, T&S, BOD, BAL, PLN, SOC) suma los
-     puntajes 1-4 (N=1, O=2, F=3, S=4) de sus 10 ítems (bruto 10-40).
-   - ST (Total Sensorial) = VIS + HEA + TOU + T&S + BOD + BAL (60-240).
+     puntajes 1-4 de sus 10 ítems (bruto 10-40).
+   - Ítems 71-80 (Participación Social) redactados en positivo: se
+     puntúan INVERTIDOS (N=4, O=3, F=2, S=1) según la Scoring
+     Worksheet oficial de cada formulario (ver ITEMS_SOC_INVERTIDOS).
+   - ST (Total Sensorial) = VIS + HEA + TOU + T&S + BOD + BAL (60-240);
+     SOC y PLN no entran en el ST.
    - El puntaje bruto se convierte a puntaje T y percentil con las
      tablas normativas del AutoScore (src/lib/normas-spm2.js).
    - Rangos de interpretación: Típico (T 40-59),
@@ -13,6 +17,39 @@ import { TABLAS_NORMAS, rangoDeT } from "./normas-spm2";
    ============================================================ */
 
 const PUNTAJES_OPCION = { nunca: 1, ocasionalmente: 2, frecuentemente: 3, siempre: 4 };
+
+/* Ítems de Participación Social (71-80) redactados en positivo.
+   En el SPM-2 esos ítems se puntúan invertidos (N = 4, O = 3,
+   F = 2, S = 1); los ítems 71-80 redactados en negativo se puntúan
+   directos. Direcciones tomadas de la Scoring Worksheet oficial de
+   cada formulario (W-709E y W-708E: los diez ítems son positivos;
+   W-707E, W-707G, W-706F y W-706E: mixtos según su redacción). */
+const ITEMS_SOC_INVERTIDOS = {
+  preescolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+  child: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+  adolescenteHogar: [71, 72, 73, 74, 75, 76, 77, 78],
+  adolescenteAuto: [71, 72, 73, 74, 77],
+  adultoEvaluador: [71, 72, 74, 75, 76, 77, 78, 79],
+  adultoAuto: [71, 72, 74, 75, 80],
+};
+
+// Puntaje de un ítem: directo (N=1, O=2, F=3, S=4) o invertido (5 - directo).
+function puntajeItem(valor, invertido) {
+  const directo = PUNTAJES_OPCION[valor];
+  if (!directo) return 0;
+  return invertido ? 5 - directo : directo;
+}
+
+// Suma los 10 ítems de la sección `indice` (0-7) de un formulario.
+export function sumaDeSeccion(respuestas, indice, norma) {
+  const invertidos = ITEMS_SOC_INVERTIDOS[norma] ?? [];
+  let suma = 0;
+  for (let i = 1; i <= 10; i++) {
+    const numero = indice * 10 + i;
+    suma += puntajeItem(respuestas[numero], invertidos.includes(numero));
+  }
+  return suma;
+}
 
 // Orden de las secciones del formulario -> código de escala oficial
 const SECCIONES_A_ESCALA = [
@@ -40,15 +77,11 @@ const ETIQUETAS_ESCALA = {
 
 export const SENSORIALES = ["VIS", "HEA", "TOU", "TS", "BOD", "BAL"];
 
-function sumaSeccion(secciones, respuestas, definicion) {
+function sumaSeccion(secciones, respuestas, definicion, norma) {
   const candidatos = [definicion.titulo, ...(definicion.alias ?? [])];
   const indice = secciones.findIndex((s) => candidatos.includes(s.titulo));
   if (indice === -1) return null;
-  let suma = 0;
-  for (let i = 1; i <= 10; i++) {
-    suma += PUNTAJES_OPCION[respuestas[indice * 10 + i]] ?? 0;
-  }
-  return suma;
+  return sumaDeSeccion(respuestas, indice, norma);
 }
 
 export function calcularPuntuacion(config) {
@@ -64,7 +97,7 @@ export function calcularPuntuacion(config) {
 
   const brutos = {};
   for (const def of SECCIONES_A_ESCALA) {
-    brutos[def.escala] = sumaSeccion(secciones, respuestas, def);
+    brutos[def.escala] = sumaSeccion(secciones, respuestas, def, norma);
   }
   brutos.ST = SENSORIALES.reduce((total, e) => total + (brutos[e] ?? 0), 0);
 
@@ -127,9 +160,9 @@ const TEXTOS_ESCALA = {
     severo: "En conjunto, el procesamiento de la información sensorial evidencia dificultades severas. Las respuestas frente a los estímulos del entorno difieren de manera importante de lo esperado y repercuten de forma significativa en la atención, la regulación, la conducta y la participación funcional.",
   },
   PLN: {
-    tipico: "Sus respuestas conductuales asociadas al procesamiento sensorial son típicas, esperadas y funcionales. Se adapta a las demandas del entorno sin mostrar rigidez, crisis o desregulaciones significativas frente a cambios mínimos.",
-    moderado: "Sus respuestas conductuales asociadas al procesamiento sensorial muestran diferencias respecto de lo esperado. Puede presentar rigidez, frustración o malestar frente a los cambios y las demandas del entorno con más frecuencia que otros, afectando su participación en algunas actividades.",
-    severo: "Sus respuestas conductuales difieren significativamente de la mayoría, impactando fuertemente su participación. Puede manifestar rigidez extrema, sufrir crisis o desregulaciones emocionales severas ante cambios mínimos, y presentar altos niveles de ansiedad.",
+    tipico: "Su planificación e ideas son típicas, esperadas y funcionales. Planifica y organiza las acciones necesarias para las tareas, sigue los pasos de una rutina en secuencia lógica y genera ideas propias para el juego y la construcción con facilidad.",
+    moderado: "Su planificación e ideas muestran diferencias respecto de lo esperado. Le cuesta planificar y organizar las acciones de una tarea, seguir secuencias de pasos o generar ideas propias, y suele necesitar más práctica y más tiempo que otros para adquirir habilidades nuevas o completar actividades rutinarias.",
+    severo: "Su planificación e ideas difieren significativamente de lo esperado. Presenta dificultades marcadas para planificar y secuenciar acciones, imitar modelos y generar ideas propias, lo que afecta de manera importante su autonomía en las rutinas diarias, el aprendizaje y el juego.",
   },
   SOC: {
     tipico: "Su desarrollo socioemocional y sus interacciones son típicas, esperadas y funcionales. Participa con otros de manera adecuada a su edad, expresa sus emociones con normalidad y forma relaciones sociales saludables.",

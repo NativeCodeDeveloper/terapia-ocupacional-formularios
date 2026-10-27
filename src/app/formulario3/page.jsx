@@ -381,10 +381,10 @@ export default function FormularioSPM2HogarAdolescente() {
           ))}
         </ul>
         <p className="mt-4 text-sm leading-relaxed">
-          Algunas preguntas inquireren acerca de que si se &ldquo;angustia&rdquo; en ciertas
+          Algunas preguntas inquieren acerca de que si se &ldquo;angustia&rdquo; en ciertas
           situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando)
           o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna
-          cosa, escampándose, haciendo gestos de dolor, azotando).
+          cosa, escapándose, haciendo gestos de dolor, azotando).
         </p>
         <p className="mt-4 text-xs text-red-600 dark:text-red-400">
           * Indica que la pregunta es obligatoria.

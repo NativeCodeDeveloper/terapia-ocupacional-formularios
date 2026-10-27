@@ -1,4 +1,4 @@
-import { construirInformeHogar } from "./informe-hogar";
+import { construirInformeHogar } from "./informe-hogar.js";
 
 /* ============================================================
    INFORME SPM-2 HOGAR · NIÑOS/AS DE 5 A 12 AÑOS

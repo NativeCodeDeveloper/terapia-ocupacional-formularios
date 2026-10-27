@@ -51,7 +51,7 @@ const SECCIONES = [
     titulo: "OÍDO",
     preguntas: [
       "Se fastidia con los sonidos caseros comunes como el de una aspiradora.",
-      "Responde a los ruidos fuertes escampándose, llorando, o poniéndose las manos sobre los oídos.",
+      "Responde a los ruidos fuertes escapándose, llorando, o poniéndose las manos sobre los oídos.",
       "Se distrae o se fastidia con ruidos en el ambiente que otros ignoran como una máquina de cortar el césped o el ruido del aire acondicionado.",
       "Gusta hacer ciertos sonidos repetidamente como tararear o jalar la cadena de la taza del baño.",
       "Se angustia cuando hay sonidos agudos como silbatos o aparatos para hacer bulla en las fiestas.",
@@ -67,11 +67,11 @@ const SECCIONES = [
     preguntas: [
       "Se aparta cuando lo/la tocan levemente o inesperadamente.",
       "Se pone angustiado/a cuando alguien lo lava, le limpia, o le toca la cara.",
-      "Se angustia cuando le cortan el cabello o le escobillan el cabello.",
+      "Se angustia cuando le cortan o le escobillan el cabello.",
       "Parece no darse cuenta de la necesidad de usar el baño.",
       "Disfruta de sensaciones que a otros les causarían dolor como tirarse contra las paredes.",
-      "Frota objetos repetidamente con las manos o las plantas de los dedos.",
-      "Hace arcadas o vomita en reacción al oler comidas u otras texturas.",
+      "Frota objetos repetidamente con las manos o las puntas de los dedos.",
+      "Hace arcadas o vomita en reacción a comidas de ciertas texturas.",
       "No se limpia la saliva o la comida de la cara.",
       "Gusta estar tendido/a bajo cosas pesadas como frazadas, almohadas, o cojines de sillón.",
       "Rehúsa comidas con mezclas de texturas como el yogurt con fruta.",
@@ -111,12 +111,12 @@ const SECCIONES = [
     titulo: "EQUILIBRIO Y MOVIMIENTO",
     preguntas: [
       "Le tiene miedo a ciertos movimientos como el de columpiarse o deslizarse en el tobogán.",
-      "Evita caminar sobre superficies disiguales que requieren equilibrio como la tierra o el pasto.",
+      "Evita caminar sobre superficies desiguales que requieran equilibrio como la tierra o el pasto.",
       "Se cae de la silla cuando cambia de posición.",
       "No se sujeta cuando se está cayendo.",
       "Gira o da vueltas excesivamente en los equipos del campo de recreo.",
       "Muestra poca coordinación en el uso de los dos lados de su cuerpo como hay que hacer para saltar y caer sobre los dos pies al mismo tiempo.",
-      "Mece, se balancea, o se retuerce al estar sentado/a.",
+      "Se mece, se balancea, o se retuerce al estar sentado/a.",
       "Bajar las escaleras o bajar de los cerros le da miedo.",
       "Se desploma hacia adelante, se echa hacia atrás, o se sujeta la cabeza con las manos mientras está sentado/a.",
       "No mantiene bien el equilibrio.",
@@ -390,10 +390,10 @@ export default function FormularioSPM2Hogar() {
           ))}
         </ul>
         <p className="mt-4 text-sm leading-relaxed">
-          Algunas preguntas inquireren acerca de que si este/a niño/a se &ldquo;angustia&rdquo; en
+          Algunas preguntas inquieren acerca de que si este/a niño/a se &ldquo;angustia&rdquo; en
           ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando,
           gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando
-          alguna cosa, escampándose, haciendo gestos de dolor, azotando).
+          alguna cosa, escapándose, haciendo gestos de dolor, azotando).
         </p>
         <p className="mt-4 text-xs text-red-600 dark:text-red-400">
           * Indica que la pregunta es obligatoria.

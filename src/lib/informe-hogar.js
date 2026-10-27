@@ -3,7 +3,8 @@ import {
   calcularPuntuacion,
   parrafoDiagnostico,
   textoInterpretacion,
-} from "./informe";
+  sumaDeSeccion,
+} from "./informe.js";
 
 /* ============================================================
    BASE COMÚN DE LOS INFORMES SPM-2 · FORMULARIO HOGAR (PDF)
@@ -405,13 +406,11 @@ export function construirInformeHogar(config, version) {
     doc.text("RESPUESTA", xDetalle[2] + 6, y + 11.5);
     y += 16;
 
-    let suma = 0;
     seccion.preguntas.forEach((texto, pi) => {
       const numero = si * 10 + pi + 1;
       const opcion = OPCION_POR_VALOR[respuestas[numero]];
       const letra = opcion ? opcion.etiqueta.charAt(0) : "—";
       const respuesta = opcion ? `${letra} · ${opcion.etiqueta}` : "—";
-      suma += opcion?.puntaje ?? 0;
 
       const lineasItem = lineasDe(texto, colDetalle[1], { tamano: 9.5 });
       const lineasResp = lineasDe(respuesta, colDetalle[2], { tamano: 9.5, negrita: true });
@@ -455,6 +454,7 @@ export function construirInformeHogar(config, version) {
       nuevaPagina();
       encabezadoDetalleContinuacion(seccion);
     }
+    const suma = sumaDeSeccion(respuestas, si, config.norma);
     doc.setFillColor(...CREMA);
     doc.rect(margen, y, anchoUtil, altoSubtotal, "F");
     doc.setFont("helvetica", "bold");
@@ -473,7 +473,7 @@ export function construirInformeHogar(config, version) {
     escribir(linea, { espacio: 2 });
   }
   escribir(
-    "Algunas preguntas inquireren acerca de que si este/a niño/a se “angustia” en ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna cosa, escampándose, haciendo gestos de dolor, azotando).",
+    "Algunas preguntas inquieren acerca de que si este/a niño/a se “angustia” en ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna cosa, escapándose, haciendo gestos de dolor, azotando).",
     { tamano: 9, gris: true, espacio: 14 }
   );
 
