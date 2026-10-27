@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { descargarInformePDF, descargarInformeWord } from "@/lib/informe";
+import { descargarInformePDFAutoReporteAdulto } from "@/lib/informe-autoreporte-adulto";
 
 const OPCIONES = [
   {
@@ -42,7 +42,7 @@ const SECCIONES = [
       "Yo tengo problemas para percibir los letreros de las calles o las señales de tránsito cuando estoy en un lugar nuevo.",
       "Yo tengo dificultad para juzgar la velocidad de autos que se acercan.",
       "Yo tengo dificultad para encontrar lo que busco en un mapa o en la guía de un centro comercial.",
-      "Yo tengo problemas para seguir a alguien que se mueve y que puedo ver con el rabillo del ojo.",
+      "Yo me distraigo por objetos que se mueven y que puedo ver con el rabillo del ojo.",
       "Yo pierdo mi lugar cuando muevo la vista de un sitio a otro, por ejemplo leyendo de una línea de texto a la siguiente.",
     ],
   },
@@ -57,7 +57,7 @@ const SECCIONES = [
       "Yo tengo dificultad para determinar de dónde provienen los sonidos o las voces.",
       "Los sonidos agudos, como los de silbatos o aparatos para hacer bulla en las fiestas, me molestan.",
       "Yo evito los lugares donde hay música o ruido fuerte.",
-      "Yo tengo dificultad para enfocarme en una película cuando hay ruidos cerca como el de la gente abriendo los envases de comida.",
+      "Yo tengo dificultad para enfocarme en una película cuando hay ruidos cerca como el de gente abriendo los envases de comida.",
       "Yo tengo dificultad para oír a la gente cuando me están hablando en un sitio bullicioso como un restaurante.",
     ],
   },
@@ -71,8 +71,8 @@ const SECCIONES = [
       "Otros tienen que decirme cuando yo necesito limpiarme algo de la cara porque yo no me doy cuenta de eso.",
       "La comida tiene que estar exactamente a la temperatura correcta para que yo me la coma.",
       "Yo evito ciertas comidas debido a sus texturas.",
-      "No hago caer las cosas porque no las siento deslizarse de entre mis dedos.",
-      "Yo tengo problemas con cierres que no puedo ver como para abrocharme o subirme el cierre del vestido.",
+      "Yo hago caer las cosas porque no las siento deslizarse de entre mis dedos.",
+      "Yo tengo problemas con cierres que no puedo ver como para abotonar mi cuello sin un espejo.",
       "Me es difícil sentir cuando la ropa se me ha enrollado en el cuerpo.",
     ],
   },
@@ -309,17 +309,10 @@ export default function FormularioSPM2AdultoAutoinforme() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarInformePDF(informe)}
+              onClick={() => descargarInformePDFAutoReporteAdulto(informe)}
               className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
             >
               Descargar informe PDF
-            </button>
-            <button
-              type="button"
-              onClick={() => descargarInformeWord(informe)}
-              className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Descargar informe Word
             </button>
             <button
               type="button"

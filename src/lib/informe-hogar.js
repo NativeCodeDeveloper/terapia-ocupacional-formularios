@@ -21,19 +21,23 @@ import {
      5. Detalle de las 80 respuestas por dimensión.
      6. Escala de respuesta, nota y firma.
    Los textos propios de cada versión llegan en `version`:
+     - tituloInforme: título del informe (bajo el encabezado SPM-2).
      - intro: párrafo de introducción del informe.
      - lineaEdad: subtítulo bajo el título del informe.
      - autores: línea de autores del formulario oficial.
      - celdasId: celdas de identificación (etiqueta impresa, clave
        del dato del formulario y fracción del ancho).
      - datoNombre: clave del dato con el nombre para el pie.
+     - notaAngustia: nota sobre el término "angustia" que va tras
+       la escala de respuesta (null si el formulario oficial no la
+       incluye).
      - etiquetasTablaNorma: etiqueta de cada tabla normativa
        aplicable, por clave de norma.
      - etiquetaTablaNormaPorDefecto: etiqueta si la clave no
        está en el mapa.
      - codigoFormulario: código WPS (W-709E, W-708E, ...).
      - copyright: línea de copyright del formulario oficial.
-     - pie: denominación de la versión para el pie de página.
+     - pie: línea completa del pie de página.
    ============================================================ */
 
 const VERDE = [139, 178, 90]; // Encabezados de tabla (mismo verde del proyecto)
@@ -113,7 +117,7 @@ export function construirInformeHogar(config, version) {
   y += 24;
 
   escribir("SPM-2 · SENSORY PROCESSING MEASURE, SECOND EDITION", { tamano: 10.5, negrita: true, centrado: true, gris: true, espacio: 4 });
-  escribir("Informe de resultados · Formulario HOGAR (Home Form)", { tamano: 17, negrita: true, centrado: true, espacio: 2 });
+  escribir(version.tituloInforme, { tamano: 17, negrita: true, centrado: true, espacio: 2 });
   escribir(version.lineaEdad, { tamano: 12, centrado: true, espacio: 6 });
   escribir(version.autores, { tamano: 7.5, centrado: true, gris: true, espacio: 14 });
 
@@ -470,10 +474,11 @@ export function construirInformeHogar(config, version) {
   for (const linea of INSTRUCCIONES_ESCALA) {
     escribir(linea, { espacio: 2 });
   }
-  escribir(
-    "Algunas preguntas inquieren acerca de que si este/a niño/a se “angustia” en ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna cosa, escapándose, haciendo gestos de dolor, azotando).",
-    { tamano: 9, gris: true, espacio: 14 }
-  );
+  if (version.notaAngustia) {
+    escribir(version.notaAngustia, { tamano: 9, gris: true, espacio: 14 });
+  } else {
+    y += 8;
+  }
 
   escribir("Nota", { tamano: 13, negrita: true, espacio: 4 });
   escribir(
@@ -505,7 +510,7 @@ export function construirInformeHogar(config, version) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(130);
-    const pie = `SPM-2 · Formulario HOGAR · ${version.pie}${nombre ? ` · ${nombre}` : ""}`;
+    const pie = `${version.pie}${nombre ? ` · ${nombre}` : ""}`;
     doc.text(doc.splitTextToSize(pie, anchoUtil - 90)[0], margen, altoPagina - 28);
     doc.text(`Página ${i} de ${totalPaginas}`, anchoPagina - margen, altoPagina - 28, { align: "right" });
     doc.text("Generado por teraocupame", anchoPagina / 2, altoPagina - 16, { align: "center" });

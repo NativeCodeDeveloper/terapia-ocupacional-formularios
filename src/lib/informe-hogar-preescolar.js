@@ -11,6 +11,7 @@ import { construirInformeHogar } from "./informe-hogar.js";
    ============================================================ */
 
 const VERSION = {
+  tituloInforme: "Informe de resultados · Formulario HOGAR (Home Form)",
   intro:
     "Este informe presenta los resultados de la aplicación del SPM-2, Formulario HOGAR para niños y niñas de 2 a 5 años. El instrumento lo completa el padre, la madre o el cuidador sobre la conducta típica del niño o la niña durante el último mes y consta de 80 preguntas agrupadas en ocho dimensiones: Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal, Equilibrio y Movimiento, Planificación e Ideas y Participación Social. Las seis primeras dimensiones se suman en el Total Sensorial (ST).",
   lineaEdad: "Preescolar — Niños y niñas de 2 a 5 años · Español",
@@ -24,6 +25,8 @@ const VERSION = {
     { etiqueta: "NOMBRE DEL/LA PROFESIONAL", dato: "Nombre del/la Profesional", fraccion: 0.58 },
   ],
   datoNombre: "Nombre del Niño o Niña",
+  notaAngustia:
+    "Algunas preguntas inquieren acerca de que si este/a niño/a se “angustia” en ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna cosa, escapándose, haciendo gestos de dolor, azotando).",
   etiquetasTablaNorma: {
     preescolar24: "Edades 2 a 4 años",
     preescolar5: "5 años",
@@ -32,7 +35,7 @@ const VERSION = {
   codigoFormulario: "W-709E",
   copyright:
     "SPM-2 (Sensory Processing Measure, Second Edition). Copyright © 2021 Western Psychological Services. Formulario W-709E · Preschool Home Form (español). Traducción al español: Susana Urbina, PhD.",
-  pie: "Preescolar (2 a 5 años)",
+  pie: "SPM-2 · Formulario HOGAR · Preescolar (2 a 5 años)",
 };
 
 export function construirInformePDFHogarPreescolar(config) {
