@@ -12,17 +12,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "SPM-2 · Formularios",
+  title: "Teraocupame.cl · Instrumentos de evaluación",
   description: "Formularios del Perfil Sensorial 2 (SPM-2) con descarga en PDF y Word",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-white font-[Arial,Helvetica,sans-serif] text-[#171717] dark:bg-[#0a0a0a] dark:text-[#ededed]">{children}</body>
     </html>
   );
 }
