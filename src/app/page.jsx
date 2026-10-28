@@ -30,6 +30,13 @@ const FORMULARIOS = [
     informes: "PDF",
   },
   {
+    href: "/formulario8",
+    instrumento: "SPM-2 ESCOLAR",
+    titulo: "Adolescente 12 - 21",
+    descripcion: "Responde un docente o evaluador del establecimiento sobre el o la estudiante.",
+    informes: "PDF",
+  },
+  {
     href: "/formulario4",
     instrumento: "SPM-2 AUTOINFORME",
     titulo: "Adolescente 12 - 21",
@@ -119,7 +126,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              7 formularios · 80 preguntas cada uno · Escala Nunca a Siempre
+              8 formularios · 80 preguntas cada uno · Escala Nunca a Siempre
             </p>
           </div>
         </section>
