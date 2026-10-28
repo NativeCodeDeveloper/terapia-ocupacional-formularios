@@ -142,6 +142,52 @@ test("formulario de niños 5-12 (child): misma inversión de la SOC", () => {
   assert.equal(escalas.find((e) => e.escala === "VIS").raw, 10);
 });
 
+test("preescolar escolar (W-709F): la SOC se invierte y la tabla se elige por edad", () => {
+  const caso4 = calcularPuntuacion(config("preescolarEscolar", "4", todas("nunca")));
+  assert.equal(caso4.tablaNorma, "preescolarEscolar24");
+  const soc4 = caso4.escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc4.raw, 40, "nunca colabora debe sumar lo más alto");
+  assert.equal(soc4.t, 80);
+  assert.equal(soc4.pct, ">99");
+  assert.equal(soc4.rango, "Dificultades severas");
+
+  const caso5 = calcularPuntuacion(config("preescolarEscolar", "5", todas("nunca")));
+  assert.equal(caso5.tablaNorma, "preescolarEscolar5");
+  const soc5 = caso5.escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc5.raw, 40);
+  assert.equal(soc5.t, 73);
+  assert.equal(soc5.pct, 99);
+});
+
+test("preescolar escolar 2-4: conversión bruto → T en VIS, HEA, BAL y ST", () => {
+  const LETRA = { 1: "nunca", 2: "ocasionalmente", 3: "frecuentemente", 4: "siempre" };
+  const respuestas = todas("nunca");
+  [4, 4, 4, 3, 2, 1, 1, 1, 1, 1].forEach((v, i) => { respuestas[i + 1] = LETRA[v]; }); // VIS 22
+  [4, 4, 4, 4, 4, 1, 1, 1, 1, 1].forEach((v, i) => { respuestas[i + 11] = LETRA[v]; }); // HEA 25
+  const { escalas } = calcularPuntuacion(config("preescolarEscolar", "4", respuestas));
+
+  const vis = escalas.find((e) => e.escala === "VIS");
+  assert.equal(vis.raw, 22);
+  assert.equal(vis.t, 67);
+  assert.equal(vis.pct, 96);
+
+  const hea = escalas.find((e) => e.escala === "HEA");
+  assert.equal(hea.raw, 25);
+  assert.equal(hea.t, 68);
+  assert.equal(hea.pct, 96);
+
+  // BAL 10 y ST 87 salen del resto de ítems en Nunca (10 cada dimensión)
+  const bal = escalas.find((e) => e.escala === "BAL");
+  assert.equal(bal.raw, 10);
+  assert.equal(bal.t, 41);
+  assert.equal(bal.pct, 18);
+
+  const st = escalas.find((e) => e.escala === "ST");
+  assert.equal(st.raw, 22 + 25 + 10 + 10 + 10 + 10);
+  assert.equal(st.t, 57);
+  assert.equal(st.pct, 76);
+});
+
 test("adolescente y adulto: la SOC se invierte solo en los ítems positivos", () => {
   // adolescenteAuto: invertidos 71-74 y 77; directos 75, 76, 78, 79, 80
   const respuestasAuto = todas("nunca");

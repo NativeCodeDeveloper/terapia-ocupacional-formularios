@@ -26,6 +26,7 @@ const PUNTAJES_OPCION = { nunca: 1, ocasionalmente: 2, frecuentemente: 3, siempr
    W-707E, W-707G, W-706F y W-706E: mixtos según su redacción). */
 const ITEMS_SOC_INVERTIDOS = {
   preescolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+  preescolarEscolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   child: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   adolescenteHogar: [71, 72, 73, 76, 77],
   adolescenteAuto: [71, 72, 73, 74, 77],
@@ -88,10 +89,10 @@ export function calcularPuntuacion(config) {
   const { secciones, respuestas, datos = [], norma } = config;
 
   let tablaNorma = norma;
-  if (norma === "preescolar") {
-    // La tabla del Preescolar se divide entre 2-4 años y 5 años
+  if (norma === "preescolar" || norma === "preescolarEscolar") {
+    // Las tablas del Preescolar se dividen entre 2-4 años y 5 años
     const edad = Number(datos.find((d) => d.etiqueta === "Edad")?.valor ?? "");
-    tablaNorma = edad === 5 ? "preescolar5" : "preescolar24";
+    tablaNorma = edad === 5 ? `${norma}5` : `${norma}24`;
   }
   const mapa = TABLAS_NORMAS[tablaNorma];
 

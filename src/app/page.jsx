@@ -8,6 +8,12 @@ const FORMULARIOS = [
     descripcion: "Responde el padre, madre o cuidador sobre la conducta del niño.",
   },
   {
+    href: "/formulario7",
+    instrumento: "SPM-2 ESCOLAR",
+    titulo: "Preescolar 2 - 5 años",
+    descripcion: "Responde el educador o la educadora de preescolar o guardería sobre la conducta del niño.",
+  },
+  {
     href: "/formulario2",
     instrumento: "SPM-2 HOGAR",
     titulo: "Niños 5 - 12 años",
@@ -103,7 +109,7 @@ export default function Home() {
                 <h3 className="relative max-w-[75%] text-[14px] leading-[18px] font-bold tracking-[-0.3px]">SPM-2 Hogar</h3>
                 <p className="relative mt-[2px] max-w-[85%] text-[11px] leading-[14px] text-[#72769e]">Procesamiento sensorial<br />en el contexto del hogar.</p>
                 <p className="mt-auto flex items-center gap-2 pt-[3px] text-[11px] leading-4 font-medium text-[#57628f]"><svg aria-hidden="true" className="size-[17px] shrink-0 fill-current"><use href="#personas" /></svg>Niños y jóvenes</p>
-                <button type="button" className="mt-2 flex h-7 w-full items-center justify-center gap-2 rounded-[10px] bg-[#e5dcff] text-[#4e12b7] text-[11px] font-semibold transition-[filter] hover:brightness-95">Abrir instrumento<svg aria-hidden="true" className="size-[18px]"><use href="#flecha" /></svg></button>
+                <a href="#formularios-disponibles" className="mt-2 flex h-7 w-full items-center justify-center gap-2 rounded-[10px] bg-[#e5dcff] text-[#4e12b7] text-[11px] font-semibold transition-[filter] hover:brightness-95">Abrir instrumento<svg aria-hidden="true" className="size-[18px]"><use href="#flecha" /></svg></a>
               </article>
               <article className="relative flex min-h-[176px] min-w-0 flex-col overflow-hidden rounded-[15px] bg-linear-to-br from-[#f1edff] to-[#f3efff] px-[17px] pt-3 pb-[11px]">
                 <span aria-hidden="true" className="pointer-events-none absolute top-[13px] right-3 h-[105px] w-[108px] bg-[url('/images/referencia-terapeutame.png')] bg-size-[1536px_1024px] bg-position-[-515px_-448px] bg-no-repeat" />
@@ -111,7 +117,7 @@ export default function Home() {
                 <h3 className="relative max-w-[75%] text-[14px] leading-[18px] font-bold tracking-[-0.3px]">SPM-2 Escolar</h3>
                 <p className="relative mt-[2px] max-w-[85%] text-[11px] leading-[14px] text-[#72769e]">Procesamiento sensorial<br />en el entorno escolar.</p>
                 <p className="mt-auto flex items-center gap-2 pt-[3px] text-[11px] leading-4 font-medium text-[#57628f]"><svg aria-hidden="true" className="size-[17px] shrink-0 fill-current"><use href="#personas" /></svg>Niños y jóvenes</p>
-                <button type="button" className="mt-2 flex h-7 w-full items-center justify-center gap-2 rounded-[10px] bg-[#e5dcff] text-[#4e12b7] text-[11px] font-semibold transition-[filter] hover:brightness-95">Abrir instrumento<svg aria-hidden="true" className="size-[18px]"><use href="#flecha" /></svg></button>
+                <a href="#formularios-disponibles" className="mt-2 flex h-7 w-full items-center justify-center gap-2 rounded-[10px] bg-[#e5dcff] text-[#4e12b7] text-[11px] font-semibold transition-[filter] hover:brightness-95">Abrir instrumento<svg aria-hidden="true" className="size-[18px]"><use href="#flecha" /></svg></a>
               </article>
               <article className="relative flex min-h-[176px] min-w-0 flex-col overflow-hidden rounded-[15px] bg-linear-to-br from-[#e7f2ff] to-[#e6f1ff] px-[17px] pt-3 pb-[11px]">
                 <span aria-hidden="true" className="pointer-events-none absolute top-[13px] right-3 h-[77px] w-[82px] bg-[url('/images/referencia-terapeutame.png')] bg-size-[1536px_1024px] bg-position-[-801px_-448px] bg-no-repeat" />
