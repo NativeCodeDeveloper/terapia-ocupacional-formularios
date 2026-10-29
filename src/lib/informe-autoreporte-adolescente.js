@@ -34,9 +34,9 @@ const VERSION = {
   notaPuntuacion:
     "P. bruto: suma de los puntajes de los 10 ítems de la dimensión (N = 1, O = 2, F = 3, S = 4; rango 10-40). Los ítems 71-74 y 77 de Participación Social, redactados en positivo, se puntúan invertidos (N = 4, O = 3, F = 2, S = 1). ST (Total Sensorial): suma de las dimensiones Visión, Oído, Tacto, Gusto y Olfato, Conciencia del Cuerpo y Equilibrio y Movimiento (rango 60-240).",
   etiquetasTablaNorma: {
-    adolescenteAuto: "12 a 21 años",
+    adolescenteAuto: "12 a 21 años · Autoreporte (Self-Report)",
   },
-  etiquetaTablaNormaPorDefecto: "12 a 21 años",
+  etiquetaTablaNormaPorDefecto: "12 a 21 años · Autoreporte (Self-Report)",
   codigoFormulario: "W-707G",
   copyright:
     "SPM-2 (Sensory Processing Measure, Second Edition). Copyright © 2021 Western Psychological Services. Formulario W-707G · Adolescent Self-Report Form · Ages 12-21 years (español).",

@@ -33,9 +33,9 @@ const VERSION = {
   notaAngustia:
     "Algunas preguntas inquieren acerca de que si este/esta estudiante se “angustia” en ciertas situaciones. Angustia puede incluir expresiones verbales (gimiendo, llorando, gritando) o expresiones sin uso de palabras (apartándose, haciendo gestos, descartando alguna cosa, escapándose, haciendo gestos de dolor, azotando).",
   etiquetasTablaNorma: {
-    adolescenteEscolar: "12 a 21 años",
+    adolescenteEscolar: "12 a 21 años · Escolar (School Form)",
   },
-  etiquetaTablaNormaPorDefecto: "12 a 21 años",
+  etiquetaTablaNormaPorDefecto: "12 a 21 años · Escolar (School Form)",
   codigoFormulario: "W-707F",
   copyright:
     "SPM-2 (Sensory Processing Measure, Second Edition). Copyright © 2021 Western Psychological Services. Formulario W-707F · Adolescent School Form (español). Traducción al español: Susana Urbina, PhD.",
