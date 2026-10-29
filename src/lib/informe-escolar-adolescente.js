@@ -20,9 +20,11 @@ const VERSION = {
     "H. Kuhaneck, PhD, OTR/L, FAOTA · L. D. Parham, PhD, OTR/L, FAOTA · C. L. Ecker, MA, OTR/L · T. J. Glennon, EdD, OTR/L, FAOTA · D. A. Henry, MS, OTR/L, FAOTA",
   celdasId: [
     { etiqueta: "NOMBRE DEL/DE LA ESTUDIANTE", dato: "Nombre del/de la Estudiante", fraccion: 0.58 },
+    { etiqueta: "SEXO", dato: "Sexo", fraccion: 0.42 },
+    { etiqueta: "FECHA DE NACIMIENTO", dato: "Fecha de Nacimiento", fraccion: 0.58 },
     { etiqueta: "EDAD", dato: "Edad", fraccion: 0.42 },
-    { etiqueta: "NOMBRE DE QUIÉN RESPONDE", dato: "Nombre de quién responde", fraccion: 0.5 },
-    { etiqueta: "RELACIÓN CON EL/LA ESTUDIANTE", dato: "Relación con el/la estudiante", fraccion: 0.5 },
+    { etiqueta: "NOMBRE DEL RESPONDIENTE", dato: "Nombre del respondiente", fraccion: 0.5 },
+    { etiqueta: "RELACIÓN DEL RESPONDIENTE CON EL/LA ESTUDIANTE", dato: "Relación del respondiente con el/la estudiante", fraccion: 0.5 },
     { etiqueta: "ESCUELA/AGENCIA", dato: "Escuela/Agencia", fraccion: 0.5 },
     { etiqueta: "GRADO ESCOLAR", dato: "Grado Escolar", fraccion: 0.5 },
     { etiqueta: "NOMBRE DEL/LA PROFESIONAL", dato: "Nombre del/la Profesional", fraccion: 0.58 },

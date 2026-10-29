@@ -128,9 +128,11 @@ const SECCIONES = [
 
 const DATOS = [
   { id: "dato-nombreEstudiante", campo: "nombreEstudiante", etiqueta: "Nombre del/de la Estudiante", tipo: "text", requerido: true },
+  { id: "dato-sexo", campo: "sexo", etiqueta: "Sexo", tipo: "text", requerido: true },
+  { id: "dato-fechaNacimiento", campo: "fechaNacimiento", etiqueta: "Fecha de Nacimiento", tipo: "date", requerido: true },
   { id: "dato-edad", campo: "edad", etiqueta: "Edad", tipo: "number", requerido: true },
-  { id: "dato-nombreResponde", campo: "nombreResponde", etiqueta: "Nombre de quién responde", tipo: "text", requerido: true },
-  { id: "dato-relacion", campo: "relacion", etiqueta: "Relación con el/la estudiante", tipo: "text", requerido: true },
+  { id: "dato-nombreResponde", campo: "nombreResponde", etiqueta: "Nombre del respondiente", tipo: "text", requerido: true },
+  { id: "dato-relacion", campo: "relacion", etiqueta: "Relación del respondiente con el/la estudiante", tipo: "text", requerido: true },
   { id: "dato-escuela", campo: "escuela", etiqueta: "Escuela/Agencia", tipo: "text", requerido: true },
   { id: "dato-grado", campo: "grado", etiqueta: "Grado Escolar", tipo: "text", requerido: true },
   { id: "dato-profesional", campo: "profesional", etiqueta: "Nombre del/la Profesional", tipo: "text", requerido: true },
