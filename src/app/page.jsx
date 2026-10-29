@@ -47,7 +47,7 @@ const FORMULARIOS = [
     titulo: "Adolescente 12 - 21",
     descripcion: "Lo responde el propio adolescente.",
     informes: "PDF y Word",
-    preguntas: 79,
+    preguntas: 80,
   },
   {
     href: "/formulario5",
@@ -134,7 +134,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              8 formularios · 79 a 80 preguntas cada uno · Escala Nunca a Siempre
+              8 formularios · 80 preguntas cada uno · Escala Nunca a Siempre
             </p>
           </div>
         </section>

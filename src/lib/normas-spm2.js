@@ -4,9 +4,7 @@
    Cada fila: [percentil, T, VIS, HEA, TOU, T&S, BOD, BAL, ST, PLN, SOC]
    Cada celda de escala: número (valor único), "min-max" (rango)
    o null (sin valor para ese T).
-   Cada escala tiene 10 ítems con puntaje 1-4 (rango bruto 10-40),
-   salvo la Participación Social del Adolescent Self-Report
-   (adolescenteAuto), que tiene 9 ítems (71-79; rango bruto 9-36).
+   Cada escala tiene 10 ítems con puntaje 1-4 (rango bruto 10-40);
    ST (Sensory Total) = suma de VIS+HEA+TOU+T&S+BOD+BAL (60-240).
    ============================================================ */
 

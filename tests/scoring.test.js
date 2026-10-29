@@ -258,38 +258,18 @@ test("adolescente y adulto: la SOC se invierte solo en los ítems positivos", ()
 
 /* ============================================================
    AUTOREPORTE ADOLESCENTE 12-21 (W-707G)
-   Formulario de 79 ítems: la Participación Social tiene 9
-   (71-79) y, según su Scoring Worksheet, se invierten 71-74
-   y 77 (redactados en positivo); 75, 76, 78 y 79 son directos.
+   80 ítems: la Participación Social (71-80) se invierte en
+   71-74 y 77 (redactados en positivo); 75, 76 y 78-80 son
+   directos, según la Scoring Worksheet del formulario.
    ============================================================ */
 
-const secciones79 = TITULOS.map((titulo, si) => ({
-  titulo,
-  preguntas: Array.from(
-    { length: si === 7 ? 9 : 10 },
-    (_, i) => `Pregunta ${i + 1} de ${titulo}.`
-  ),
-}));
-
-const todas79 = (valor) => {
-  const respuestas = {};
-  let numero = 0;
-  secciones79.forEach((s) => s.preguntas.forEach(() => { respuestas[++numero] = valor; }));
-  return respuestas;
-};
-
-const config79 = (respuestas) => ({
-  ...config("adolescenteAuto", "15", respuestas),
-  secciones: secciones79,
-});
-
-test("autoreporte adolescente (W-707G): 79 ítems y SOC de 9 con 71-74 y 77 invertidos", () => {
-  const { escalas } = calcularPuntuacion(config79(todas79("nunca")));
+test("autoreporte adolescente (W-707G): SOC se invierte en 71-74 y 77; el 80 es directo", () => {
+  const { escalas } = calcularPuntuacion(config("adolescenteAuto", "15", todas("nunca")));
 
   const soc = escalas.find((e) => e.escala === "SOC");
-  assert.equal(soc.raw, 5 * 4 + 4 * 1, "invertidos 71-74 y 77 en Nunca; directos 75, 76, 78 y 79");
-  assert.equal(soc.t, 64);
-  assert.equal(soc.pct, 92);
+  assert.equal(soc.raw, 5 * 4 + 5 * 1, "invertidos 71-74 y 77 en Nunca; directos 75, 76 y 78-80");
+  assert.equal(soc.t, 66);
+  assert.equal(soc.pct, 95);
   assert.equal(soc.rango, "Dificultades moderadas");
 
   assert.equal(escalas.find((e) => e.escala === "VIS").raw, 10);
@@ -297,37 +277,43 @@ test("autoreporte adolescente (W-707G): 79 ítems y SOC de 9 con 71-74 y 77 inve
   assert.equal(escalas.find((e) => e.escala === "ST").raw, 60);
 
   // Ítem 77 positivo: "Siempre" suma 1 (invertido), no 4
-  const con77 = todas79("nunca");
+  const con77 = todas("nunca");
   con77[77] = "siempre";
-  assert.equal(calcularPuntuacion(config79(con77)).escalas.find((e) => e.escala === "SOC").raw, 21);
+  assert.equal(calcularPuntuacion(config("adolescenteAuto", "15", con77)).escalas.find((e) => e.escala === "SOC").raw, 25 - 4 + 1);
 
   // Ítem 75 negativo: "Siempre" suma 4 (directo), no 1
-  const con75 = todas79("nunca");
+  const con75 = todas("nunca");
   con75[75] = "siempre";
-  assert.equal(calcularPuntuacion(config79(con75)).escalas.find((e) => e.escala === "SOC").raw, 27);
+  assert.equal(calcularPuntuacion(config("adolescenteAuto", "15", con75)).escalas.find((e) => e.escala === "SOC").raw, 25 - 1 + 4);
 
-  const siempre = calcularPuntuacion(config79(todas79("siempre")));
+  // Ítem 80 directo ("hablo demasiado suavemente o con voz demasiado alta")
+  const con80 = todas("nunca");
+  con80[80] = "siempre";
+  assert.equal(calcularPuntuacion(config("adolescenteAuto", "15", con80)).escalas.find((e) => e.escala === "SOC").raw, 25 - 1 + 4);
+
+  const siempre = calcularPuntuacion(config("adolescenteAuto", "15", todas("siempre")));
   const socSiempre = siempre.escalas.find((e) => e.escala === "SOC");
-  assert.equal(socSiempre.raw, 5 * 1 + 4 * 4);
-  assert.equal(socSiempre.t, 58);
-  assert.equal(socSiempre.pct, 79);
-  assert.equal(socSiempre.rango, "Típico");
+  assert.equal(socSiempre.raw, 5 * 1 + 5 * 4);
+  assert.equal(socSiempre.t, 66);
+  assert.equal(socSiempre.pct, 95);
+  assert.equal(socSiempre.rango, "Dificultades moderadas");
 });
 
 test("autoreporte adolescente (W-707G): en la hoja de resumen SOC 14 es T42 y PLN 12 es T43", () => {
-  // SOC 14: 71-73 en Siempre (1 c/u), 74 en Ocasionalmente (3) y el resto en Nunca
-  const respuestas = todas79("nunca");
+  // SOC 14: 71-73 en Siempre (1 c/u), 74 y 77 en Ocasionalmente (3 c/u), resto en Nunca
+  const respuestas = todas("nunca");
   respuestas[71] = "siempre";
   respuestas[72] = "siempre";
   respuestas[73] = "siempre";
   respuestas[74] = "ocasionalmente";
+  respuestas[77] = "ocasionalmente";
   // PLN 12: dos ítems (61 y 62) en Ocasionalmente sobre la base de 10
   respuestas[61] = "ocasionalmente";
   respuestas[62] = "ocasionalmente";
 
-  const { escalas } = calcularPuntuacion(config79(respuestas));
+  const { escalas } = calcularPuntuacion(config("adolescenteAuto", "15", respuestas));
   const soc = escalas.find((e) => e.escala === "SOC");
-  assert.equal(soc.raw, 3 * 1 + 3 + 4 + 4 * 1, "invertidos 1+1+1+3+4 y directos 1×4");
+  assert.equal(soc.raw, 3 * 1 + 2 * 3 + 5 * 1, "invertidos 1+1+1+3+3 y directos 1×5");
   assert.equal(soc.t, 42);
   assert.equal(soc.pct, 21);
 

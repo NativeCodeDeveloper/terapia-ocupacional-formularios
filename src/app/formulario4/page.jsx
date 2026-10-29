@@ -7,8 +7,8 @@ import { descargarInformePDFAutoReporteAdolescente } from "@/lib/informe-autorep
    SPM-2 · AUTOINFORME ADOLESCENTE 12-21 (Self-Report Form)
    Ítems transcritos del formulario oficial WPS en español
    "Adolescent AutoScore Form · Self-Report Form · Ages 12-21
-   years · SPANISH" (W-707G). La Participación Social consta de
-   9 ítems (71-79); las demás dimensiones, de 10 (total 79).
+   years · SPANISH" (W-707G). 80 ítems: la Participación Social
+   (71-80) invierte 71-74 y 77 según su Scoring Worksheet.
    ============================================================ */
 
 const SECCIONES = [
@@ -129,6 +129,7 @@ const SECCIONES = [
       "Yo me uno a actividades con otros sin perturbar la actividad que está en progreso.",
       "Yo me quedo atascado/a en un solo tema cuando hablo con otros.",
       "Los demás me dicen que yo parezco estar ignorando a la gente, cuando en realidad yo ni siquiera me había dado cuenta de que estaban allí.",
+      "La gente me dice que yo hablo demasiado suavemente o con voz demasiado alta.",
     ],
   },
 ];
