@@ -7,6 +7,7 @@ const FORMULARIOS = [
     titulo: "Niños 2 - 5 años",
     descripcion: "Responde el padre, madre o cuidador sobre la conducta del niño.",
     informes: "PDF y Word",
+    preguntas: 80,
   },
   {
     href: "/formulario7",
@@ -14,6 +15,7 @@ const FORMULARIOS = [
     titulo: "Preescolar 2 - 5 años",
     descripcion: "Responde el educador o la educadora de preescolar o guardería sobre la conducta del niño.",
     informes: "PDF y Word",
+    preguntas: 80,
   },
   {
     href: "/formulario2",
@@ -21,6 +23,7 @@ const FORMULARIOS = [
     titulo: "Niños 5 - 12 años",
     descripcion: "Responde el padre, madre o cuidador sobre la conducta del niño.",
     informes: "PDF",
+    preguntas: 80,
   },
   {
     href: "/formulario3",
@@ -28,6 +31,7 @@ const FORMULARIOS = [
     titulo: "Adolescente 12 - 21",
     descripcion: "Responde un evaluador o cuidador sobre el usuario.",
     informes: "PDF",
+    preguntas: 80,
   },
   {
     href: "/formulario8",
@@ -35,6 +39,7 @@ const FORMULARIOS = [
     titulo: "Adolescente 12 - 21",
     descripcion: "Responde un docente o evaluador del establecimiento sobre el o la estudiante.",
     informes: "PDF",
+    preguntas: 80,
   },
   {
     href: "/formulario4",
@@ -42,6 +47,7 @@ const FORMULARIOS = [
     titulo: "Adolescente 12 - 21",
     descripcion: "Lo responde el propio adolescente.",
     informes: "PDF y Word",
+    preguntas: 79,
   },
   {
     href: "/formulario5",
@@ -49,6 +55,7 @@ const FORMULARIOS = [
     titulo: "Adulto (Evaluador) 21 - 87",
     descripcion: "Responde un evaluador o cuidador sobre el usuario.",
     informes: "PDF",
+    preguntas: 80,
   },
   {
     href: "/formulario6",
@@ -56,6 +63,7 @@ const FORMULARIOS = [
     titulo: "Adulto (Autoinforme) 21 - 87",
     descripcion: "Lo responde el propio adulto.",
     informes: "PDF",
+    preguntas: 80,
   },
 ];
 
@@ -126,7 +134,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              8 formularios · 80 preguntas cada uno · Escala Nunca a Siempre
+              8 formularios · 79 a 80 preguntas cada uno · Escala Nunca a Siempre
             </p>
           </div>
         </section>
@@ -157,7 +165,7 @@ export default function Home() {
                   {f.descripcion}
                 </span>
                 <span className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-400">
-                  <span>80 preguntas · Informe {f.informes}</span>
+                  <span>{f.preguntas} preguntas · Informe {f.informes}</span>
                   <span
                     aria-hidden="true"
                     className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition-transform group-hover:translate-x-0.5"

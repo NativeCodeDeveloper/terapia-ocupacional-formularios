@@ -236,13 +236,6 @@ test("adolescente escolar (W-707F): conversión bruto → T en VIS, T&S, BAL y S
 });
 
 test("adolescente y adulto: la SOC se invierte solo en los ítems positivos", () => {
-  // adolescenteAuto: invertidos 71-74 y 77; directos 75, 76, 78, 79, 80
-  const respuestasAuto = todas("nunca");
-  respuestasAuto[71] = "siempre";
-  respuestasAuto[75] = "siempre";
-  const auto = calcularPuntuacion(config("adolescenteAuto", "15", respuestasAuto));
-  assert.equal(auto.escalas.find((e) => e.escala === "SOC").raw, 25);
-
   // adolescenteHogar (W-707E): invertidos 71-73, 76 y 77; directos 74, 75, 78-80
   const hogar = calcularPuntuacion(config("adolescenteHogar", "15", todas("nunca")));
   assert.equal(hogar.escalas.find((e) => e.escala === "SOC").raw, 5 * 4 + 5 * 1);
@@ -261,4 +254,85 @@ test("adolescente y adulto: la SOC se invierte solo en los ítems positivos", ()
   // adultoAuto: invertidos 71-72, 74-75 y 80; directos 73 y 76-79
   const autoAdulto = calcularPuntuacion(config("adultoAuto", "30", todas("nunca")));
   assert.equal(autoAdulto.escalas.find((e) => e.escala === "SOC").raw, 5 * 4 + 5 * 1);
+});
+
+/* ============================================================
+   AUTOREPORTE ADOLESCENTE 12-21 (W-707G)
+   Formulario de 79 ítems: la Participación Social tiene 9
+   (71-79) y, según su Scoring Worksheet, se invierten 71-74
+   y 77 (redactados en positivo); 75, 76, 78 y 79 son directos.
+   ============================================================ */
+
+const secciones79 = TITULOS.map((titulo, si) => ({
+  titulo,
+  preguntas: Array.from(
+    { length: si === 7 ? 9 : 10 },
+    (_, i) => `Pregunta ${i + 1} de ${titulo}.`
+  ),
+}));
+
+const todas79 = (valor) => {
+  const respuestas = {};
+  let numero = 0;
+  secciones79.forEach((s) => s.preguntas.forEach(() => { respuestas[++numero] = valor; }));
+  return respuestas;
+};
+
+const config79 = (respuestas) => ({
+  ...config("adolescenteAuto", "15", respuestas),
+  secciones: secciones79,
+});
+
+test("autoreporte adolescente (W-707G): 79 ítems y SOC de 9 con 71-74 y 77 invertidos", () => {
+  const { escalas } = calcularPuntuacion(config79(todas79("nunca")));
+
+  const soc = escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc.raw, 5 * 4 + 4 * 1, "invertidos 71-74 y 77 en Nunca; directos 75, 76, 78 y 79");
+  assert.equal(soc.t, 64);
+  assert.equal(soc.pct, 92);
+  assert.equal(soc.rango, "Dificultades moderadas");
+
+  assert.equal(escalas.find((e) => e.escala === "VIS").raw, 10);
+  // ST suma las 6 dimensiones sensoriales de 10 ítems cada una
+  assert.equal(escalas.find((e) => e.escala === "ST").raw, 60);
+
+  // Ítem 77 positivo: "Siempre" suma 1 (invertido), no 4
+  const con77 = todas79("nunca");
+  con77[77] = "siempre";
+  assert.equal(calcularPuntuacion(config79(con77)).escalas.find((e) => e.escala === "SOC").raw, 21);
+
+  // Ítem 75 negativo: "Siempre" suma 4 (directo), no 1
+  const con75 = todas79("nunca");
+  con75[75] = "siempre";
+  assert.equal(calcularPuntuacion(config79(con75)).escalas.find((e) => e.escala === "SOC").raw, 27);
+
+  const siempre = calcularPuntuacion(config79(todas79("siempre")));
+  const socSiempre = siempre.escalas.find((e) => e.escala === "SOC");
+  assert.equal(socSiempre.raw, 5 * 1 + 4 * 4);
+  assert.equal(socSiempre.t, 58);
+  assert.equal(socSiempre.pct, 79);
+  assert.equal(socSiempre.rango, "Típico");
+});
+
+test("autoreporte adolescente (W-707G): en la hoja de resumen SOC 14 es T42 y PLN 12 es T43", () => {
+  // SOC 14: 71-73 en Siempre (1 c/u), 74 en Ocasionalmente (3) y el resto en Nunca
+  const respuestas = todas79("nunca");
+  respuestas[71] = "siempre";
+  respuestas[72] = "siempre";
+  respuestas[73] = "siempre";
+  respuestas[74] = "ocasionalmente";
+  // PLN 12: dos ítems (61 y 62) en Ocasionalmente sobre la base de 10
+  respuestas[61] = "ocasionalmente";
+  respuestas[62] = "ocasionalmente";
+
+  const { escalas } = calcularPuntuacion(config79(respuestas));
+  const soc = escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc.raw, 3 * 1 + 3 + 4 + 4 * 1, "invertidos 1+1+1+3+4 y directos 1×4");
+  assert.equal(soc.t, 42);
+  assert.equal(soc.pct, 21);
+
+  const pln = escalas.find((e) => e.escala === "PLN");
+  assert.equal(pln.raw, 12);
+  assert.equal(pln.t, 43);
+  assert.equal(pln.pct, 24);
 });

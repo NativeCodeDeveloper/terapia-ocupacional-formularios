@@ -47,6 +47,19 @@ const CONTROL_BASE =
 const CONTROL_OK = "border-neutral-300 hover:border-neutral-400 focus:border-indigo-500 focus:ring-indigo-500/10";
 const CONTROL_ERROR = "border-red-400 focus:border-red-500 focus:ring-red-500/10";
 
+/* Numeración oficial de los ítems: se acumula con el largo real de
+   cada sección (la Participación Social del AutoReporte 12-21 tiene
+   9 ítems, del 71 al 79, y no del 71 al 80). */
+function iniciosDeSeccion(secciones) {
+  const inicios = [];
+  let contador = 0;
+  for (const seccion of secciones) {
+    inicios.push(contador + 1);
+    contador += seccion.preguntas.length;
+  }
+  return inicios;
+}
+
 export default function CuestionarioSPM2({
   marca,
   rango,
@@ -70,6 +83,7 @@ export default function CuestionarioSPM2({
   const [verResumen, setVerResumen] = useState(false);
 
   const totalPreguntas = secciones.reduce((n, s) => n + s.preguntas.length, 0);
+  const inicios = iniciosDeSeccion(secciones);
   const respondidas = Object.keys(respuestas).length;
   const progreso = Math.round((respondidas / totalPreguntas) * 100);
 
@@ -105,10 +119,10 @@ export default function CuestionarioSPM2({
       nuevosErrores.add("dato-edad");
     }
     secciones.forEach((seccion, si) => {
-      for (let i = 0; i < seccion.preguntas.length; i++) {
-        const numero = si * 10 + i + 1;
+      seccion.preguntas.forEach((_texto, i) => {
+        const numero = inicios[si] + i;
         if (!respuestas[numero]) nuevosErrores.add(`q${numero}`);
-      }
+      });
     });
 
     setErrores(nuevosErrores);
@@ -122,11 +136,11 @@ export default function CuestionarioSPM2({
     const conteo = { nunca: 0, ocasionalmente: 0, frecuentemente: 0, siempre: 0 };
     let puntajeTotal = 0;
     secciones.forEach((seccion, si) => {
-      for (let i = 0; i < seccion.preguntas.length; i++) {
-        const valor = respuestas[si * 10 + i + 1];
+      seccion.preguntas.forEach((_texto, i) => {
+        const valor = respuestas[inicios[si] + i];
         conteo[valor] += 1;
         puntajeTotal += OPCIONES.find((o) => o.valor === valor).puntaje;
-      }
+      });
     });
 
     setResultado({ conteo, puntajeTotal });
@@ -343,7 +357,7 @@ export default function CuestionarioSPM2({
 
         {/* Secciones de preguntas */}
         {secciones.map((seccion, indice) => {
-          const desde = indice * 10 + 1;
+          const desde = inicios[indice];
           const hasta = desde + seccion.preguntas.length - 1;
           return (
             <section key={seccion.titulo} className="mb-10">

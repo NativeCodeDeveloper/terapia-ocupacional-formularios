@@ -44,11 +44,14 @@ function puntajeItem(valor, invertido) {
   return invertido ? 5 - directo : directo;
 }
 
-// Suma los 10 ítems de la sección `indice` (0-7) de un formulario.
-export function sumaDeSeccion(respuestas, indice, norma) {
+// Suma los ítems de la sección `indice` (0-7) de un formulario.
+// `cantidad` es el número de ítems de la sección (10 en todos los
+// formularios, salvo la Participación Social del AutoReporte de
+// 12-21 años, que tiene 9).
+export function sumaDeSeccion(respuestas, indice, norma, cantidad = 10) {
   const invertidos = ITEMS_SOC_INVERTIDOS[norma] ?? [];
   let suma = 0;
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= cantidad; i++) {
     const numero = indice * 10 + i;
     suma += puntajeItem(respuestas[numero], invertidos.includes(numero));
   }
@@ -85,7 +88,23 @@ function sumaSeccion(secciones, respuestas, definicion, norma) {
   const candidatos = [definicion.titulo, ...(definicion.alias ?? [])];
   const indice = secciones.findIndex((s) => candidatos.includes(s.titulo));
   if (indice === -1) return null;
-  return sumaDeSeccion(respuestas, indice, norma);
+  return sumaDeSeccion(respuestas, indice, norma, secciones[indice].preguntas.length);
+}
+
+// Puntaje bruto máximo de cada escala según el formulario:
+// 4 puntos por ítem; ST suma las seis dimensiones sensoriales.
+export function maximosDeEscala(secciones = []) {
+  const maximos = {};
+  let totalSensorial = 0;
+  for (const def of SECCIONES_A_ESCALA) {
+    const candidatos = [def.titulo, ...(def.alias ?? [])];
+    const seccion = secciones.find((s) => candidatos.includes(s.titulo));
+    if (!seccion) continue;
+    maximos[def.escala] = seccion.preguntas.length * 4;
+    if (SENSORIALES.includes(def.escala)) totalSensorial += seccion.preguntas.length;
+  }
+  maximos.ST = totalSensorial * 4;
+  return maximos;
 }
 
 export function calcularPuntuacion(config) {
@@ -249,6 +268,7 @@ export function parrafoDiagnostico(escalas) {
 export function descargarInformePDF(config) {
   const { instrumento, datos, } = config;
   const { escalas } = calcularPuntuacion(config);
+  const maximos = maximosDeEscala(config.secciones);
   const encabezado = filasEncabezado(datos);
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -398,7 +418,7 @@ export function descargarInformePDF(config) {
   // ---- Interpretación por escalas ----
   escribir("Interpretación de resultados", { tamano: 13, negrita: true, espacio: 8 });
   for (const e of escalas) {
-    escribir(`${e.etiqueta}: ${e.raw}/${e.escala === "ST" ? 240 : 40} – T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} – ${e.rango ?? "—"}.`, {
+    escribir(`${e.etiqueta}: ${e.raw}/${maximos[e.escala] ?? 40} – T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} – ${e.rango ?? "—"}.`, {
       negrita: true,
       espacio: 2,
     });
@@ -469,6 +489,7 @@ export function descargarInformePDF(config) {
 export function descargarInformeWord(config) {
   const { instrumento, datos } = config;
   const { escalas } = calcularPuntuacion(config);
+  const maximos = maximosDeEscala(config.secciones);
   const encabezado = filasEncabezado(datos);
 
   const encabezadoHTML = encabezado
@@ -506,7 +527,7 @@ export function descargarInformeWord(config) {
   const interpretacionHTML = escalas
     .map((e) => {
       const texto = textoInterpretacion(e.escala, e.rango);
-      return `<p style="margin:10px 0 2px;"><b>${escaparHTML(e.etiqueta)}: ${e.raw}/${e.escala === "ST" ? 240 : 40} – T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} – ${escaparHTML(e.rango ?? "—")}.</b></p>
+      return `<p style="margin:10px 0 2px;"><b>${escaparHTML(e.etiqueta)}: ${e.raw}/${maximos[e.escala] ?? 40} – T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} – ${escaparHTML(e.rango ?? "—")}.</b></p>
 <p style="margin:0 0 6px;">${escaparHTML(texto)}</p>`;
     })
     .join("\n");

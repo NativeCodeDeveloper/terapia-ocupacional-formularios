@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import {
   calcularPuntuacion,
+  maximosDeEscala,
   parrafoDiagnostico,
   textoInterpretacion,
   sumaDeSeccion,
@@ -18,7 +19,7 @@ import {
         normativa según la edad.
      3. Perfil gráfico de puntaje T con las bandas oficiales.
      4. Interpretación de resultados.
-     5. Detalle de las 80 respuestas por dimensión.
+     5. Detalle de las respuestas por dimensión.
      6. Escala de respuesta, nota y firma.
    Los textos propios de cada versión llegan en `version`:
      - tituloInforme: título del informe (bajo el encabezado SPM-2).
@@ -68,6 +69,19 @@ function fechaCorta() {
   return new Date().toLocaleDateString("es", { dateStyle: "long" });
 }
 
+/* Número del primer ítem de cada sección. La Participación Social
+   del AutoReporte de 12-21 años tiene 9 ítems, así que la numeración
+   se acumula con el largo real de cada sección y no de 10 en 10. */
+function iniciosDeSeccion(secciones) {
+  const inicios = [];
+  let contador = 0;
+  for (const seccion of secciones) {
+    inicios.push(contador + 1);
+    contador += seccion.preguntas.length;
+  }
+  return inicios;
+}
+
 function conAnios(valor) {
   if (/^\d+$/.test(valor)) return `${valor} ${valor === "1" ? "año" : "años"}`;
   return valor;
@@ -76,6 +90,9 @@ function conAnios(valor) {
 export function construirInformeHogar(config, version) {
   const { datos = [], secciones = [], respuestas = {}, opciones = [] } = config;
   const { escalas, tablaNorma } = calcularPuntuacion(config);
+  const maximos = maximosDeEscala(secciones);
+  const inicios = iniciosDeSeccion(secciones);
+  const totalPreguntas = secciones.reduce((n, s) => n + s.preguntas.length, 0);
 
   const OPCION_POR_VALOR = Object.fromEntries(opciones.map((o) => [o.valor, o]));
   const valorDato = (etiqueta) =>
@@ -269,7 +286,8 @@ export function construirInformeHogar(config, version) {
 
     y = filaY + 10;
     escribir(
-      "P. bruto: suma de los puntajes de los 10 ítems de la dimensión (N = 1, O = 2, F = 3, S = 4; rango 10-40). Los ítems 71-80 de Participación Social redactados en positivo se puntúan invertidos (N = 4, O = 3, F = 2, S = 1). ST (Total Sensorial): suma de las dimensiones Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal y Equilibrio y Movimiento (rango 60-240).",
+      version.notaPuntuacion ??
+        "P. bruto: suma de los puntajes de los 10 ítems de la dimensión (N = 1, O = 2, F = 3, S = 4; rango 10-40). Los ítems 71-80 de Participación Social redactados en positivo se puntúan invertidos (N = 4, O = 3, F = 2, S = 1). ST (Total Sensorial): suma de las dimensiones Visión, Oído, Tacto, Gusto y Olfato, Conciencia Corporal y Equilibrio y Movimiento (rango 60-240).",
       { tamano: 8, gris: true, espacio: 2 }
     );
     escribir(
@@ -357,7 +375,7 @@ export function construirInformeHogar(config, version) {
     if (!texto) continue;
     asegurar(40);
     escribir(
-      `${e.etiqueta}: puntaje bruto ${e.raw}/${e.escala === "ST" ? 240 : 40} — T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} — ${e.rango ?? "—"}.`,
+      `${e.etiqueta}: puntaje bruto ${e.raw}/${maximos[e.escala] ?? 40} — T ${e.t ?? "—"}, percentil ${e.pct ?? "—"} — ${e.rango ?? "—"}.`,
       { negrita: true, espacio: 2 }
     );
     escribir(texto, { espacio: 10 });
@@ -368,7 +386,7 @@ export function construirInformeHogar(config, version) {
   asegurar(60);
   escribir("Detalle de respuestas por dimensión", { tamano: 13, negrita: true, espacio: 4 });
   escribir(
-    "Respuestas registradas para las 80 preguntas del formulario, agrupadas por dimensión. Letras de la escala: N = Nunca · O = Ocasionalmente · F = Frecuentemente · S = Siempre.",
+    `Respuestas registradas para las ${totalPreguntas} preguntas del formulario, agrupadas por dimensión. Letras de la escala: N = Nunca · O = Ocasionalmente · F = Frecuentemente · S = Siempre.`,
     { espacio: 10 }
   );
 
@@ -395,7 +413,7 @@ export function construirInformeHogar(config, version) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(255);
-    doc.text(`${seccion.titulo} — ítems ${si * 10 + 1} a ${si * 10 + seccion.preguntas.length}`, anchoPagina / 2, y + 14, { align: "center" });
+    doc.text(`${seccion.titulo} — ítems ${inicios[si]} a ${inicios[si] + seccion.preguntas.length - 1}`, anchoPagina / 2, y + 14, { align: "center" });
     y += banda;
 
     doc.setFillColor(...VERDE);
@@ -409,7 +427,7 @@ export function construirInformeHogar(config, version) {
     y += 16;
 
     seccion.preguntas.forEach((texto, pi) => {
-      const numero = si * 10 + pi + 1;
+      const numero = inicios[si] + pi;
       const opcion = OPCION_POR_VALOR[respuestas[numero]];
       const letra = opcion ? opcion.etiqueta.charAt(0) : "—";
       const respuesta = opcion ? `${letra} · ${opcion.etiqueta}` : "—";
@@ -456,14 +474,14 @@ export function construirInformeHogar(config, version) {
       nuevaPagina();
       encabezadoDetalleContinuacion(seccion);
     }
-    const suma = sumaDeSeccion(respuestas, si, config.norma);
+    const suma = sumaDeSeccion(respuestas, si, config.norma, seccion.preguntas.length);
     doc.setFillColor(...CREMA);
     doc.rect(margen, y, anchoUtil, altoSubtotal, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(25);
     doc.text(`Suma de la dimensión — ${escala.etiqueta}`, xDetalle[1] + 6, y + 13);
-    doc.text(`${suma} de 40`, xDetalle[2] + 6, y + 13);
+    doc.text(`${suma} de ${seccion.preguntas.length * 4}`, xDetalle[2] + 6, y + 13);
     y += altoSubtotal + 16;
   });
 

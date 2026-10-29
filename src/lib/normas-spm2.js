@@ -4,7 +4,9 @@
    Cada fila: [percentil, T, VIS, HEA, TOU, T&S, BOD, BAL, ST, PLN, SOC]
    Cada celda de escala: número (valor único), "min-max" (rango)
    o null (sin valor para ese T).
-   Cada escala tiene 10 ítems con puntaje 1-4 (rango bruto 10-40);
+   Cada escala tiene 10 ítems con puntaje 1-4 (rango bruto 10-40),
+   salvo la Participación Social del Adolescent Self-Report
+   (adolescenteAuto), que tiene 9 ítems (71-79; rango bruto 9-36).
    ST (Sensory Total) = suma de VIS+HEA+TOU+T&S+BOD+BAL (60-240).
    ============================================================ */
 
@@ -48,8 +50,8 @@ const F = {
     [34, 46, null, 14, null, null, null, null, "82-83", null, null],
     [31, 45, null, null, 13, 14, 12, 11, "80-81", 13, 15],
     [27, 44, 13, 13, null, null, null, null, "78-79", 12, null],
-    [24, 43, null, null, 12, 13, null, null, "75-77", null, 14],
-    [21, 42, 12, 12, null, null, 11, null, "73-74", null, null],
+    [24, 43, null, null, 12, 13, null, null, "75-77", 12, null],
+    [21, 42, 12, 12, null, null, 11, null, "73-74", null, 14],
     [18, 41, null, null, null, null, null, null, "71-72", null, null],
     [16, 40, "10-11", "10-11", "10-11", "10-12", 10, 10, "60-70", "10-11", "10-13"],
   ],
