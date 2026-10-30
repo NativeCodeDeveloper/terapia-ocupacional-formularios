@@ -34,6 +34,14 @@ const FORMULARIOS = [
     preguntas: 80,
   },
   {
+    href: "/formulario10",
+    instrumento: "PERFIL SENSORIAL 2 INFANT",
+    titulo: "Bebés 0 - 6 meses",
+    descripcion: "Cuestionario para padres o tutores sobre la conducta sensorial del bebé.",
+    informes: "PDF",
+    preguntas: 25,
+  },
+  {
     href: "/formulario3",
     instrumento: "SPM-2 HOGAR",
     titulo: "Adolescente 12 - 21",
@@ -142,7 +150,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              9 formularios · 80 preguntas cada uno · Escala Nunca a Siempre
+              10 formularios · Escala Nunca a Siempre (SPM-2) y Casi siempre a Casi nunca (Infant)
             </p>
           </div>
         </section>
