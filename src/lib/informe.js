@@ -22,13 +22,14 @@ const PUNTAJES_OPCION = { nunca: 1, ocasionalmente: 2, frecuentemente: 3, siempr
    En el SPM-2 esos ítems se puntúan invertidos (N = 4, O = 3,
    F = 2, S = 1); los ítems 71-80 redactados en negativo se puntúan
    directos. Direcciones tomadas de la Scoring Worksheet oficial de
-   cada formulario (W-709E, W-709F y W-708E: los diez ítems son
-   positivos; W-707E, W-707F, W-707G, W-706F y W-706E: mixtos según
-   su redacción). */
+   cada formulario (W-709E, W-709F, W-708E y W-708F: los diez ítems
+   son positivos; W-707E, W-707F, W-707G, W-706F y W-706E: mixtos
+   según su redacción). */
 const ITEMS_SOC_INVERTIDOS = {
   preescolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   preescolarEscolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   child: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+  childEscolar: [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
   adolescenteHogar: [71, 72, 73, 76, 77],
   adolescenteAuto: [71, 72, 73, 74, 77],
   // W-707F: ítems 71-79 redactados en positivo; el 80 es directo

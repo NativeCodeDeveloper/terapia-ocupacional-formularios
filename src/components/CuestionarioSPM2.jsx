@@ -5,7 +5,7 @@ import { descargarInformeWord } from "@/lib/informe";
 
 /* ============================================================
    CUESTIONARIO SPM-2 · COMPONENTE COMPARTIDO
-   Interfaz única para los 7 formularios: fondo blanco,
+   Interfaz única para los formularios: fondo blanco,
    tipografía jerárquica y controles con estados claros
    (selección, enfoque y error). Cada página entrega sus
    datos (secciones, campos de identificación, textos y

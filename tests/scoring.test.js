@@ -322,3 +322,116 @@ test("autoreporte adolescente (W-707G): en la hoja de resumen SOC 14 es T42 y PL
   assert.equal(pln.t, 43);
   assert.equal(pln.pct, 24);
 });
+
+/* ============================================================
+   ESCOLAR NIÑOS 5-12 (W-708F)
+   80 ítems: la Participación Social (71-80) se invierte completa
+   (los diez ítems redactados en positivo), según la Scoring
+   Worksheet del formulario; tabla normativa única 5-12 años.
+   ============================================================ */
+
+test("escolar niños (W-708F): la SOC se invierte en los 10 ítems", () => {
+  const { escalas, tablaNorma } = calcularPuntuacion(config("childEscolar", "8", todas("nunca")));
+  assert.equal(tablaNorma, "childEscolar");
+
+  const soc = escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc.raw, 40, "nunca colabora debe sumar lo más alto");
+  assert.equal(soc.t, 78);
+  assert.equal(soc.pct, ">99");
+  assert.equal(soc.rango, "Dificultades severas");
+
+  const siempre = calcularPuntuacion(config("childEscolar", "8", todas("siempre")));
+  const socSiempre = siempre.escalas.find((e) => e.escala === "SOC");
+  assert.equal(socSiempre.raw, 10);
+  assert.equal(socSiempre.t, 40);
+  assert.equal(socSiempre.pct, 16);
+  assert.equal(socSiempre.rango, "Típico");
+
+  // El ítem 80 ("Demuestra respeto y cortesía...") también es invertido
+  const con80 = todas("nunca");
+  con80[80] = "siempre";
+  assert.equal(
+    calcularPuntuacion(config("childEscolar", "8", con80)).escalas.find((e) => e.escala === "SOC").raw,
+    40 - 4 + 1
+  );
+});
+
+test("escolar niños (W-708F): el resto de las escalas sigue directa", () => {
+  const { escalas } = calcularPuntuacion(config("childEscolar", "8", todas("nunca")));
+  for (const codigo of ["VIS", "HEA", "TOU", "TS", "BOD", "BAL", "PLN"]) {
+    assert.equal(escalas.find((e) => e.escala === codigo).raw, 10, `${codigo} sigue directa`);
+  }
+  assert.equal(escalas.find((e) => e.escala === "ST").raw, 60);
+});
+
+test("escolar niños (W-708F): conversión bruto → T según la hoja de resumen", () => {
+  const LETRA = { 1: "nunca", 2: "ocasionalmente", 3: "frecuentemente", 4: "siempre" };
+  const respuestas = todas("nunca");
+  [4, 4, 4, 4, 4, 2, 1, 1, 1, 1].forEach((v, i) => { respuestas[i + 1] = LETRA[v]; }); // VIS 26
+  [4, 4, 4, 4, 4, 2, 1, 1, 1, 1].forEach((v, i) => { respuestas[i + 11] = LETRA[v]; }); // HEA 26
+  [4, 4, 4, 4, 4, 4, 4, 1, 1, 1].forEach((v, i) => { respuestas[i + 31] = LETRA[v]; }); // T&S 31
+  [4, 4, 4, 4, 1, 1, 1, 1, 1, 1].forEach((v, i) => { respuestas[i + 51] = LETRA[v]; }); // BAL 22
+  const { escalas } = calcularPuntuacion(config("childEscolar", "8", respuestas));
+
+  const vis = escalas.find((e) => e.escala === "VIS");
+  assert.equal(vis.raw, 26);
+  assert.equal(vis.t, 79);
+  assert.equal(vis.pct, ">99");
+
+  const hea = escalas.find((e) => e.escala === "HEA");
+  assert.equal(hea.raw, 26);
+  assert.equal(hea.t, 79);
+  assert.equal(hea.pct, ">99");
+
+  // T&S 31: dentro del rango 19-40 → T80
+  const ts = escalas.find((e) => e.escala === "TS");
+  assert.equal(ts.raw, 31);
+  assert.equal(ts.t, 80);
+  assert.equal(ts.pct, ">99");
+
+  const bal = escalas.find((e) => e.escala === "BAL");
+  assert.equal(bal.raw, 22);
+  assert.equal(bal.t, 78);
+  assert.equal(bal.pct, ">99");
+
+  // ST = 26 + 26 + 10 + 31 + 10 + 22 = 125
+  const st = escalas.find((e) => e.escala === "ST");
+  assert.equal(st.raw, 125);
+  assert.equal(st.t, 80);
+  assert.equal(st.pct, ">99");
+
+  // PLN 10 (base Nunca) → T40 y SOC 40 (invertida) → T78
+  const pln = escalas.find((e) => e.escala === "PLN");
+  assert.equal(pln.raw, 10);
+  assert.equal(pln.t, 40);
+  assert.equal(pln.pct, 16);
+
+  const soc = escalas.find((e) => e.escala === "SOC");
+  assert.equal(soc.raw, 40);
+  assert.equal(soc.t, 78);
+  assert.equal(soc.pct, ">99");
+});
+
+test("escolar niños (W-708F): caso moderado de la hoja de resumen", () => {
+  // Todas Ocasionalmente: brutos 20 en las escalas directas, ST 120
+  // y SOC 30 (invertida: cada ítem Ocasionalmente suma 3)
+  const { escalas } = calcularPuntuacion(config("childEscolar", "8", todas("ocasionalmente")));
+
+  const esperado = {
+    VIS: { raw: 20, t: 68, pct: 96 },
+    HEA: { raw: 20, t: 69, pct: 97 },
+    TOU: { raw: 20, t: 80, pct: ">99" },
+    TS: { raw: 20, t: 80, pct: ">99" },
+    BOD: { raw: 20, t: 75, pct: 99 },
+    BAL: { raw: 20, t: 74, pct: 99 },
+    ST: { raw: 120, t: 78, pct: ">99" },
+    PLN: { raw: 20, t: 62, pct: 88 },
+    SOC: { raw: 30, t: 72, pct: 99 },
+  };
+  for (const [codigo, e] of Object.entries(esperado)) {
+    const escala_ = escalas.find((x) => x.escala === codigo);
+    assert.equal(escala_.raw, e.raw, `${codigo} bruto`);
+    assert.equal(escala_.t, e.t, `${codigo} puntaje T`);
+    assert.equal(escala_.pct, e.pct, `${codigo} percentil`);
+  }
+});
