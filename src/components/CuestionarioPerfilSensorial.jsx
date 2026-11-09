@@ -7,16 +7,18 @@ import {
 } from "@/lib/informe-infantil";
 
 /* ============================================================
-   CUESTIONARIO INFANT SENSORY PROFILE 2 · COMPONENTE
-   Interfaz del cuestionario para padres o tutores (nacimiento
-   a 6 meses). A diferencia del SPM-2, la escala tiene seis
-   opciones (Casi siempre = 5 … No aplicable = 0) y el
-   resultado se clasifica en la curva normal, no en puntaje T.
-   Cada página entrega sus secciones (ítems con cuadrante),
-   datos, textos y la función de informe PDF.
+   CUESTIONARIO PERFIL SENSORIAL 2 · COMPONENTE
+   Interfaz común de los cuestionarios para padres o tutores
+   del Perfil Sensorial 2 (Infant 0-6 meses y Toddler 7-35
+   meses). A diferencia del SPM-2, la escala es de frecuencia
+   (Casi siempre = 5 … Casi nunca = 1, con No aplicable = 0
+   solo en Infant) y el resultado se clasifica en la curva o
+   tabla de corte, no en puntaje T. Cada página entrega sus
+   opciones, secciones (ítems con cuadrante), datos, textos y
+   la función de cálculo e informe PDF.
    ============================================================ */
 
-const OPCIONES = [
+const OPCIONES_INFANTE = [
   {
     valor: "casiSiempre",
     etiqueta: "CASI SIEMPRE",
@@ -64,11 +66,17 @@ const CONTROL_OK = "border-neutral-300 hover:border-neutral-400 focus:border-ind
 const CONTROL_ERROR = "border-red-400 focus:border-red-500 focus:ring-red-500/10";
 
 const TINTE_CLASIFICACION = {
+  // Infant: "…los demás" · Toddler: "…otros"
   "Mucho menos que los demás": "bg-emerald-50 text-emerald-900 border-emerald-200",
+  "Mucho menos que otros": "bg-emerald-50 text-emerald-900 border-emerald-200",
   "Menos que los demás": "bg-lime-50 text-lime-900 border-lime-200",
+  "Menos que otros": "bg-lime-50 text-lime-900 border-lime-200",
   "Como la mayoría de los demás": "bg-indigo-50 text-indigo-900 border-indigo-200",
+  "Como la mayoría": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Más que los demás": "bg-amber-50 text-amber-900 border-amber-200",
+  "Más que otros": "bg-amber-50 text-amber-900 border-amber-200",
   "Mucho más que los demás": "bg-red-50 text-red-900 border-red-200",
+  "Mucho más que otros": "bg-red-50 text-red-900 border-red-200",
 };
 
 /* Numeración oficial de los ítems: se acumula con el largo real
@@ -83,7 +91,7 @@ function iniciosDeSeccion(secciones) {
   return inicios;
 }
 
-export default function CuestionarioInfante({
+export default function CuestionarioPerfilSensorial({
   marca,
   rango,
   instrumento,
@@ -91,6 +99,11 @@ export default function CuestionarioInfante({
   secciones,
   datos,
   intro,
+  opciones = OPCIONES_INFANTE,
+  autor = "INFANT SENSORY PROFILE 2 · Winnie Dunn, PhD, OTR, FAOTA",
+  fraseOpciones = "Cuando se le presenta la oportunidad, mi bebé…",
+  calcular = calcularPuntuacionInfante,
+  cuadrantes = CUADRANTES,
   notaEscala = null,
   edadMin = null,
   edadMax = null,
@@ -106,6 +119,7 @@ export default function CuestionarioInfante({
   const inicios = iniciosDeSeccion(secciones);
   const respondidas = Object.keys(respuestas).length;
   const progreso = Math.round((respondidas / totalPreguntas) * 100);
+  const tieneNoAplicable = opciones.some((o) => o.valor === "noAplicable");
 
   function actualizarDato(campo, valor) {
     setValores((prev) => ({ ...prev, [campo]: valor }));
@@ -166,7 +180,7 @@ export default function CuestionarioInfante({
   }
 
   if (verResumen) {
-    const resultado = calcularPuntuacionInfante({ secciones, respuestas, opciones: OPCIONES });
+    const resultado = calcular({ secciones, respuestas, opciones });
     const informe = {
       nombreArchivo,
       instrumento,
@@ -174,7 +188,7 @@ export default function CuestionarioInfante({
       datos: datos.map((d) => ({ etiqueta: d.etiqueta, valor: valores[d.campo] })),
       secciones,
       respuestas,
-      opciones: OPCIONES,
+      opciones,
     };
     const tinteClasificacion = resultado.clasificacion
       ? TINTE_CLASIFICACION[resultado.clasificacion.nombre]
@@ -212,7 +226,9 @@ export default function CuestionarioInfante({
                 <th className="px-4 py-2.5 font-semibold">Sección</th>
                 <th className="px-3 py-2.5 text-center font-semibold">Bruto</th>
                 <th className="px-3 py-2.5 text-center font-semibold">Máximo</th>
-                <th className="px-3 py-2.5 text-center font-semibold">No aplica</th>
+                {tieneNoAplicable && (
+                  <th className="px-3 py-2.5 text-center font-semibold">No aplica</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -221,7 +237,9 @@ export default function CuestionarioInfante({
                   <td className="px-4 py-2.5 font-medium">{s.titulo}</td>
                   <td className="px-3 py-2.5 text-center tabular-nums font-semibold">{s.raw}</td>
                   <td className="px-3 py-2.5 text-center tabular-nums text-neutral-500">{s.maximo}</td>
-                  <td className="px-3 py-2.5 text-center tabular-nums text-neutral-500">{s.noAplicables}</td>
+                  {tieneNoAplicable && (
+                    <td className="px-3 py-2.5 text-center tabular-nums text-neutral-500">{s.noAplicables}</td>
+                  )}
                 </tr>
               ))}
               <tr className="bg-neutral-50">
@@ -232,9 +250,11 @@ export default function CuestionarioInfante({
                 <td className="px-3 py-3 text-center tabular-nums font-semibold text-neutral-500">
                   {resultado.totalMaximo}
                 </td>
-                <td className="px-3 py-3 text-center tabular-nums text-neutral-500">
-                  {resultado.totalNoAplicables}
-                </td>
+                {tieneNoAplicable && (
+                  <td className="px-3 py-3 text-center tabular-nums text-neutral-500">
+                    {resultado.totalNoAplicables}
+                  </td>
+                )}
               </tr>
             </tbody>
           </table>
@@ -247,12 +267,48 @@ export default function CuestionarioInfante({
             </div>
           )}
 
+          {resultado.filasClasificacion && (
+            <>
+              <h2 className={`mt-8 ${TITULO_SECCION}`}>Clasificación por cuadrante y sección</h2>
+              <table className="mt-3 w-full border-collapse overflow-hidden rounded-2xl text-sm">
+                <thead>
+                  <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2.5 font-semibold">Fila</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">Bruto</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">Máximo</th>
+                    <th className="px-3 py-2.5 text-center font-semibold">Clasificación</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {resultado.filasClasificacion.map((fila) => (
+                    <tr key={fila.nombre}>
+                      <td className="px-4 py-2.5 font-medium">{fila.nombre}</td>
+                      <td className="px-3 py-2.5 text-center tabular-nums font-semibold">{fila.bruto}</td>
+                      <td className="px-3 py-2.5 text-center tabular-nums text-neutral-500">{fila.maximo}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        {fila.clasificacion && (
+                          <span
+                            className={`inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                              TINTE_CLASIFICACION[fila.clasificacion.nombre] ?? ""
+                            }`}
+                          >
+                            {fila.clasificacion.nombre}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
           <h2 className={`mt-8 ${TITULO_SECCION}`}>Cuadrantes por sección</h2>
           <table className="mt-3 w-full border-collapse overflow-hidden rounded-2xl text-sm">
             <thead>
               <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
                 <th className="px-4 py-2.5 font-semibold">Sección</th>
-                {CUADRANTES.map((c) => (
+                {cuadrantes.map((c) => (
                   <th key={c.codigo} className="px-3 py-2.5 text-center font-semibold">
                     {c.codigo}
                   </th>
@@ -261,11 +317,11 @@ export default function CuestionarioInfante({
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {resultado.secciones.map((s) => {
-                const maximo = Math.max(...CUADRANTES.map((c) => s.cuadrantes[c.codigo]));
+                const maximo = Math.max(...cuadrantes.map((c) => s.cuadrantes[c.codigo]));
                 return (
                   <tr key={s.titulo}>
                     <td className="px-4 py-2.5 font-medium">{s.titulo}</td>
-                    {CUADRANTES.map((c) => (
+                    {cuadrantes.map((c) => (
                       <td
                         key={c.codigo}
                         className={`px-3 py-2.5 text-center tabular-nums ${
@@ -283,8 +339,8 @@ export default function CuestionarioInfante({
               <tr className="bg-neutral-50">
                 <td className="px-4 py-3 font-bold">Total</td>
                 {(() => {
-                  const maximo = Math.max(...CUADRANTES.map((c) => resultado.totalesCuadrante[c.codigo]));
-                  return CUADRANTES.map((c) => (
+                  const maximo = Math.max(...cuadrantes.map((c) => resultado.totalesCuadrante[c.codigo]));
+                  return cuadrantes.map((c) => (
                     <td
                       key={c.codigo}
                       className={`px-3 py-3 text-center tabular-nums ${
@@ -301,8 +357,8 @@ export default function CuestionarioInfante({
             </tbody>
           </table>
           <p className="mt-2 text-xs text-neutral-500">
-            BU = Buscador · EV = Evitativo · SE = Sensitivo · RE = Registro. El mayor de la fila queda
-            destacado.
+            {cuadrantes.map((c) => `${c.codigo} = ${c.nombre}`).join(" · ")}. El mayor de la fila
+            queda destacado.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -356,7 +412,7 @@ export default function CuestionarioInfante({
 
       <header className="mb-8">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-600">
-          INFANT SENSORY PROFILE 2 · Winnie Dunn, PhD, OTR, FAOTA
+          {autor}
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           {marca}
@@ -373,10 +429,10 @@ export default function CuestionarioInfante({
         <h2 className={TITULO_SECCION}>Instrucciones</h2>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-700">{intro}</p>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-700">
-          <span className="font-semibold">Cuando se le presenta la oportunidad, mi bebé…</span>
+          <span className="font-semibold">{fraseOpciones}</span>
         </p>
         <div className="mt-5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {OPCIONES.map((o) => (
+          {opciones.map((o) => (
             <div key={o.valor} className="rounded-xl border border-neutral-200 bg-neutral-50/70 px-4 py-3">
               <p className="text-xs font-bold tracking-wide text-neutral-900">
                 {o.etiqueta} <span className="text-indigo-600">{o.puntaje}</span>
@@ -467,7 +523,7 @@ export default function CuestionarioInfante({
                         aria-label={pregunta.texto}
                         className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3"
                       >
-                        {OPCIONES.map((o) => {
+                        {opciones.map((o) => {
                           const seleccionado = respuestas[numero] === o.valor;
                           return (
                             <label

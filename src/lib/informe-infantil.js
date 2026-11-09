@@ -148,6 +148,8 @@ export function calcularPuntuacionInfante({ secciones = [], respuestas = {}, opc
     totalNoAplicables,
     totalesCuadrante,
     dominantes,
+    // El Infant clasifica el total en la curva; el Toddler usa filasClasificacion.
+    filasClasificacion: null,
     clasificacion: clasificarTotal(total),
   };
 }

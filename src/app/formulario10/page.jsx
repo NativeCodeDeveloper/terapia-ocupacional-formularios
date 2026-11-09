@@ -1,6 +1,6 @@
 "use client";
 
-import CuestionarioInfante from "@/components/CuestionarioInfante";
+import CuestionarioPerfilSensorial from "@/components/CuestionarioPerfilSensorial";
 import { descargarInformePDFInfante } from "@/lib/informe-infantil";
 
 /* ============================================================
@@ -85,7 +85,7 @@ const DATOS = [
 
 export default function FormularioInfantSensoryProfile2() {
   return (
-    <CuestionarioInfante
+    <CuestionarioPerfilSensorial
       marca="PERFIL SENSORIAL 2 INFANT"
       rango="Bebés 0 - 6 meses"
       instrumento="Perfil Sensorial 2 Infant · Bebés 0 - 6 meses"
