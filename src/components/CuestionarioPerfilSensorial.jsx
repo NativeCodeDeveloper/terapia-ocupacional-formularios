@@ -104,6 +104,8 @@ export default function CuestionarioPerfilSensorial({
   fraseOpciones = "Cuando se le presenta la oportunidad, mi bebé…",
   calcular = calcularPuntuacionInfante,
   cuadrantes = CUADRANTES,
+  campoEdad = "edadMeses",
+  unidadEdad = "meses",
   notaEscala = null,
   edadMin = null,
   edadMax = null,
@@ -149,9 +151,9 @@ export default function CuestionarioPerfilSensorial({
       if (d.requerido === false) continue;
       if (!valores[d.campo].toString().trim()) nuevosErrores.add(d.id);
     }
-    const edad = Number(valores.edadMeses);
+    const edad = Number(valores[campoEdad]);
     if (edadMin != null && (!Number.isInteger(edad) || edad < edadMin || edad > edadMax)) {
-      nuevosErrores.add("dato-edadMeses");
+      nuevosErrores.add(`dato-${campoEdad}`);
     }
     secciones.forEach((seccion, si) => {
       seccion.preguntas.forEach((_texto, i) => {
@@ -452,7 +454,7 @@ export default function CuestionarioPerfilSensorial({
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             {datos.map((d) => {
               const conError = errores.has(d.id);
-              const esEdad = d.campo === "edadMeses";
+              const esEdad = d.campo === campoEdad;
               const opcional = d.requerido === false;
               const control = `${CONTROL_BASE} ${conError ? CONTROL_ERROR : CONTROL_OK}`;
               return (
@@ -475,7 +477,7 @@ export default function CuestionarioPerfilSensorial({
                   {conError && (
                     <p className="mt-1.5 text-xs text-red-600">
                       {esEdad && edadMin != null
-                        ? `Ingresa una edad entera entre ${edadMin} y ${edadMax} meses.`
+                        ? `Ingresa una edad entera entre ${edadMin} y ${edadMax} ${unidadEdad}.`
                         : "Este campo es obligatorio."}
                     </p>
                   )}

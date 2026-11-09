@@ -50,6 +50,14 @@ const FORMULARIOS = [
     preguntas: 54,
   },
   {
+    href: "/formulario12",
+    instrumento: "PERFIL SENSORIAL 2 BREVE",
+    titulo: "Niños 3:0 - 14:11 años",
+    descripcion: "Cuestionario breve para los padres o el cuidador sobre la conducta sensorial del niño.",
+    informes: "PDF",
+    preguntas: 34,
+  },
+  {
     href: "/formulario3",
     instrumento: "SPM-2 HOGAR",
     titulo: "Adolescente 12 - 21",
@@ -158,7 +166,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              11 formularios · Escala Nunca a Siempre (SPM-2) y Casi siempre a Casi nunca (Infant y Toddler)
+              12 formularios · Escala Nunca a Siempre (SPM-2) y Casi siempre a Casi nunca (Infant, Toddler y Breve)
             </p>
           </div>
         </section>
