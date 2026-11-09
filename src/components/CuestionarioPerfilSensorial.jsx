@@ -66,17 +66,22 @@ const CONTROL_OK = "border-neutral-300 hover:border-neutral-400 focus:border-ind
 const CONTROL_ERROR = "border-red-400 focus:border-red-500 focus:ring-red-500/10";
 
 const TINTE_CLASIFICACION = {
-  // Infant: "…los demás" · Toddler: "…otros"
+  // Infant: "…los demás" · Toddler: "…otros" · Adolescentes/Adultos: "…la mayoría de las personas"
   "Mucho menos que los demás": "bg-emerald-50 text-emerald-900 border-emerald-200",
   "Mucho menos que otros": "bg-emerald-50 text-emerald-900 border-emerald-200",
+  "Mucho menos que la mayoría de las personas": "bg-emerald-50 text-emerald-900 border-emerald-200",
   "Menos que los demás": "bg-lime-50 text-lime-900 border-lime-200",
   "Menos que otros": "bg-lime-50 text-lime-900 border-lime-200",
+  "Menos que la mayoría de las personas": "bg-lime-50 text-lime-900 border-lime-200",
   "Como la mayoría de los demás": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Como la mayoría": "bg-indigo-50 text-indigo-900 border-indigo-200",
+  "Similar a la mayoría de las personas": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Más que los demás": "bg-amber-50 text-amber-900 border-amber-200",
   "Más que otros": "bg-amber-50 text-amber-900 border-amber-200",
+  "Más que la mayoría de las personas": "bg-amber-50 text-amber-900 border-amber-200",
   "Mucho más que los demás": "bg-red-50 text-red-900 border-red-200",
   "Mucho más que otros": "bg-red-50 text-red-900 border-red-200",
+  "Mucho más que la mayoría de las personas": "bg-red-50 text-red-900 border-red-200",
 };
 
 /* Numeración oficial de los ítems: se acumula con el largo real
@@ -182,7 +187,7 @@ export default function CuestionarioPerfilSensorial({
   }
 
   if (verResumen) {
-    const resultado = calcular({ secciones, respuestas, opciones });
+    const resultado = calcular({ secciones, respuestas, opciones, valores });
     const informe = {
       nombreArchivo,
       instrumento,

@@ -66,6 +66,14 @@ const FORMULARIOS = [
     preguntas: 86,
   },
   {
+    href: "/formulario14",
+    instrumento: "PERFIL SENSORIAL ADOLESCENTES Y ADULTOS",
+    titulo: "Autoinforme 11 años en adelante",
+    descripcion: "Auto cuestionario sobre la frecuencia de las respuestas sensoriales propias.",
+    informes: "PDF",
+    preguntas: 60,
+  },
+  {
     href: "/formulario3",
     instrumento: "SPM-2 HOGAR",
     titulo: "Adolescente 12 - 21",
@@ -174,7 +182,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              13 formularios · Escala Nunca a Siempre (SPM-2) y Casi siempre a Casi nunca (Infant, Toddler, Breve y Niño)
+              14 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2 / Adolescentes y Adultos)
             </p>
           </div>
         </section>
