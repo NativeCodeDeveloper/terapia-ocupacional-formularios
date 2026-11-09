@@ -17,13 +17,15 @@ import { jsPDF } from "jspdf";
      (Avoiding), SE Sensibilidad/Sensitivo (Sensitivity) o RE
      Registro/Espectador (Registration); 12 ítems no tienen
      cuadrante.
-   - Nota sobre la pauta: en la tabla de clasificación impresa
-     los máximos de Visual (/30), Táctil (/30) y Movimiento
-     (/25) no cuadran con sus ítems (8, 10 y 6 ítems → /40,
-     /50 y /30). Se usan los máximos reales (ítems × 5), los
-     únicos compatibles con los cuadrantes (/35 + /55 + /65 +
-     /55 más los 12 ítems sin cuadrante = 270) y con el rango
-     "Mucho más que otros" impreso en cada fila.
+   - Ítems que puntúan solo en el cuadrante: según la pauta,
+     la línea «Puntuación directa» de Visual, Táctil y
+     Movimiento se imprime antes de los últimos ítems de la
+     sección. Esos ítems suman únicamente en su cuadrante y no
+     en la puntuación directa de la sección: 24-25 (Visual),
+     32-35 (Táctil) y 41 (Movimiento). Por eso las secciones
+     puntúan sobre 50, 35, 30, 30, 25, 35 y 30 (47 ítems),
+     mientras los cuadrantes (7+11+13+11 ítems) suman sobre
+     /35, /55, /65 y /55 con los 54 ítems.
    ============================================================ */
 
 const AZUL = [102, 114, 168];
@@ -176,42 +178,42 @@ export const TABLA_CLASIFICACION = [
     nombre: "Visual",
     tipo: "seccion",
     indice: 2,
-    maximo: 40,
+    maximo: 30,
     dominio: "el procesamiento visual se observa",
     cortes: [
       { nombre: "Mucho menos que otros", min: 0, max: 5 },
       { nombre: "Menos que otros", min: 6, max: 10 },
       { nombre: "Como la mayoría", min: 11, max: 19 },
       { nombre: "Más que otros", min: 20, max: 24 },
-      { nombre: "Mucho más que otros", min: 25, max: 40 },
+      { nombre: "Mucho más que otros", min: 25, max: 30 },
     ],
   },
   {
     nombre: "Táctil",
     tipo: "seccion",
     indice: 3,
-    maximo: 50,
+    maximo: 30,
     dominio: "el procesamiento táctil se observa",
     cortes: [
       { nombre: "Mucho menos que otros", min: 0, max: 1 },
       { nombre: "Menos que otros", min: 2, max: 5 },
       { nombre: "Como la mayoría", min: 6, max: 13 },
       { nombre: "Más que otros", min: 14, max: 16 },
-      { nombre: "Mucho más que otros", min: 17, max: 50 },
+      { nombre: "Mucho más que otros", min: 17, max: 30 },
     ],
   },
   {
     nombre: "Movimiento",
     tipo: "seccion",
     indice: 4,
-    maximo: 30,
+    maximo: 25,
     dominio: "el procesamiento del movimiento se observa",
     cortes: [
       { nombre: "Mucho menos que otros", min: 0, max: 9 },
       { nombre: "Menos que otros", min: 10, max: 12 },
       { nombre: "Como la mayoría", min: 13, max: 20 },
       { nombre: "Más que otros", min: 21, max: 23 },
-      { nombre: "Mucho más que otros", min: 24, max: 30 },
+      { nombre: "Mucho más que otros", min: 24, max: 25 },
     ],
   },
   {
@@ -280,14 +282,16 @@ export function calcularPuntuacionToddler({ secciones = [], respuestas = {}, opc
       const valor = respuestas[inicios[si] + pi];
       const puntaje = puntajePorValor[valor] ?? 0;
       if (pregunta.cuadrante) cuadrantes[pregunta.cuadrante] += puntaje;
-      raw += puntaje;
+      // Los ítems solo-cuadrante no suman en la puntuación directa
+      // de la sección (pauta: su sección se cierra antes de ellos).
+      if (!pregunta.soloCuadrante) raw += puntaje;
       return { ...pregunta, valor, puntaje, letra: letraPorValor[valor] ?? "—" };
     });
     total += raw;
     return {
       titulo: seccion.titulo,
       raw,
-      maximo: seccion.preguntas.length * 5,
+      maximo: seccion.preguntas.filter((p) => !p.soloCuadrante).length * 5,
       noAplicables: 0,
       cuadrantes,
       detalle,
@@ -316,7 +320,7 @@ export function calcularPuntuacionToddler({ secciones = [], respuestas = {}, opc
             (n, s) => n + s.detalle.filter((d) => d.cuadrante === fila.codigo).length,
             0
           )
-        : (seccionesResultado[fila.indice]?.detalle.length ?? 0);
+        : (seccionesResultado[fila.indice]?.detalle.filter((d) => !d.soloCuadrante).length ?? 0);
     return {
       nombre: fila.nombre,
       items,
@@ -469,10 +473,14 @@ export function descargarInformePDFToddler(config) {
   for (const fila of resultado.filasClasificacion.slice(0, 4)) filasResumen.push({ fila });
   filasResumen.push({ grupo: "PROCESAMIENTO SENSORIAL Y COMPORTAMIENTO" });
   for (const fila of resultado.filasClasificacion.slice(4)) filasResumen.push({ fila });
+  const itemsSecciones = resultado.secciones.reduce(
+    (n, s) => n + s.detalle.filter((d) => !d.soloCuadrante).length,
+    0
+  );
   filasResumen.push({
     celdas: [
-      { texto: "PUNTAJE TOTAL DEL PERFIL", alinear: "izquierda" },
-      { texto: "54", alinear: "centro" },
+      { texto: "PUNTAJE TOTAL DE LAS SECCIONES", alinear: "izquierda" },
+      { texto: String(itemsSecciones), alinear: "centro" },
       { texto: String(resultado.total), alinear: "centro" },
       { texto: String(resultado.totalMaximo), alinear: "centro" },
       { texto: "—", alinear: "centro" },
@@ -726,8 +734,9 @@ export function descargarInformePDFToddler(config) {
     doc.setFontSize(tamano);
     return doc.splitTextToSize(texto, ancho - 12);
   };
+  const iniciosDetalle = iniciosDeSeccionToddler(secciones);
 
-  resultado.secciones.forEach((seccion) => {
+  resultado.secciones.forEach((seccion, si) => {
     const banda = 20;
     asegurar(banda + 18 + 40);
     doc.setFillColor(...AZUL_OSCURO);
@@ -749,7 +758,7 @@ export function descargarInformePDFToddler(config) {
     y += 16;
 
     seccion.detalle.forEach((item, pi) => {
-      const respuesta = `${item.letra} (${item.puntaje})`;
+      const respuesta = `${item.letra} (${item.puntaje})${item.soloCuadrante ? " *" : ""}`;
       const lineasItem = lineasDe(item.texto, colDetalle[1]);
       const lineasResp = lineasDe(respuesta, colDetalle[2], { negrita: true });
       const altoFila = Math.max(2, lineasItem.length, lineasResp.length) * 11.5 + 7;
@@ -784,7 +793,7 @@ export function descargarInformePDFToddler(config) {
         tyResp += 11.5;
       }
       doc.setFont("helvetica", "normal");
-      doc.text(String(pi + 1), xDetalle[0] + 6, y + 13);
+      doc.text(String(iniciosDetalle[si] + pi), xDetalle[0] + 6, y + 13);
 
       y += altoFila;
       doc.setDrawColor(200);
@@ -801,7 +810,29 @@ export function descargarInformePDFToddler(config) {
     doc.setTextColor(25);
     doc.text(`Suma de la sección`, xDetalle[1] + 6, y + 13);
     doc.text(`${seccion.raw} de ${seccion.maximo}`, xDetalle[2] + 6, y + 13);
-    y += altoSubtotal + 16;
+    y += altoSubtotal;
+
+    // Nota al pie para los ítems que puntúan solo en su cuadrante.
+    const soloCuadrante = seccion.detalle
+      .map((item, i) => ({ item, numero: iniciosDetalle[si] + i }))
+      .filter(({ item }) => item.soloCuadrante);
+    if (soloCuadrante.length > 0) {
+      const numeros = soloCuadrante.map(({ numero }) => numero).join(", ");
+      const codigos = [...new Set(soloCuadrante.map(({ item }) => item.cuadrante))].join(" y ");
+      if (y + 14 > limite()) nuevaPagina();
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(GRIS);
+      for (const linea of doc.splitTextToSize(
+        `* Ítems ${numeros} puntúan únicamente en su cuadrante (${codigos}), no en la puntuación directa de la sección.`,
+        anchoUtil
+      )) {
+        asegurar(12);
+        doc.text(linea, margen, y + 11);
+        y += 11;
+      }
+    }
+    y += 16;
   });
 
   /* ---- 7. Escala, nota y firma ---- */
@@ -814,7 +845,7 @@ export function descargarInformePDFToddler(config) {
 
   escribir("Nota", { tamano: 13, negrita: true, espacio: 4 });
   escribir(
-    "Los resultados del Toddler Sensory Profile 2 se interpretan junto con la observación clínica y la información de otras fuentes; no constituyen por sí mismos un diagnóstico. Cada fila de la tabla de clasificación se interpreta de manera independiente: puntajes altos indican conductas más frecuentes que en la mayoría de los niños de la misma edad y puntajes bajos, menos frecuentes.",
+    "Los resultados del Toddler Sensory Profile 2 se interpretan junto con la observación clínica y la información de otras fuentes; no constituyen por sí mismos un diagnóstico. Cada fila de la tabla de clasificación se interpreta de manera independiente: puntajes altos indican conductas más frecuentes que en la mayoría de los niños de la misma edad y puntajes bajos, menos frecuentes. Los ítems 24-25 (Visual), 32-35 (Táctil) y 41 (Movimiento) puntúan únicamente en su cuadrante y no forman parte de la puntuación directa de su sección, según la pauta.",
     { espacio: 10 }
   );
   escribir(

@@ -14,8 +14,12 @@ import {
    español (7 a 35 meses). Cuadrante: BU Búsqueda/Buscador,
    EV Evitación/Evitativo, SE Sensibilidad/Sensitivo, RE
    Registro/Espectador y null cuando el formulario no asigna
-   cuadrante. La escala tiene cinco opciones (sin No aplicable)
-   y cada cuadrante y sección se clasifica en la tabla de corte.
+   cuadrante. Los ítems con soloCuadrante (24-25 Visual, 32-35
+   Táctil y 41 Movimiento) suman únicamente en su cuadrante,
+   no en la puntuación directa de su sección: la pauta cierra
+   esas secciones antes de ellos. La escala tiene cinco
+   opciones (sin No aplicable) y cada cuadrante y sección se
+   clasifica en la tabla de corte.
    ============================================================ */
 
 const OPCIONES = [
@@ -88,8 +92,8 @@ const SECCIONES = [
       { texto: "Se sobresalta con la luz brillante o impredecible (por ejemplo, al salir del interior al exterior).", cuadrante: null },
       { texto: "Le molestan las luces brillantes (por ejemplo, se esconde de la luz del sol que entra por la ventana del automóvil).", cuadrante: null },
       { texto: "Le molestan las luces brillantes más que a otros niños(as) de su misma edad.", cuadrante: "RE" },
-      { texto: "Empuja los juguetes de colores brillantes alejándolos de él(ella).", cuadrante: "RE" },
-      { texto: "Falla en responder a sí mismo(a) en el espejo.", cuadrante: "RE" },
+      { texto: "Empuja los juguetes de colores brillantes alejándolos de él(ella).", cuadrante: "RE", soloCuadrante: true },
+      { texto: "Falla en responder a sí mismo(a) en el espejo.", cuadrante: "RE", soloCuadrante: true }
     ],
   },
   {
@@ -101,10 +105,10 @@ const SECCIONES = [
       { texto: "Se aleja de superficies ásperas, frías o pegajosas para no hacer contacto con ellas (por ejemplo, alfombra, mesa).", cuadrante: "EV" },
       { texto: "Choca con las cosas, sin darse cuenta de los objetos o personas que están en su camino.", cuadrante: "RE" },
       { texto: "Se jalonea la ropa o se resiste a que lo(a) vistan.", cuadrante: "SE" },
-      { texto: "Disfruta de salpicar agua durante el baño o cuando nada.", cuadrante: "BU" },
-      { texto: "Se disgusta si su ropa, manos o cara están sucias.", cuadrante: "EV" },
-      { texto: "Se pone ansioso(a) cuando camina o gatea en ciertas superficies (por ejemplo, pasto, arena, alfombra, mosaico).", cuadrante: "SE" },
-      { texto: "Se aparta si lo(a) tocan inesperadamente.", cuadrante: "EV" },
+      { texto: "Disfruta de salpicar agua durante el baño o cuando nada.", cuadrante: "BU", soloCuadrante: true },
+      { texto: "Se disgusta si su ropa, manos o cara están sucias.", cuadrante: "EV", soloCuadrante: true },
+      { texto: "Se pone ansioso(a) cuando camina o gatea en ciertas superficies (por ejemplo, pasto, arena, alfombra, mosaico).", cuadrante: "SE", soloCuadrante: true },
+      { texto: "Se aparta si lo(a) tocan inesperadamente.", cuadrante: "EV", soloCuadrante: true }
     ],
   },
   {
@@ -115,7 +119,7 @@ const SECCIONES = [
       { texto: "Toma riesgos al trepar/escalar o hacer movimientos.", cuadrante: "BU" },
       { texto: "Se disgusta cuando lo(a) ponen de espalda (por ejemplo, para cambiarle los pañales).", cuadrante: "SE" },
       { texto: "Parece torpe o propenso(a) a los accidentes.", cuadrante: "RE" },
-      { texto: "Se queja cuando lo(a) mueven (por ejemplo, hacerlo(a) caminar, cuando lo(a) pasan de una persona a otra).", cuadrante: "SE" },
+      { texto: "Se queja cuando lo(a) mueven (por ejemplo, hacerlo(a) caminar, cuando lo(a) pasan de una persona a otra).", cuadrante: "SE", soloCuadrante: true }
     ],
   },
   {

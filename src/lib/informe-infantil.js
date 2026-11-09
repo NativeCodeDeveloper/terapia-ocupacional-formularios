@@ -479,8 +479,9 @@ export function descargarInformePDFInfante(config) {
     doc.setFontSize(tamano);
     return doc.splitTextToSize(texto, ancho - 12);
   };
+  const iniciosDetalle = iniciosDeSeccionInfante(secciones);
 
-  resultado.secciones.forEach((seccion) => {
+  resultado.secciones.forEach((seccion, si) => {
     const banda = 20;
     asegurar(banda + 18 + 40);
     doc.setFillColor(...VERDE_OSCURO);
@@ -537,7 +538,7 @@ export function descargarInformePDFInfante(config) {
         tyResp += 11.5;
       }
       doc.setFont("helvetica", "normal");
-      doc.text(String(pi + 1), xDetalle[0] + 6, y + 13);
+      doc.text(String(iniciosDetalle[si] + pi), xDetalle[0] + 6, y + 13);
 
       y += altoFila;
       doc.setDrawColor(200);

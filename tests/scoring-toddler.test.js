@@ -11,9 +11,14 @@ import {
    54 ítems en 7 secciones (10+7+8+10+6+7+6). Escala Casi
    siempre o siempre=5, Frecuentemente=4, La mitad de las
    veces=3, Ocasionalmente=2, Casi nunca=1 (sin No aplicable).
-   Cada cuadrante (BU 7 ítems /35, EV 11 /55, SE 13 /65,
-   RE 11 /55) y cada sección se clasifica en la tabla de corte:
-   ±1 DE = Más/Menos que otros, ±2 DE = Mucho más/Mucho menos.
+   Los ítems 24-25 (Visual), 32-35 (Táctil) y 41 (Movimiento)
+   puntúan solo en su cuadrante, no en la puntuación directa
+   de su sección (la pauta cierra esa sección antes de ellos):
+   las secciones puntúan sobre 50+35+30+30+25+35+30 = 235 con
+   47 ítems. Cuadrantes: BU 7 /35, EV 11 /55, SE 13 /65,
+   RE 11 /55 (los 54 ítems). Cada fila se clasifica en la
+   tabla de corte: ±1 DE = Más/Menos que otros, ±2 DE =
+   Mucho más/Mucho menos.
    ============================================================ */
 
 const OPCIONES = [
@@ -44,13 +49,22 @@ const CUADRANTES_SECCION = [
   ["EV", null, null, "SE", "EV", "EV"], // Comportamiento
 ];
 
-const secciones = CUADRANTES_SECCION.map((cuadrantes, si) => ({
-  titulo: TITULOS[si],
-  preguntas: cuadrantes.map((cuadrante, i) => ({
-    texto: `Pregunta ${i + 1} de ${TITULOS[si]}.`,
-    cuadrante,
-  })),
-}));
+const SOLO_CUADRANTE = new Set([24, 25, 32, 33, 34, 35, 41]);
+
+const secciones = (() => {
+  let numero = 0;
+  return CUADRANTES_SECCION.map((cuadrantes, si) => ({
+    titulo: TITULOS[si],
+    preguntas: cuadrantes.map((cuadrante) => {
+      numero += 1;
+      return {
+        texto: `Pregunta ${numero} de ${TITULOS[si]}.`,
+        cuadrante,
+        soloCuadrante: SOLO_CUADRANTE.has(numero),
+      };
+    }),
+  }));
+})();
 
 const todas = (valor) =>
   Object.fromEntries(
@@ -59,13 +73,17 @@ const todas = (valor) =>
 
 const config = (respuestas) => ({ secciones, respuestas, opciones: OPCIONES });
 
-test("todas Casi nunca → total 54, filas en sus bandas inferiores", () => {
+test("todas Casi nunca → total 47, filas en sus bandas inferiores", () => {
   const r = calcularPuntuacionToddler(config(todas("casiNunca")));
-  assert.equal(r.total, 54);
-  assert.equal(r.totalMaximo, 270);
+  assert.equal(r.total, 47);
+  assert.equal(r.totalMaximo, 235);
   assert.deepEqual(
     r.secciones.map((s) => s.raw),
-    [10, 7, 8, 10, 6, 7, 6]
+    [10, 7, 6, 6, 5, 7, 6]
+  );
+  assert.deepEqual(
+    r.secciones.map((s) => s.maximo),
+    [50, 35, 30, 30, 25, 35, 30]
   );
   assert.deepEqual(r.totalesCuadrante, { BU: 7, EV: 11, SE: 13, RE: 11 });
   assert.equal(r.dominantes.length, 1);
@@ -79,18 +97,23 @@ test("todas Casi nunca → total 54, filas en sus bandas inferiores", () => {
       "Como la mayoría", // Registro 11 (10-21)
       "Menos que otros", // General 10 (6-10)
       "Como la mayoría", // Auditivo 7 (6-14)
-      "Menos que otros", // Visual 8 (6-10)
-      "Como la mayoría", // Táctil 10 (6-13)
-      "Mucho menos que otros", // Movimiento 6 (0-9)
+      "Menos que otros", // Visual 6 (6-10)
+      "Como la mayoría", // Táctil 6 (6-13)
+      "Mucho menos que otros", // Movimiento 5 (0-9)
       "Como la mayoría", // Oral 7 (6-15)
       "Menos que otros", // Comportamiento 6 (4-6)
     ]
   );
 });
 
-test("todas Casi siempre → total 270 y cuadrantes en su máximo", () => {
+test("todas Casi siempre → total 235 y cuadrantes en su máximo", () => {
   const r = calcularPuntuacionToddler(config(todas("casiSiempre")));
-  assert.equal(r.total, 270);
+  assert.equal(r.total, 235);
+  assert.equal(r.totalMaximo, 235);
+  assert.deepEqual(
+    r.secciones.map((s) => s.raw),
+    [50, 35, 30, 30, 25, 35, 30]
+  );
   assert.deepEqual(r.totalesCuadrante, { BU: 35, EV: 55, SE: 65, RE: 55 });
   assert.equal(r.dominantes.length, 1);
   assert.equal(r.dominantes[0].codigo, "SE");
@@ -103,9 +126,9 @@ test("todas Casi siempre → total 270 y cuadrantes en su máximo", () => {
       "Mucho más que otros", // Registro 55
       "Mucho más que otros", // General 50
       "Mucho más que otros", // Auditivo 35
-      "Mucho más que otros", // Visual 40
-      "Mucho más que otros", // Táctil 50
-      "Mucho más que otros", // Movimiento 30
+      "Mucho más que otros", // Visual 30
+      "Mucho más que otros", // Táctil 30
+      "Mucho más que otros", // Movimiento 25
       "Mucho más que otros", // Oral 35
       "Mucho más que otros", // Comportamiento 30
     ]
@@ -116,18 +139,31 @@ test("cantidad de ítems y máximos de cada fila según la pauta", () => {
   const r = calcularPuntuacionToddler(config(todas("casiNunca")));
   assert.deepEqual(
     r.filasClasificacion.map((f) => f.items),
-    [7, 11, 13, 11, 10, 7, 8, 10, 6, 7, 6]
+    [7, 11, 13, 11, 10, 7, 6, 6, 5, 7, 6]
   );
   assert.deepEqual(
     r.filasClasificacion.map((f) => f.maximo),
-    [35, 55, 65, 55, 50, 35, 40, 50, 30, 35, 30]
+    [35, 55, 65, 55, 50, 35, 30, 30, 25, 35, 30]
   );
 });
 
-test("caso de regresión: total 104 con mezcla de respuestas", () => {
-  // Brutos: General 24, Auditivo 13, Visual 17, Táctil 21,
-  // Movimiento 16, Oral 7, Comportamiento 6.
-  // Cuadrantes: BU 25 · EV 23 · SE 24 · RE 20 (predominante BU).
+test("los ítems solo cuadrante no suman en la puntuación directa de su sección", () => {
+  // Ítem 32 (BU, Táctil) en Casi siempre: el resto Casi nunca.
+  const respuestas = todas("casiNunca");
+  respuestas[32] = "casiSiempre";
+  const r = calcularPuntuacionToddler(config(respuestas));
+  assert.equal(r.secciones[3].raw, 6); // Táctil no cambia (ítems 26-31)
+  assert.equal(r.secciones[3].maximo, 30);
+  assert.equal(r.totalesCuadrante.BU, 3 + 5 + 3); // 18,19,20 + 32 + 36,37,38
+  assert.equal(r.total, 47); // el total de secciones no cambia
+});
+
+test("caso de regresión: total 97 con mezcla de respuestas", () => {
+  // Brutos (solo ítems que puntúan en sección): General 24,
+  // Auditivo 13, Visual 15 (18-23), Táctil 17 (26-31),
+  // Movimiento 15 (36-40), Oral 7, Comportamiento 6.
+  // Cuadrantes (los 54 ítems): BU 25 · EV 23 · SE 24 · RE 20
+  // (predominante BU).
   const L = { 1: "casiNunca", 2: "ocasionalmente", 3: "laMitad", 4: "frecuentemente", 5: "casiSiempre" };
   const respuestas = todas("casiNunca");
   const vector = (indices, valores) => indices.forEach((idx, i) => { respuestas[idx] = L[valores[i]]; });
@@ -151,9 +187,9 @@ test("caso de regresión: total 104 con mezcla de respuestas", () => {
   const r = calcularPuntuacionToddler(config(respuestas));
   assert.deepEqual(
     r.secciones.map((s) => s.raw),
-    [24, 13, 17, 21, 16, 7, 6]
+    [24, 13, 15, 17, 15, 7, 6]
   );
-  assert.equal(r.total, 104);
+  assert.equal(r.total, 97);
   assert.deepEqual(r.totalesCuadrante, { BU: 25, EV: 23, SE: 24, RE: 20 });
   assert.equal(r.dominantes.length, 1);
   assert.equal(r.dominantes[0].codigo, "BU");
@@ -166,9 +202,9 @@ test("caso de regresión: total 104 con mezcla de respuestas", () => {
       "Como la mayoría", // Registro 20 (10-21)
       "Más que otros", // General 24 (23-27)
       "Como la mayoría", // Auditivo 13 (6-14)
-      "Como la mayoría", // Visual 17 (11-19)
-      "Mucho más que otros", // Táctil 21 (17-50)
-      "Como la mayoría", // Movimiento 16 (13-20)
+      "Como la mayoría", // Visual 15 (11-19)
+      "Mucho más que otros", // Táctil 17 (17-30)
+      "Como la mayoría", // Movimiento 15 (13-20)
       "Como la mayoría", // Oral 7 (6-15)
       "Menos que otros", // Comportamiento 6 (4-6)
     ]
