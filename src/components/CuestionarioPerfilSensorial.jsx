@@ -8,14 +8,17 @@ import {
 
 /* ============================================================
    CUESTIONARIO PERFIL SENSORIAL 2 · COMPONENTE
-   Interfaz común de los cuestionarios para padres o tutores
-   del Perfil Sensorial 2 (Infant 0-6 meses y Toddler 7-35
-   meses). A diferencia del SPM-2, la escala es de frecuencia
+   Interfaz común de los cuestionarios del Perfil Sensorial 2
+   (Infant 0-6 meses, Toddler 7-35 meses, Breve y Niño 3:0-14:11,
+   Escolar 3:0-14:11 para el profesor y Adolescentes y Adultos).
+   A diferencia del SPM-2, la escala es de frecuencia
    (Casi siempre = 5 … Casi nunca = 1, con No aplicable = 0
    solo en Infant) y el resultado se clasifica en la curva o
    tabla de corte, no en puntaje T. Cada página entrega sus
    opciones, secciones (ítems con cuadrante), datos, textos y
-   la función de cálculo e informe PDF.
+   la función de cálculo e informe PDF. El prop `factores`
+   (opcional) añade la tabla de factores escolares por sección
+   (cuestionario Escolar).
    ============================================================ */
 
 const OPCIONES_INFANTE = [
@@ -73,6 +76,7 @@ const TINTE_CLASIFICACION = {
   "Menos que los demás": "bg-lime-50 text-lime-900 border-lime-200",
   "Menos que otros": "bg-lime-50 text-lime-900 border-lime-200",
   "Menos que la mayoría de las personas": "bg-lime-50 text-lime-900 border-lime-200",
+  "Como los demás": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Como la mayoría de los demás": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Como la mayoría": "bg-indigo-50 text-indigo-900 border-indigo-200",
   "Similar a la mayoría de las personas": "bg-indigo-50 text-indigo-900 border-indigo-200",
@@ -83,6 +87,66 @@ const TINTE_CLASIFICACION = {
   "Mucho más que otros": "bg-red-50 text-red-900 border-red-200",
   "Mucho más que la mayoría de las personas": "bg-red-50 text-red-900 border-red-200",
 };
+
+/* Tabla común «agrupación por sección»: cada fila es una
+   sección y cada columna una agrupación de ítems (cuadrantes
+   o factores escolares); el mayor de la fila queda destacado. */
+function TablaPorSeccion({ columnas, filas, totales }) {
+  return (
+    <table className="mt-3 w-full border-collapse overflow-hidden rounded-2xl text-sm">
+      <thead>
+        <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+          <th className="px-4 py-2.5 font-semibold">Sección</th>
+          {columnas.map((c) => (
+            <th key={c.codigo} className="px-3 py-2.5 text-center font-semibold">
+              {c.codigo}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-neutral-100">
+        {filas.map((fila) => {
+          const maximo = Math.max(...columnas.map((c) => fila.valores[c.codigo]));
+          return (
+            <tr key={fila.titulo}>
+              <td className="px-4 py-2.5 font-medium">{fila.titulo}</td>
+              {columnas.map((c) => (
+                <td
+                  key={c.codigo}
+                  className={`px-3 py-2.5 text-center tabular-nums ${
+                    maximo > 0 && fila.valores[c.codigo] === maximo
+                      ? "font-bold text-indigo-600"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  {fila.valores[c.codigo]}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+        <tr className="bg-neutral-50">
+          <td className="px-4 py-3 font-bold">Total</td>
+          {(() => {
+            const maximo = Math.max(...columnas.map((c) => totales[c.codigo]));
+            return columnas.map((c) => (
+              <td
+                key={c.codigo}
+                className={`px-3 py-3 text-center tabular-nums ${
+                  maximo > 0 && totales[c.codigo] === maximo
+                    ? "font-bold text-indigo-600"
+                    : "font-medium text-neutral-500"
+                }`}
+              >
+                {totales[c.codigo]}
+              </td>
+            ));
+          })()}
+        </tr>
+      </tbody>
+    </table>
+  );
+}
 
 /* Numeración oficial de los ítems: se acumula con el largo real
    de cada sección (las seis secciones tienen largos distintos). */
@@ -109,6 +173,7 @@ export default function CuestionarioPerfilSensorial({
   fraseOpciones = "Cuando se le presenta la oportunidad, mi bebé…",
   calcular = calcularPuntuacionInfante,
   cuadrantes = CUADRANTES,
+  factores = null,
   campoEdad = "edadMeses",
   unidadEdad = "meses",
   notaEscala = null,
@@ -311,62 +376,30 @@ export default function CuestionarioPerfilSensorial({
           )}
 
           <h2 className={`mt-8 ${TITULO_SECCION}`}>Cuadrantes por sección</h2>
-          <table className="mt-3 w-full border-collapse overflow-hidden rounded-2xl text-sm">
-            <thead>
-              <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
-                <th className="px-4 py-2.5 font-semibold">Sección</th>
-                {cuadrantes.map((c) => (
-                  <th key={c.codigo} className="px-3 py-2.5 text-center font-semibold">
-                    {c.codigo}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {resultado.secciones.map((s) => {
-                const maximo = Math.max(...cuadrantes.map((c) => s.cuadrantes[c.codigo]));
-                return (
-                  <tr key={s.titulo}>
-                    <td className="px-4 py-2.5 font-medium">{s.titulo}</td>
-                    {cuadrantes.map((c) => (
-                      <td
-                        key={c.codigo}
-                        className={`px-3 py-2.5 text-center tabular-nums ${
-                          maximo > 0 && s.cuadrantes[c.codigo] === maximo
-                            ? "font-bold text-indigo-600"
-                            : "text-neutral-500"
-                        }`}
-                      >
-                        {s.cuadrantes[c.codigo]}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-              <tr className="bg-neutral-50">
-                <td className="px-4 py-3 font-bold">Total</td>
-                {(() => {
-                  const maximo = Math.max(...cuadrantes.map((c) => resultado.totalesCuadrante[c.codigo]));
-                  return cuadrantes.map((c) => (
-                    <td
-                      key={c.codigo}
-                      className={`px-3 py-3 text-center tabular-nums ${
-                        maximo > 0 && resultado.totalesCuadrante[c.codigo] === maximo
-                          ? "font-bold text-indigo-600"
-                          : "font-medium text-neutral-500"
-                      }`}
-                    >
-                      {resultado.totalesCuadrante[c.codigo]}
-                    </td>
-                  ));
-                })()}
-              </tr>
-            </tbody>
-          </table>
+          <TablaPorSeccion
+            columnas={cuadrantes}
+            filas={resultado.secciones.map((s) => ({ titulo: s.titulo, valores: s.cuadrantes }))}
+            totales={resultado.totalesCuadrante}
+          />
           <p className="mt-2 text-xs text-neutral-500">
             {cuadrantes.map((c) => `${c.codigo} = ${c.nombre}`).join(" · ")}. El mayor de la fila
             queda destacado.
           </p>
+
+          {factores && resultado.totalesFactor && (
+            <>
+              <h2 className={`mt-8 ${TITULO_SECCION}`}>Factores escolares por sección</h2>
+              <TablaPorSeccion
+                columnas={factores}
+                filas={resultado.secciones.map((s) => ({ titulo: s.titulo, valores: s.factores }))}
+                totales={resultado.totalesFactor}
+              />
+              <p className="mt-2 text-xs text-neutral-500">
+                {factores.map((f) => `${f.codigo} = ${f.etiqueta ?? f.nombre}`).join(" · ")}. El
+                mayor de la fila queda destacado.
+              </p>
+            </>
+          )}
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button

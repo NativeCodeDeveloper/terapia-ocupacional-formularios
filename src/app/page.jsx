@@ -66,6 +66,14 @@ const FORMULARIOS = [
     preguntas: 86,
   },
   {
+    href: "/formulario15",
+    instrumento: "PERFIL SENSORIAL 2 ESCOLAR",
+    titulo: "Alumnos 3:0 - 14:11 años",
+    descripcion: "Cuestionario para el profesor sobre la conducta sensorial del alumno en la escuela.",
+    informes: "PDF",
+    preguntas: 44,
+  },
+  {
     href: "/formulario14",
     instrumento: "PERFIL SENSORIAL ADOLESCENTES Y ADULTOS",
     titulo: "Autoinforme 11 años en adelante",
@@ -182,7 +190,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              14 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2 / Adolescentes y Adultos)
+              15 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2 / Adolescentes y Adultos)
             </p>
           </div>
         </section>
