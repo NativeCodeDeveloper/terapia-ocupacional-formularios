@@ -479,7 +479,7 @@ export function descargarInformePDFToddler(config) {
   );
   filasResumen.push({
     celdas: [
-      { texto: "PUNTAJE TOTAL DE LAS SECCIONES", alinear: "izquierda" },
+      { texto: "PUNTAJE TOTAL DE SECCIONES", alinear: "izquierda" },
       { texto: String(itemsSecciones), alinear: "centro" },
       { texto: String(resultado.total), alinear: "centro" },
       { texto: String(resultado.totalMaximo), alinear: "centro" },
@@ -819,14 +819,15 @@ export function descargarInformePDFToddler(config) {
     if (soloCuadrante.length > 0) {
       const numeros = soloCuadrante.map(({ numero }) => numero).join(", ");
       const codigos = [...new Set(soloCuadrante.map(({ item }) => item.cuadrante))].join(" y ");
+      const nota =
+        soloCuadrante.length === 1
+          ? `* Ítem ${numeros} puntúa únicamente en su cuadrante (${codigos}), no en la puntuación directa de la sección.`
+          : `* Ítems ${numeros} puntúan únicamente en su cuadrante (${codigos}), no en la puntuación directa de la sección.`;
       if (y + 14 > limite()) nuevaPagina();
       doc.setFont("helvetica", "italic");
       doc.setFontSize(8.5);
       doc.setTextColor(GRIS);
-      for (const linea of doc.splitTextToSize(
-        `* Ítems ${numeros} puntúan únicamente en su cuadrante (${codigos}), no en la puntuación directa de la sección.`,
-        anchoUtil
-      )) {
+      for (const linea of doc.splitTextToSize(nota, anchoUtil)) {
         asegurar(12);
         doc.text(linea, margen, y + 11);
         y += 11;
