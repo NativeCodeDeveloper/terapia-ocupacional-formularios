@@ -126,7 +126,7 @@ const FORMULARIOS = [
     instrumento: "EVALUACIÓN INICIAL · INFANTIL",
     titulo: "Niño · entrevista inicial",
     descripcion: "Ficha de primera atención de terapia ocupacional que completa el tutor o cuidador junto al terapeuta.",
-    informes: "PDF",
+    informes: "PDF y Word",
     preguntas: 104,
   },
   {
@@ -134,7 +134,7 @@ const FORMULARIOS = [
     instrumento: "EVALUACIÓN INICIAL · ADOLESCENCIA",
     titulo: "Adolescente · entrevista inicial",
     descripcion: "Ficha de primera atención con el tutor o el propio adolescente, con área académica e independencia funcional.",
-    informes: "PDF",
+    informes: "PDF y Word",
     preguntas: 103,
   },
   {
@@ -142,7 +142,7 @@ const FORMULARIOS = [
     instrumento: "EVALUACIÓN INICIAL · ADULTO",
     titulo: "Adulto · entrevista inicial",
     descripcion: "Ficha de primera atención con independencia funcional básica e instrumental, área física y salud mental.",
-    informes: "PDF",
+    informes: "PDF y Word",
     preguntas: 125,
   },
   {
@@ -150,7 +150,7 @@ const FORMULARIOS = [
     instrumento: "EVALUACIÓN INICIAL · PERSONA MAYOR",
     titulo: "Persona mayor · entrevista inicial",
     descripcion: "Ficha de primera atención con síndromes geriátricos, entorno y adaptaciones, área física y salud mental.",
-    informes: "PDF",
+    informes: "PDF y Word",
     preguntas: 136,
   },
 ];

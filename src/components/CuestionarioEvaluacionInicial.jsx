@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { calcularEdad, fechaLarga } from "@/lib/informe-evaluacion-inicial";
 
 /* ============================================================
    EVALUACIÓN INICIAL DE TERAPIA OCUPACIONAL · COMPONENTE COMÚN
@@ -10,10 +11,13 @@ import { useState } from "react";
    cuestionario de frecuencia: es una ficha de entrevista. Cada
    página entrega el esquema de sus secciones (campos de texto,
    texto largo, fecha, número, radio, sí/no y escala con
-   observación) y la función `sintetizar` que construye la
-   síntesis automatizada y las banderas clínicas que se muestran
-   en el resumen y en el informe PDF (`descargarInformePDF`
-   recibe el objeto de valores completo).
+   observación) y las funciones de descarga del informe
+   (`descargarInformePDF` y `descargarInformeWord` reciben el
+   objeto de valores completo). Al enviar se muestra una
+   pantalla de confirmación mínima solo con las descargas; la
+   síntesis automatizada y el registro viven dentro del
+   informe. Los campos con `autoDesde` (p. ej. Edad desde la
+   fecha de nacimiento) se completan automáticamente.
    ============================================================ */
 
 const TARJETA = "rounded-2xl border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)]";
@@ -23,101 +27,21 @@ const CONTROL_BASE =
 const CONTROL_OK = "border-neutral-300 hover:border-neutral-400 focus:border-indigo-500 focus:ring-indigo-500/10";
 const CONTROL_ERROR = "border-red-400 focus:border-red-500 focus:ring-red-500/10";
 
-const TINTE_BANDERA = {
-  critico: "bg-red-50 text-red-900 border-red-200",
-  alerta: "bg-amber-50 text-amber-900 border-amber-200",
-  ok: "bg-emerald-50 text-emerald-900 border-emerald-200",
-  info: "bg-indigo-50 text-indigo-900 border-indigo-200",
-};
-
-const ETIQUETA_BANDERA = {
-  critico: "Atención inmediata",
-  alerta: "Alerta",
-  ok: "Sin alertas",
-  info: "Información",
-};
-
 const OPCIONES_SI_NO = [
   { valor: "si", etiqueta: "Sí" },
   { valor: "no", etiqueta: "No" },
 ];
+
+/* Los tipos del esquema se traducen a tipos nativos de input
+   (fecha → date con calendario y formato del navegador,
+   numero → number). Un tipo no válido degradaría a texto. */
+const TIPO_INPUT = { texto: "text", numero: "number", fecha: "date" };
 
 /* Los campos de texto largo son narrativos: se completan durante
    la entrevista y no son obligatorios salvo que el esquema
    indique lo contrario. El resto de tipos sí lo son por defecto. */
 function esRequerido(campo) {
   return campo.requerido ?? campo.tipo !== "textoLargo";
-}
-
-function BloqueBandera({ bloque }) {
-  return (
-    <div className={`rounded-2xl border px-5 py-4 text-sm ${TINTE_BANDERA[bloque.nivel] ?? TINTE_BANDERA.info}`}>
-      <span className="text-[11px] font-bold uppercase tracking-wide">
-        {ETIQUETA_BANDERA[bloque.nivel] ?? ETIQUETA_BANDERA.info}
-        {bloque.titulo ? ` · ${bloque.titulo}` : ""}
-      </span>
-      <p className="mt-1 leading-relaxed">{bloque.texto}</p>
-    </div>
-  );
-}
-
-function BloqueTabla({ bloque }) {
-  return (
-    <div>
-      {bloque.titulo && <p className="text-sm font-semibold">{bloque.titulo}</p>}
-      <table className="mt-2 w-full border-collapse overflow-hidden rounded-2xl text-sm">
-        <thead>
-          <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
-            {bloque.columnas.map((c) => (
-              <th key={c.titulo} className="px-3 py-2 font-semibold">
-                {c.titulo}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-neutral-100">
-          {bloque.filas.map((fila, i) => (
-            <tr key={i}>
-              {fila.map((celda, j) => (
-                <td key={j} className="px-3 py-2 align-top">
-                  {celda || "—"}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function BloquesSintesis({ bloques }) {
-  return (
-    <div className="space-y-4">
-      {bloques.map((bloque, i) => {
-        if (bloque.tipo === "bandera") return <BloqueBandera key={i} bloque={bloque} />;
-        if (bloque.tipo === "tabla") return <BloqueTabla key={i} bloque={bloque} />;
-        if (bloque.tipo === "lista") {
-          return (
-            <div key={i}>
-              {bloque.titulo && <p className="text-sm font-semibold">{bloque.titulo}</p>}
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm leading-relaxed text-neutral-700">
-                {bloque.items.map((item, j) => (
-                  <li key={j}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          );
-        }
-        return (
-          <div key={i}>
-            {bloque.titulo && <p className="text-sm font-semibold">{bloque.titulo}</p>}
-            <p className="mt-1 text-sm leading-relaxed text-neutral-700">{bloque.texto}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 /* Botonera de opciones (radio, sí/no y escala). */
@@ -196,41 +120,14 @@ function CampoEscala({ campo, valores, conError, alCambiar }) {
   );
 }
 
-/* Resumen compacto de los campos de escala dentro del informe. */
-function TablaEscalasResumen({ campos, valores }) {
-  return (
-    <table className="mt-2 w-full border-collapse overflow-hidden rounded-2xl text-sm">
-      <thead>
-        <tr className="bg-neutral-100 text-left text-[11px] uppercase tracking-wide text-neutral-500">
-          <th className="px-3 py-2 font-semibold">Ámbito</th>
-          <th className="px-3 py-2 font-semibold">Nivel</th>
-          <th className="px-3 py-2 font-semibold">Observación</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-neutral-100">
-        {campos.map((campo) => {
-          const elegida = campo.opciones?.find((o) => o.valor === valores[campo.id])?.etiqueta;
-          return (
-            <tr key={campo.id}>
-              <td className="px-3 py-2 align-top font-medium">{campo.etiqueta}</td>
-              <td className="px-3 py-2 align-top">{elegida ?? "—"}</td>
-              <td className="px-3 py-2 align-top text-neutral-600">{valores[`${campo.id}Obs`] || "—"}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
 export default function CuestionarioEvaluacionInicial({
   marca,
   rango,
   instrumento,
   intro,
   secciones,
-  sintetizar,
   descargarInformePDF,
+  descargarInformeWord,
   confirmacion,
 }) {
   const [valores, setValores] = useState({});
@@ -241,10 +138,19 @@ export default function CuestionarioEvaluacionInicial({
   const camposRequeridos = todosLosCampos.filter(esRequerido);
   const respondidos = camposRequeridos.filter((c) => (valores[c.id] ?? "").toString().trim() !== "").length;
   const progreso = Math.round((respondidos / Math.max(camposRequeridos.length, 1)) * 100);
-  const seccionId = secciones.find((s) => s.identificacion);
 
   function actualizar(campo, valor) {
-    setValores((prev) => ({ ...prev, [campo]: valor }));
+    setValores((prev) => {
+      const next = { ...prev, [campo]: valor };
+      // Campos calculados (p. ej. Edad desde la fecha de nacimiento).
+      for (const c of todosLosCampos) {
+        if (c.autoDesde === campo) {
+          const edad = calcularEdad(valor);
+          next[c.id] = edad == null ? "" : String(edad);
+        }
+      }
+      return next;
+    });
     setErrores((prev) => {
       const clave = campo.startsWith("campo-") ? campo : `campo-${campo}`;
       if (!prev.has(clave)) return prev;
@@ -281,9 +187,8 @@ export default function CuestionarioEvaluacionInicial({
   }
 
   if (verResumen) {
-    const sintesis = sintetizar(valores);
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16">
         <div className={`p-6 sm:p-10 ${TARJETA}`}>
           <div className="flex items-start gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xl text-emerald-600">
@@ -295,61 +200,10 @@ export default function CuestionarioEvaluacionInicial({
             </div>
           </div>
 
-          {seccionId && (
-            <>
-              <h2 className={`mt-8 ${TITULO_SECCION}`}>Datos de identificación</h2>
-              <dl className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl bg-neutral-50 p-5 sm:grid-cols-2">
-                {seccionId.campos.map((campo) => (
-                  <div key={campo.id} className="min-w-0">
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                      {campo.etiqueta}
-                    </dt>
-                    <dd className="mt-0.5 truncate text-sm font-medium">
-                      {valores[campo.id] || "—"}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </>
-          )}
-
-          <h2 className={`mt-8 ${TITULO_SECCION}`}>Síntesis automatizada</h2>
-          <div className="mt-3">
-            <BloquesSintesis bloques={sintesis} />
-          </div>
-
-          <h2 className={`mt-8 ${TITULO_SECCION}`}>Registro de respuestas</h2>
-          <div className="mt-3 space-y-6">
-            {secciones.map((seccion) => {
-              const escalas = seccion.campos.filter((c) => c.tipo === "escala");
-              const otros = seccion.campos.filter((c) => c.tipo !== "escala");
-              return (
-                <div key={seccion.id}>
-                  <p className="text-[15px] font-bold tracking-tight">{seccion.titulo}</p>
-                  {escalas.length > 0 && <TablaEscalasResumen campos={escalas} valores={valores} />}
-                  <dl className="mt-3 space-y-3">
-                    {otros.map((campo) => {
-                      const valor = valores[campo.id];
-                      const elegida =
-                        (campo.tipo === "radio" || campo.tipo === "siNo") && campo.opciones
-                          ? campo.opciones.find((o) => o.valor === valor)?.etiqueta
-                          : null;
-                      return (
-                        <div key={campo.id} className="rounded-xl bg-neutral-50 px-4 py-3">
-                          <dt className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                            {campo.etiqueta}
-                          </dt>
-                          <dd className={`mt-0.5 whitespace-pre-line text-sm ${valor ? "text-neutral-900" : "text-neutral-400"}`}>
-                            {elegida ?? (valor || "Sin información registrada")}
-                          </dd>
-                        </div>
-                      );
-                    })}
-                  </dl>
-                </div>
-              );
-            })}
-          </div>
+          <p className="mt-6 text-sm leading-relaxed text-neutral-600">
+            Descarga el informe con el registro completo de la evaluación y la síntesis clínica
+            automatizada, listo para firmar e integrar a la ficha.
+          </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button
@@ -361,19 +215,20 @@ export default function CuestionarioEvaluacionInicial({
             </button>
             <button
               type="button"
-              onClick={() => setVerResumen(false)}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              onClick={() => descargarInformeWord(valores)}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
             >
-              Volver al formulario
-            </button>
-            <button
-              type="button"
-              onClick={reiniciar}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
-            >
-              Completar otra evaluación
+              Descargar informe Word
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={reiniciar}
+            className="mt-6 text-[13px] font-medium text-neutral-400 underline-offset-4 transition-colors hover:text-neutral-600 hover:underline"
+          >
+            Completar otra evaluación
+          </button>
         </div>
       </main>
     );
@@ -478,13 +333,27 @@ export default function CuestionarioEvaluacionInicial({
                             {(campo.tipo === "texto" || campo.tipo === "numero" || campo.tipo === "fecha") && (
                               <input
                                 id={campo.id}
-                                type={campo.tipo}
+                                type={TIPO_INPUT[campo.tipo] ?? "text"}
+                                placeholder={campo.placeholder}
                                 value={valores[campo.id] ?? ""}
                                 onChange={(e) => actualizar(campo.id, e.target.value)}
                                 required={requerido}
                                 aria-invalid={conError}
                                 className={control}
                               />
+                            )}
+
+                            {campo.tipo === "fecha" && (
+                              <p className="mt-1.5 text-xs text-neutral-400">
+                                {valores[campo.id]
+                                  ? `Fecha seleccionada: ${fechaLarga(valores[campo.id])}`
+                                  : "Formato DD/MM/AAAA · elige la fecha en el calendario."}
+                              </p>
+                            )}
+                            {campo.autoDesde && valores[campo.id] !== undefined && valores[campo.id] !== "" && (
+                              <p className="mt-1 text-xs text-neutral-400">
+                                Calculada automáticamente desde la fecha de nacimiento.
+                              </p>
                             )}
 
                             {campo.tipo === "textoLargo" && (

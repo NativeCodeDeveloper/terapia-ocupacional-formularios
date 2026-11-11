@@ -1,5 +1,6 @@
 import {
   descargarInformePDFEvaluacionInicial,
+  descargarInformeWordEvaluacionInicial,
   etiquetaOpcion,
   textoValor,
 } from "./informe-evaluacion-inicial.js";
@@ -99,7 +100,7 @@ export const SECCIONES = [
       { id: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { id: "run", etiqueta: "RUN", tipo: "texto", placeholder: "12.345.678-9" },
       { id: "fechaNacimiento", etiqueta: "Fecha de nacimiento", tipo: "fecha" },
-      { id: "edad", etiqueta: "Edad", tipo: "numero", placeholder: "Años" },
+      { id: "edad", etiqueta: "Edad", tipo: "numero", autoDesde: "fechaNacimiento", placeholder: "Años" },
       { id: "nombreTutor", etiqueta: "Nombre tutor/a", tipo: "texto" },
       { id: "direccion", etiqueta: "Dirección", tipo: "texto" },
       { id: "telefono", etiqueta: "Teléfono", tipo: "texto", placeholder: "+56 9 1234 5678" },
@@ -669,8 +670,9 @@ export function sintetizar(valores = {}) {
 
 /* ==== Informe en PDF ==== */
 
-export function descargarInformePDF(valores) {
-  descargarInformePDFEvaluacionInicial({
+/* Configuración común del informe (PDF y Word). */
+function configInforme(valores) {
+  return {
     nombreArchivo: "Informe-Evaluacion-Inicial-Adolescencia",
     instrumento: "Evaluación inicial · Adolescencia",
     titulo: "Informe de evaluación inicial",
@@ -684,5 +686,13 @@ export function descargarInformePDF(valores) {
     sintesis: sintetizar(valores),
     introduccion:
       "Ficha de evaluación inicial de terapia ocupacional para adolescentes. Se completa en la primera atención junto al tutor/a o al propio adolescente: registre los datos de identificación, la entrevista y la observación del terapeuta en cada área. La síntesis automatizada resume el motivo de consulta, la independencia funcional, los hitos del desarrollo, las funciones cognitivas consultadas y el plan de intervención.",
-  });
+  };
+}
+
+export function descargarInformePDF(valores) {
+  descargarInformePDFEvaluacionInicial(configInforme(valores));
+}
+
+export function descargarInformeWord(valores) {
+  descargarInformeWordEvaluacionInicial(configInforme(valores));
 }

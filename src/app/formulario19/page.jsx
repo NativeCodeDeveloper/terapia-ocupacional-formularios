@@ -3,8 +3,8 @@
 import CuestionarioEvaluacionInicial from "@/components/CuestionarioEvaluacionInicial";
 import {
   SECCIONES,
-  sintetizar,
   descargarInformePDF,
+  descargarInformeWord,
 } from "@/lib/informe-ei-persona-mayor";
 
 /* ============================================================
@@ -21,7 +21,7 @@ import {
    salud mental (autoinforme de 15 ítems), área cognitiva
    (sí/no con companion «¿En qué?»), lenguaje, participación
    social, habituación, esparcimiento, volición y plan de
-   intervención por plazo. La síntesis y el informe PDF viven
+   intervención por plazo. La síntesis y los informes PDF y Word viven
    en src/lib/informe-ei-persona-mayor.js.
    ============================================================ */
 
@@ -33,8 +33,8 @@ export default function FormularioEvaluacionInicialPersonaMayor() {
       instrumento="Evaluación inicial de terapia ocupacional"
       intro="Esta ficha se completa en la primera atención junto a la propia persona mayor y/o su cuidador. Responda cada sección según la entrevista, el autoinforme y la observación del terapeuta: registre los datos de identificación e historial médico, marque el nivel de independencia de cada ámbito y describa los síndromes geriátricos, la salud mental, las áreas física y cognitiva, el entorno y el plan de intervención. Los campos marcados con * son obligatorios; los de texto largo pueden quedar vacíos si no aplican."
       secciones={SECCIONES}
-      sintetizar={sintetizar}
       descargarInformePDF={descargarInformePDF}
+      descargarInformeWord={descargarInformeWord}
       confirmacion="Gracias. La evaluación inicial Persona Mayor se registró correctamente."
     />
   );

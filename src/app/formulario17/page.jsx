@@ -3,8 +3,8 @@
 import CuestionarioEvaluacionInicial from "@/components/CuestionarioEvaluacionInicial";
 import {
   SECCIONES,
-  sintetizar,
   descargarInformePDF,
+  descargarInformeWord,
 } from "@/lib/informe-ei-adolescencia";
 
 /* ============================================================
@@ -34,8 +34,8 @@ export default function FormularioEvaluacionInicialAdolescencia() {
         "Esta ficha se completa en la primera atención de terapia ocupacional junto al tutor/a o al propio adolescente. Responda cada sección según lo que refiere la entrevista y lo que observa el terapeuta: datos personales, historial médico, motivo de consulta, antecedentes familiares, independencia funcional, hitos del desarrollo, áreas sensorial, física y cognitiva, lenguaje, conducta, interacción social, emociones, área académica, habituación, esparcimiento, volición y plan de intervención. Los campos con * son obligatorios."
       }
       secciones={SECCIONES}
-      sintetizar={sintetizar}
       descargarInformePDF={descargarInformePDF}
+      descargarInformeWord={descargarInformeWord}
       confirmacion="Gracias. La evaluación inicial Adolescencia se registró correctamente."
     />
   );

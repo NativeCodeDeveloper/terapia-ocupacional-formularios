@@ -1,5 +1,6 @@
 import {
   descargarInformePDFEvaluacionInicial,
+  descargarInformeWordEvaluacionInicial,
   etiquetaOpcion,
   textoValor,
 } from "./informe-evaluacion-inicial.js";
@@ -114,7 +115,7 @@ export const SECCIONES = [
       { id: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { id: "run", etiqueta: "RUN", tipo: "texto" },
       { id: "fechaNacimiento", etiqueta: "Fecha de nacimiento", tipo: "fecha" },
-      { id: "edad", etiqueta: "Edad", tipo: "numero" },
+      { id: "edad", etiqueta: "Edad", tipo: "numero", autoDesde: "fechaNacimiento" },
       { id: "estadoCivil", etiqueta: "Estado civil", tipo: "texto" },
       { id: "direccion", etiqueta: "Dirección", tipo: "texto" },
       { id: "telefono", etiqueta: "Teléfono", tipo: "texto" },
@@ -885,8 +886,9 @@ export function sintetizar(valores = {}) {
    INFORME EN PDF
    ============================================================ */
 
-export function descargarInformePDF(valores) {
-  descargarInformePDFEvaluacionInicial({
+/* Configuración común del informe (PDF y Word). */
+function configInforme(valores) {
+  return {
     nombreArchivo: "Informe-Evaluacion-Inicial-Persona-Mayor",
     instrumento: "Evaluación inicial · Persona mayor",
     titulo: "Informe de evaluación inicial",
@@ -904,5 +906,13 @@ export function descargarInformePDF(valores) {
       "historial médico declarados, el motivo de consulta, la independencia funcional básica e instrumental, los " +
       "síndromes geriátricos, la salud mental, las áreas física y cognitiva, y el entorno y sus adaptaciones. La " +
       "síntesis automatizada resume los hallazgos y el plan de intervención propuesto.",
-  });
+  };
+}
+
+export function descargarInformePDF(valores) {
+  descargarInformePDFEvaluacionInicial(configInforme(valores));
+}
+
+export function descargarInformeWord(valores) {
+  descargarInformeWordEvaluacionInicial(configInforme(valores));
 }

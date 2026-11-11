@@ -1,5 +1,6 @@
 import {
   descargarInformePDFEvaluacionInicial,
+  descargarInformeWordEvaluacionInicial,
   etiquetaOpcion,
 } from "./informe-evaluacion-inicial.js";
 
@@ -88,7 +89,7 @@ export const SECCIONES = [
       { id: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { id: "run", etiqueta: "RUN", tipo: "texto" },
       { id: "fechaNacimiento", etiqueta: "Fecha de nacimiento", tipo: "fecha" },
-      { id: "edad", etiqueta: "Edad", tipo: "numero" },
+      { id: "edad", etiqueta: "Edad", tipo: "numero", autoDesde: "fechaNacimiento" },
       { id: "estadoCivil", etiqueta: "Estado civil", tipo: "texto" },
       { id: "direccion", etiqueta: "Dirección", tipo: "texto" },
       { id: "telefono", etiqueta: "Teléfono", tipo: "texto" },
@@ -681,8 +682,9 @@ export function sintetizar(valores = {}) {
   return bloques;
 }
 
-export function descargarInformePDF(valores) {
-  descargarInformePDFEvaluacionInicial({
+/* Configuración común del informe (PDF y Word). */
+function configInforme(valores) {
+  return {
     nombreArchivo: "Informe-Evaluacion-Inicial-Adulto",
     instrumento: "Evaluación inicial · Adulto",
     titulo: "Informe de evaluación inicial",
@@ -698,5 +700,13 @@ export function descargarInformePDF(valores) {
       "La ficha de evaluación inicial se completa durante la primera atención: los datos se obtienen con la propia persona, " +
       "a partir de sus palabras y de la observación del terapeuta. El informe reúne el registro completo de la entrevista " +
       "y la síntesis automatizada con las banderas clínicas para su revisión antes de firmar e integrar a la ficha clínica.",
-  });
+  };
+}
+
+export function descargarInformePDF(valores) {
+  descargarInformePDFEvaluacionInicial(configInforme(valores));
+}
+
+export function descargarInformeWord(valores) {
+  descargarInformeWordEvaluacionInicial(configInforme(valores));
 }

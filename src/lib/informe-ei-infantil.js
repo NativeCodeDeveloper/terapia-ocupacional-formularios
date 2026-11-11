@@ -1,5 +1,6 @@
 import {
   descargarInformePDFEvaluacionInicial,
+  descargarInformeWordEvaluacionInicial,
   etiquetaOpcion,
   textoValor,
 } from "./informe-evaluacion-inicial.js";
@@ -97,7 +98,7 @@ export const SECCIONES = [
       { id: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { id: "run", etiqueta: "RUN", tipo: "texto" },
       { id: "fechaNacimiento", etiqueta: "Fecha de nacimiento", tipo: "fecha" },
-      { id: "edad", etiqueta: "Edad", tipo: "numero" },
+      { id: "edad", etiqueta: "Edad", tipo: "numero", autoDesde: "fechaNacimiento" },
       { id: "nombreTutor", etiqueta: "Nombre tutor/a", tipo: "texto" },
       { id: "direccion", etiqueta: "Dirección", tipo: "texto" },
       { id: "telefono", etiqueta: "Teléfono", tipo: "texto" },
@@ -685,8 +686,9 @@ export function sintetizar(valores = {}) {
    INFORME EN PDF
    ============================================================ */
 
-export function descargarInformePDF(valores) {
-  descargarInformePDFEvaluacionInicial({
+/* Configuración común del informe (PDF y Word). */
+function configInforme(valores) {
+  return {
     nombreArchivo: "Informe-Evaluacion-Inicial-Infantil",
     instrumento: "Evaluación inicial · Infantil",
     titulo: "Informe de evaluación inicial",
@@ -704,5 +706,13 @@ export function descargarInformePDF(valores) {
       "entrevista y las áreas sensorial, física, cognitiva y socioemocional según la observación del terapeuta. La " +
       "síntesis automatizada resume la independencia funcional, los hitos del desarrollo y el plan de intervención " +
       "propuesto.",
-  });
+  };
+}
+
+export function descargarInformePDF(valores) {
+  descargarInformePDFEvaluacionInicial(configInforme(valores));
+}
+
+export function descargarInformeWord(valores) {
+  descargarInformeWordEvaluacionInicial(configInforme(valores));
 }

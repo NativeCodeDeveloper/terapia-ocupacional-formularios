@@ -3,8 +3,8 @@
 import CuestionarioEvaluacionInicial from "@/components/CuestionarioEvaluacionInicial";
 import {
   SECCIONES,
-  sintetizar,
   descargarInformePDF,
+  descargarInformeWord,
 } from "@/lib/informe-ei-adulto";
 
 /* ============================================================
@@ -36,8 +36,8 @@ export default function FormularioEvaluacionInicialAdulto() {
         "automatizada antes de descargar el informe PDF."
       }
       secciones={SECCIONES}
-      sintetizar={sintetizar}
       descargarInformePDF={descargarInformePDF}
+      descargarInformeWord={descargarInformeWord}
       confirmacion="Gracias. La evaluación inicial Adulto se registró correctamente."
     />
   );

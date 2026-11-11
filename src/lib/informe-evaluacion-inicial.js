@@ -32,8 +32,31 @@ export function textoValor(valor) {
   return texto || "—";
 }
 
+/* Edad en años cumplidos a partir de una fecha ISO (aaaa-mm-dd).
+   Devuelve null si la fecha es inválida o futura. */
+export function calcularEdad(fecha) {
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+  const nacimiento = new Date(`${fecha}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+  if (nacimiento > hoy) return null;
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad -= 1;
+  return edad;
+}
+
 function fechaCorta() {
   return new Date().toLocaleDateString("es", { dateStyle: "long" });
+}
+
+/* Fecha ISO en formato largo en español (4 de mayo de 2020). */
+export function fechaLarga(fecha) {
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return "";
+  const fechaParseada = new Date(`${fecha}T00:00:00`);
+  return Number.isNaN(fechaParseada.getTime())
+    ? ""
+    : fechaParseada.toLocaleDateString("es", { dateStyle: "long" });
 }
 
 /* ============================================================
@@ -321,4 +344,156 @@ export function descargarInformePDFEvaluacionInicial(config) {
   }
 
   doc.save(`${nombreArchivo}.pdf`);
+}
+
+/* ============================================================
+   INFORME EN WORD
+   Mismo contenido que el PDF (identificación, síntesis
+   automatizada y registro completo) en HTML para Word.
+   ============================================================ */
+
+function escaparHTML(texto) {
+  return texto
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+const rgbCSS = (color) => `rgb(${color[0]},${color[1]},${color[2]})`;
+
+function bloquesWordHTML(bloques, oscuro) {
+  return bloques
+    .map((bloque) => {
+      if (bloque.tipo === "bandera") {
+        const tinte = TINTES_BANDERA[bloque.nivel] ?? TINTES_BANDERA.info;
+        return `<p style="border-left:6px solid ${rgbCSS(tinte.franja)};background:${rgbCSS(tinte.fondo)};padding:8px 12px;margin:8px 0;"><b>${escaparHTML(tinte.etiqueta)}.</b> ${escaparHTML(bloque.texto)}</p>`;
+      }
+      if (bloque.tipo === "tabla") {
+        return `<p style="margin:10px 0 2px;"><b>${escaparHTML(bloque.titulo ?? "")}</b></p>
+<table cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:10pt;table-layout:fixed;">
+  <tr>${bloque.columnas
+    .map(
+      (c) =>
+        `<th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">${escaparHTML(c.titulo)}</th>`
+    )
+    .join("")}</tr>
+  ${bloque.filas
+    .map(
+      (fila) =>
+        `<tr>${fila
+          .map((celda) => `<td style="border:1px solid #999;">${escaparHTML(textoValor(celda))}</td>`)
+          .join("")}</tr>`
+    )
+    .join("\n")}
+</table>`;
+      }
+      if (bloque.tipo === "lista") {
+        return `<p style="margin:10px 0 2px;"><b>${escaparHTML(bloque.titulo)}</b></p>
+<ul style="margin:0 0 8px 18px;padding:0;">${bloque.items.map((item) => `<li>${escaparHTML(item)}</li>`).join("")}</ul>`;
+      }
+      const titulo = bloque.titulo ? `<b>${escaparHTML(bloque.titulo)}.</b> ` : "";
+      return `<p style="margin:8px 0;">${titulo}${escaparHTML(bloque.texto)}</p>`;
+    })
+    .join("\n");
+}
+
+function seccionWordHTML(seccion, valores, oscuro) {
+  const escalas = seccion.campos.filter((c) => c.tipo === "escala");
+  const otros = seccion.campos.filter((c) => c.tipo !== "escala");
+
+  const escalasHTML = escalas.length
+    ? `<table cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:10pt;table-layout:fixed;">
+  <colgroup><col style="width:30%" /><col style="width:24%" /><col style="width:46%" /></colgroup>
+  <tr>
+    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">ÁMBITO</th>
+    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">NIVEL</th>
+    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">OBSERVACIÓN</th>
+  </tr>
+  ${escalas
+    .map((campo) => {
+      const nivel = etiquetaOpcion(campo, valores[campo.id]) || "—";
+      const obs = textoValor(valores[`${campo.id}Obs`]);
+      return `<tr><td style="border:1px solid #999;">${escaparHTML(campo.etiqueta)}</td><td style="border:1px solid #999;">${escaparHTML(nivel)}</td><td style="border:1px solid #999;">${escaparHTML(obs)}</td></tr>`;
+    })
+    .join("\n")}
+</table>`
+    : "";
+
+  const otrosHTML = otros
+    .map((campo) => {
+      const valor =
+        campo.tipo === "radio" || campo.tipo === "siNo"
+          ? etiquetaOpcion(campo, valores[campo.id]) || "—"
+          : textoValor(valores[campo.id]);
+      return `<p style="margin:6px 0;"><b style="font-size:8.5pt;color:#666;text-transform:uppercase;">${escaparHTML(campo.etiqueta)}</b><br/>${escaparHTML(valor).replaceAll("\n", "<br/>")}</p>`;
+    })
+    .join("\n");
+
+  return `<h2 style="font-size:12pt;color:${rgbCSS(oscuro)};border-bottom:2px solid ${rgbCSS(oscuro)};margin:16px 0 6px;">${escaparHTML(seccion.titulo)}</h2>
+${escalasHTML}
+${otrosHTML}`;
+}
+
+export function construirInformeWordHTML(config) {
+  const {
+    instrumento,
+    titulo,
+    subtitulo = "",
+    autor = "",
+    notaPie = "",
+    color = [99, 102, 241],
+    colorOscuro,
+    secciones = [],
+    valores = {},
+    sintesis = [],
+    introduccion = "",
+  } = config;
+  const oscuro = colorOscuro ?? color;
+
+  const idCampos = secciones.find((s) => s.identificacion)?.campos ?? [];
+  const identificacionHTML = idCampos
+    .map((campo) => `<p style="margin:2px 0;"><b>${escaparHTML(campo.etiqueta)}:</b> ${escaparHTML(textoValor(valores[campo.id]))}</p>`)
+    .join("\n");
+  const fechaHTML = `<p style="margin:2px 0;"><b>FECHA DE APLICACIÓN:</b> ${escaparHTML(fechaCorta())}</p>`;
+
+  const sintesisHTML = sintesis.length
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Síntesis automatizada de la evaluación</h2>
+${bloquesWordHTML(sintesis, oscuro)}`
+    : "";
+
+  const registroHTML = secciones
+    .map((seccion) => seccionWordHTML(seccion, valores, oscuro))
+    .join("\n");
+
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8" /><title>${escaparHTML(titulo)}</title></head>
+<body style="font-family: Arial, sans-serif; font-size:11pt; color:#111;">
+  <p style="text-align:center;margin:0;"><b>${escaparHTML(instrumento.toUpperCase())}</b></p>
+  <h1 style="text-align:center;font-size:16pt;margin:4px 0 2px;">${escaparHTML(titulo)}</h1>
+  ${subtitulo ? `<p style="text-align:center;margin:0;">${escaparHTML(subtitulo)}</p>` : ""}
+  ${autor ? `<p style="text-align:center;margin:0 0 12px;font-size:8.5pt;color:#666;">${escaparHTML(autor)}</p>` : ""}
+  ${introduccion ? `<p style="margin:12px 0;">${escaparHTML(introduccion)}</p>` : ""}
+  ${identificacionHTML}
+  ${fechaHTML}
+  ${sintesisHTML}
+  <h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Registro completo de la evaluación</h2>
+  ${registroHTML}
+  ${notaPie ? `<p style="margin:18px 0 0;font-size:9pt;color:#666;">${escaparHTML(notaPie)}</p>` : ""}
+  <p style="margin:30px 0 0;text-align:center;">____________________________<br/>Firma Profesional</p>
+</body>
+</html>`;
+}
+
+export function descargarInformeWordEvaluacionInicial(config) {
+  const html = construirInformeWordHTML(config);
+  const blob = new Blob(["\ufeff", html], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `${config.nombreArchivo}.doc`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
+  URL.revokeObjectURL(url);
 }
