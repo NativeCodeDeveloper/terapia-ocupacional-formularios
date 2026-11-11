@@ -121,6 +121,38 @@ const FORMULARIOS = [
     informes: "PDF",
     preguntas: 80,
   },
+  {
+    href: "/formulario16",
+    instrumento: "EVALUACIÓN INICIAL · INFANTIL",
+    titulo: "Niño · entrevista inicial",
+    descripcion: "Ficha de primera atención de terapia ocupacional que completa el tutor o cuidador junto al terapeuta.",
+    informes: "PDF",
+    preguntas: 104,
+  },
+  {
+    href: "/formulario17",
+    instrumento: "EVALUACIÓN INICIAL · ADOLESCENCIA",
+    titulo: "Adolescente · entrevista inicial",
+    descripcion: "Ficha de primera atención con el tutor o el propio adolescente, con área académica e independencia funcional.",
+    informes: "PDF",
+    preguntas: 103,
+  },
+  {
+    href: "/formulario18",
+    instrumento: "EVALUACIÓN INICIAL · ADULTO",
+    titulo: "Adulto · entrevista inicial",
+    descripcion: "Ficha de primera atención con independencia funcional básica e instrumental, área física y salud mental.",
+    informes: "PDF",
+    preguntas: 125,
+  },
+  {
+    href: "/formulario19",
+    instrumento: "EVALUACIÓN INICIAL · PERSONA MAYOR",
+    titulo: "Persona mayor · entrevista inicial",
+    descripcion: "Ficha de primera atención con síndromes geriátricos, entorno y adaptaciones, área física y salud mental.",
+    informes: "PDF",
+    preguntas: 136,
+  },
 ];
 
 const VENTAJAS = [
@@ -190,7 +222,7 @@ export default function Home() {
               Comenzar ahora
             </a>
             <p className="text-[13px] text-neutral-500">
-              15 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2 / Adolescentes y Adultos)
+              19 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2) y fichas de Evaluación Inicial
             </p>
           </div>
         </section>
@@ -199,7 +231,7 @@ export default function Home() {
         <section id="formularios" aria-labelledby="titulo-formularios" className="scroll-mt-24 py-12 sm:py-16">
           <div className="mb-8">
             <h2 id="titulo-formularios" className="text-2xl font-bold tracking-tight">
-              SPM-2 · Formularios disponibles
+              Formularios disponibles
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
               Selecciona el formulario que necesitas completar. Al terminar podrás revisar un
@@ -267,7 +299,7 @@ export default function Home() {
       <footer className="border-t border-neutral-200/80 py-8">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-neutral-400 lg:px-0">
           <p>© 2026 Teraocupame.cl — Instrumentos de evaluación en salud mental</p>
-          <p>SPM-2 © Western Psychological Services · Uso profesional</p>
+          <p>SPM-2 © Western Psychological Services · Fichas de Evaluación Inicial TeraOcupame · Uso profesional</p>
         </div>
       </footer>
     </div>

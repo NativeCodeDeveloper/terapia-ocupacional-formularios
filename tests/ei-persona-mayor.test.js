@@ -1,0 +1,454 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  SECCIONES,
+  sintetizar,
+  INDICADORES_RIESGO_SALUD_MENTAL,
+  contarNivelesIndependencia,
+  ambitosConApoyo,
+  contarIndicadoresRiesgoSaludMental,
+  etiquetasIndicadoresRiesgoSaludMental,
+  contarSindromesGeriatricos,
+} from "../src/lib/informe-ei-persona-mayor.js";
+
+/* ============================================================
+   EVALUACIÓN INICIAL · PERSONA MAYOR (PESTAÑA PERSONA MAYOR)
+   Ficha de entrevista de 18 secciones y 136 campos. Las 22
+   escalas (11 ámbitos básicos + descanso y sueño + 10
+   instrumentales) generan su observación `${id}Obs` fuera del
+   esquema y cada sí/no del área cognitiva lleva el companion
+   `${id}EnQue`. Secciones propias de esta ficha: Síndromes
+   geriátricos (8 campos) y Entorno y adaptaciones (3). Salud
+   mental: 15 sí/no, con 13 indicadores de riesgo definidos
+   (alucinaciones e ideación suicida llevan bandera propia).
+   La síntesis automatizada no usa puntajes: construye
+   párrafos, tablas, listas y banderas a partir del registro.
+   ============================================================ */
+
+const TODOS_LOS_CAMPOS = SECCIONES.flatMap((s) => s.campos);
+const CAMPOS_ESCALA = TODOS_LOS_CAMPOS.filter((c) => c.tipo === "escala");
+const CAMPOS_BASICA = SECCIONES.find((s) => s.id === "independencia-basica").campos.filter(
+  (c) => c.tipo === "escala"
+);
+const CAMPOS_INSTRUMENTAL = SECCIONES.find((s) => s.id === "independencia-instrumental").campos.filter(
+  (c) => c.tipo === "escala"
+);
+const CAMPOS_INDEPENDENCIA = CAMPOS_ESCALA.filter((c) => c.id !== "descansoSueno");
+const CAMPOS_SALUD_MENTAL = SECCIONES.find((s) => s.id === "salud-mental").campos.filter(
+  (c) => c.tipo === "siNo"
+);
+const CAMPOS_COGNITIVOS = SECCIONES.find((s) => s.id === "area-cognitiva").campos.filter(
+  (c) => c.tipo === "siNo"
+);
+
+const todosLosNiveles = (valor, { conDescanso = false } = {}) => {
+  const valores = Object.fromEntries(CAMPOS_INDEPENDENCIA.map((c) => [c.id, valor]));
+  if (conDescanso) valores.descansoSueno = valor;
+  return valores;
+};
+
+test("la primera sección es la de identificación y es la única", () => {
+  const conIdentificacion = SECCIONES.filter((s) => s.identificacion);
+  assert.equal(conIdentificacion.length, 1);
+  assert.equal(SECCIONES[0].id, "datos-personales");
+  assert.equal(SECCIONES[0].titulo, "Datos personales");
+  assert.deepEqual(
+    SECCIONES[0].campos.map((c) => [c.id, c.tipo]),
+    [
+      ["nombre", "texto"],
+      ["run", "texto"],
+      ["fechaNacimiento", "fecha"],
+      ["edad", "numero"],
+      ["estadoCivil", "texto"],
+      ["direccion", "texto"],
+      ["telefono", "texto"],
+      ["ocupacion", "texto"],
+    ]
+  );
+});
+
+test("los ids de secciones y de campos son únicos", () => {
+  const idsSecciones = SECCIONES.map((s) => s.id);
+  assert.equal(new Set(idsSecciones).size, idsSecciones.length);
+  const idsCampos = TODOS_LOS_CAMPOS.map((c) => c.id);
+  assert.equal(new Set(idsCampos).size, idsCampos.length);
+});
+
+test("el esquema cubre las 18 secciones del impreso en su orden", () => {
+  assert.equal(SECCIONES.length, 18);
+  assert.deepEqual(
+    SECCIONES.map((s) => s.id),
+    [
+      "datos-personales",
+      "historial-medico",
+      "motivo-consulta",
+      "antecedentes-familiares",
+      "independencia-basica",
+      "independencia-instrumental",
+      "area-fisica",
+      "sindromes-geriatricos",
+      "otras-consideraciones",
+      "salud-mental",
+      "area-cognitiva",
+      "lenguaje",
+      "participacion-social",
+      "entorno-adaptaciones",
+      "habitucion",
+      "esparcimiento",
+      "volicion",
+      "plan-intervencion",
+    ]
+  );
+});
+
+test("Síndromes geriátricos tiene los 8 campos con su pregunta literal", () => {
+  const seccion = SECCIONES.find((s) => s.id === "sindromes-geriatricos");
+  assert.equal(seccion.campos.length, 8);
+  for (const campo of seccion.campos) {
+    assert.equal(campo.tipo, "textoLargo", campo.id);
+    assert.ok(campo.hint, `${campo.id} debe llevar la pregunta del impreso como hint`);
+  }
+  assert.deepEqual(seccion.campos.map((c) => c.id), [
+    "movilidadCaidas",
+    "incontinencia",
+    "deterioroCognitivo",
+    "depresion",
+    "polifarmacia",
+    "fragilidad",
+    "sensorial",
+    "socioeconomico",
+  ]);
+  assert.equal(seccion.campos[0].hint, "¿Ha sufrido alguna caída en los últimos 12 meses?");
+  assert.equal(seccion.campos[7].hint, "¿Considera que sus ingresos cubren sus necesidades básicas?");
+});
+
+test("Entorno y adaptaciones tiene los 3 campos propios de Persona Mayor", () => {
+  const seccion = SECCIONES.find((s) => s.id === "entorno-adaptaciones");
+  assert.equal(seccion.campos.length, 3);
+  assert.deepEqual(seccion.campos.map((c) => [c.id, c.etiqueta]), [
+    ["barrerasEntorno", "Barreras en el entorno"],
+    ["adaptacionesDisponibles", "Adaptaciones disponibles"],
+    ["adaptacionRequerida", "Adaptación requerida"],
+  ]);
+});
+
+test("Salud mental tiene exactamente 15 sí/no y 13 indicadores de riesgo", () => {
+  assert.equal(CAMPOS_SALUD_MENTAL.length, 15);
+  assert.equal(SECCIONES.find((s) => s.id === "salud-mental").campos.length, 15);
+  // La pregunta repetida del impreso aparece una sola vez.
+  assert.equal(
+    CAMPOS_SALUD_MENTAL.filter((c) => c.id === "maravillosoVivo").length,
+    1
+  );
+  assert.equal(Object.keys(INDICADORES_RIESGO_SALUD_MENTAL).length, 13);
+  // Alucinaciones e ideación suicida van con bandera propia, fuera del conteo.
+  assert.equal("alucinaciones" in INDICADORES_RIESGO_SALUD_MENTAL, false);
+  assert.equal("ideacionSuicida" in INDICADORES_RIESGO_SALUD_MENTAL, false);
+});
+
+test("básica 12 escalas e instrumental 10, con Obs fuera del esquema", () => {
+  assert.equal(CAMPOS_BASICA.length, 12);
+  assert.equal(CAMPOS_INSTRUMENTAL.length, 10);
+  assert.equal(CAMPOS_INDEPENDENCIA.length, 21);
+  for (const campo of CAMPOS_ESCALA) {
+    assert.equal(campo.opciones.length, 4, campo.id);
+    assert.equal(
+      TODOS_LOS_CAMPOS.some((c) => c.id === `${campo.id}Obs`),
+      false,
+      `${campo.id}Obs no debe declararse en el esquema`
+    );
+  }
+  assert.deepEqual(
+    CAMPOS_ESCALA.find((c) => c.id === "descansoSueno").opciones.map((o) => o.valor),
+    ["normal", "conFarmacos", "insomnioConciliacion", "insomnioMantencion"]
+  );
+  // El impreso usa «Asistencia» solo en Alimentación (básica) y
+  // Cuidado de otros (instrumental); el resto usa «Supervisión».
+  const conAsistencia = CAMPOS_ESCALA.filter((c) =>
+    c.opciones.some((o) => o.valor === "asistencia")
+  ).map((c) => c.id);
+  assert.deepEqual(conAsistencia.sort(), ["alimentacion", "cuidadoDeOtros"]);
+  const conSupervision = CAMPOS_ESCALA.filter((c) =>
+    c.opciones.some((o) => o.valor === "supervision")
+  ).map((c) => c.id);
+  // 21 ámbitos de independencia - 2 con «Asistencia» (el descanso
+  // y sueño no es escala de independencia).
+  assert.equal(conSupervision.length, 19);
+});
+
+test("cada función cognitiva tiene su companion ¿en qué?", () => {
+  assert.equal(CAMPOS_COGNITIVOS.length, 6);
+  const seccion = SECCIONES.find((s) => s.id === "area-cognitiva");
+  assert.equal(seccion.campos.length, 13); // Generalidades + 6 funciones + 6 companions
+  for (const campo of CAMPOS_COGNITIVOS) {
+    const companion = seccion.campos.find((c) => c.id === `${campo.id}EnQue`);
+    assert.ok(companion, `falta ${campo.id}EnQue`);
+    assert.equal(companion.tipo, "textoLargo");
+    assert.equal(companion.etiqueta, "¿En qué?");
+  }
+});
+
+test("sintetizar con valores vacíos no lanza y no genera bandera crítico", () => {
+  const bloques = sintetizar({});
+  assert.ok(bloques.length > 0);
+  assert.equal(bloques.some((b) => b.tipo === "bandera" && b.nivel === "critico"), false);
+  assert.equal(
+    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Motivo de consulta").texto,
+    "No se registra motivo de consulta en la entrevista."
+  );
+  assert.equal(
+    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto,
+    "Plan pendiente de definición por el terapeuta tratante."
+  );
+  // Sin escalas respondidas no hay distribución de niveles.
+  assert.equal(
+    bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"),
+    false
+  );
+});
+
+test("la síntesis arma las tablas del impreso: básica 12, instrumental 10, síndromes 8", () => {
+  const bloques = sintetizar({});
+  const basica = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Independencia funcional básica");
+  const instrumental = bloques.find(
+    (b) => b.tipo === "tabla" && b.titulo === "Independencia funcional instrumental"
+  );
+  const sindromes = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Síndromes geriátricos");
+  assert.equal(basica.filas.length, 12);
+  assert.equal(instrumental.filas.length, 10);
+  assert.equal(sindromes.filas.length, 8);
+  assert.deepEqual(
+    basica.filas.map((fila) => fila[0]),
+    CAMPOS_BASICA.map((c) => c.etiqueta)
+  );
+});
+
+test("ideacionSuicida «si» → bandera crítico con protocolo de crisis", () => {
+  const bloques = sintetizar({ ideacionSuicida: "si" });
+  const critico = bloques.find((b) => b.tipo === "bandera" && b.nivel === "critico");
+  assert.ok(critico, "debe existir la bandera crítica");
+  assert.equal(
+    critico.texto,
+    "Se registra ideación/comunicación/acto suicida: activar protocolo de crisis y derivación inmediata."
+  );
+});
+
+test("alucinaciones «si» → bandera alerta propia", () => {
+  const bloques = sintetizar({ alucinaciones: "si" });
+  const alerta = bloques.find(
+    (b) => b.tipo === "bandera" && b.nivel === "alerta" && b.texto.includes("alucinaciones")
+  );
+  assert.ok(alerta, "debe existir la bandera de alucinaciones");
+  // Las alucinaciones no cuentan como indicador de riesgo general.
+  assert.equal(contarIndicadoresRiesgoSaludMental({ alucinaciones: "si" }), 0);
+});
+
+test("todas las respuestas de riesgo → alerta con 13 indicadores", () => {
+  const valores = Object.fromEntries(
+    Object.entries(INDICADORES_RIESGO_SALUD_MENTAL).map(([id, riesgo]) => [id, riesgo])
+  );
+  const bloques = sintetizar(valores);
+  const alerta = bloques.find(
+    (b) => b.tipo === "bandera" && b.texto.includes("indicadores de riesgo de salud mental")
+  );
+  assert.ok(alerta, "debe existir la bandera de salud mental");
+  assert.equal(alerta.nivel, "alerta");
+  assert.match(alerta.texto, /13 indicadores de riesgo de salud mental/);
+  assert.equal(contarIndicadoresRiesgoSaludMental(valores), 13);
+});
+
+test("respuestas sanas de salud mental → bandera ok sin indicadores", () => {
+  const valores = Object.fromEntries(
+    Object.entries(INDICADORES_RIESGO_SALUD_MENTAL).map(([id, riesgo]) => [
+      id,
+      riesgo === "si" ? "no" : "si",
+    ])
+  );
+  const bloques = sintetizar(valores);
+  const ok = bloques.find((b) => b.tipo === "bandera" && b.texto.includes("indicadores de riesgo"));
+  assert.equal(ok.nivel, "ok");
+  assert.equal(contarIndicadoresRiesgoSaludMental(valores), 0);
+});
+
+test("3 o más síndromes geriátricos con texto → alerta; sin ninguno → ok", () => {
+  const bloques = sintetizar({
+    movilidadCaidas: "Dos caídas en el último año.",
+    incontinencia: "Escapes ocasionales al toser.",
+    polifarmacia: "Siete fármacos diarios.",
+  });
+  const alerta = bloques.find(
+    (b) => b.tipo === "bandera" && b.texto.includes("síndromes geriátricos")
+  );
+  assert.equal(alerta.nivel, "alerta");
+  assert.match(alerta.texto, /3 síndromes geriátricos/);
+  assert.ok(alerta.texto.includes("Movilidad y caídas"));
+  assert.ok(alerta.texto.includes("Polifarmacia"));
+
+  const vacios = sintetizar({});
+  const ok = vacios.find((b) => b.tipo === "bandera" && b.texto.includes("síndromes geriátricos"));
+  assert.equal(ok.nivel, "ok");
+  assert.equal(contarSindromesGeriatricos({}), 0);
+  assert.equal(contarSindromesGeriatricos({ movilidadCaidas: "Una caída." }), 1);
+});
+
+test("dos o más Sí en otras consideraciones → alerta; una → info", () => {
+  const dos = sintetizar({ mareos: "si", temblor: "si", vision: "mala" });
+  const alerta = dos.find(
+    (b) => b.tipo === "bandera" && b.texto.includes("otras consideraciones")
+  );
+  assert.equal(alerta.nivel, "alerta");
+  assert.match(alerta.texto, /2 hallazgos positivos/);
+  assert.ok(alerta.texto.includes("Mareos"));
+  assert.ok(alerta.texto.includes("Temblor"));
+
+  const una = sintetizar({ dolorCadera: "si" });
+  const info = una.find((b) => b.tipo === "bandera" && b.texto.includes("otras consideraciones"));
+  assert.equal(info.nivel, "info");
+});
+
+test("todo bien: escalas independientes, descanso normal, cognitiva sana → banderas ok", () => {
+  const valores = {
+    ...todosLosNiveles("independiente", { conDescanso: true }),
+    descansoSueno: "normal",
+    ...Object.fromEntries(CAMPOS_COGNITIVOS.map((c) => [c.id, "si"])),
+  };
+  const bloques = sintetizar(valores);
+  assert.equal(bloques.some((b) => b.tipo === "bandera" && b.nivel === "critico"), false);
+  assert.equal(bloques.some((b) => b.tipo === "bandera" && b.nivel === "alerta"), false);
+
+  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
+  assert.deepEqual(distribucion.items, ["Independiente: 21"]);
+
+  const okIndependencia = bloques.find((b) => b.tipo === "bandera" && b.texto.includes("Independencia funcional conservada"));
+  assert.equal(okIndependencia.nivel, "ok");
+  const okDescanso = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("Descanso y sueño"));
+  assert.equal(okDescanso.nivel, "ok");
+  const okSindromes = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("síndromes geriátricos"));
+  assert.equal(okSindromes.nivel, "ok");
+  const okSaludMental = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("indicadores de riesgo"));
+  assert.equal(okSaludMental.nivel, "ok");
+  const okCognitiva = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("funciones cognitivas"));
+  assert.equal(okCognitiva.nivel, "ok");
+});
+
+test("un ámbito con supervisión → alerta Requiere apoyo en el impreso", () => {
+  const valores = todosLosNiveles("independiente");
+  valores.marcha = "supervision";
+  const bloques = sintetizar(valores);
+  const alerta = bloques.find(
+    (b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en:")
+  );
+  assert.equal(alerta.texto, "Requiere apoyo en: Marcha con o sin silla de ruedas.");
+  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
+  assert.deepEqual(distribucion.items, ["Independiente: 20", "Supervisión: 1"]);
+});
+
+test("descanso y sueño distinto de normal → bandera alerta que menciona el nivel", () => {
+  const bloques = sintetizar({ ...todosLosNiveles("independiente"), descansoSueno: "insomnioMantencion" });
+  const alerta = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("Insomnio de mantención"));
+  assert.equal(alerta.nivel, "alerta");
+  assert.ok(alerta.texto.includes("descanso y sueño"));
+});
+
+test("el motivo de consulta arma el párrafo con origen, refiere y observación", () => {
+  const bloques = sintetizar({
+    origen: "derivacion",
+    refiereQue: "Se cansa al caminar media cuadra.",
+    seObserva: "Marcha lentificada con apoyo en muebles.",
+    condicionesGenerales: "buenas",
+    animo: "eutimico",
+    orientacion: "orientadoTemporoespacial",
+  });
+  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Motivo de consulta").texto;
+  assert.ok(texto.includes("Origen de la consulta: Derivación."));
+  assert.ok(texto.includes("Refiere que: Se cansa al caminar media cuadra."));
+  assert.ok(texto.includes("Se observa: Marcha lentificada con apoyo en muebles."));
+  assert.ok(
+    texto.includes(
+      "En la observación se registran Buenas condiciones generales, ánimo eutímico y orientación orientado temporoespacial."
+    )
+  );
+});
+
+test("el párrafo de entorno y adaptaciones recoge los tres campos", () => {
+  const bloques = sintetizar({
+    barrerasEntorno: "Escalera sin baranda en el acceso.",
+    adaptacionesDisponibles: "Barra de apoyo en la ducha.",
+    adaptacionRequerida: "Rampa de acceso.",
+  });
+  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Entorno y adaptaciones").texto;
+  assert.ok(texto.includes("Barreras en el entorno: Escalera sin baranda en el acceso."));
+  assert.ok(texto.includes("Adaptaciones disponibles: Barra de apoyo en la ducha."));
+  assert.ok(texto.includes("Adaptación requerida: Rampa de acceso."));
+  // Sin entorno registrado el párrafo no aparece.
+  assert.equal(
+    sintetizar({}).some((b) => b.titulo === "Entorno y adaptaciones"),
+    false
+  );
+});
+
+test("el plan de intervención recoge la problemática y los objetivos por plazo", () => {
+  const bloques = sintetizar({
+    problemaOcupacional: "Caídas recurrentes y pérdida de roles del hogar.",
+    cortoObjetivo: "Recuperar la marcha segura en el hogar.",
+    cortoEspecificos: "Caminar 50 metros con bastón sin apoyo externo.",
+    largoEspecificos: "Retomar las compras semanales de forma autónoma.",
+  });
+  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto;
+  assert.ok(texto.includes("Problemática ocupacional: Caídas recurrentes y pérdida de roles del hogar."));
+  assert.ok(texto.includes("Corto plazo: objetivo general: Recuperar la marcha segura en el hogar."));
+  assert.ok(texto.includes("objetivos específicos: Retomar las compras semanales de forma autónoma."));
+  assert.ok(!texto.includes("Mediano plazo"));
+});
+
+test("contarNivelesIndependencia y ambitosConApoyo sobre un caso mixto", () => {
+  const valores = todosLosNiveles("independiente");
+  valores.alimentacion = "asistencia";
+  valores.vestuario = "ayudaModerada";
+  valores.compras = "dependiente";
+  assert.deepEqual(contarNivelesIndependencia(valores), {
+    independiente: 18,
+    supervision: 0,
+    asistencia: 1,
+    ayudaModerada: 1,
+    dependiente: 1,
+  });
+  assert.deepEqual(ambitosConApoyo(valores), ["Alimentación", "Vestuario", "Compras"]);
+
+  const bloques = sintetizar(valores);
+  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en:"));
+  assert.equal(alerta.texto, "Requiere apoyo en: Alimentación, Vestuario, Compras.");
+  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
+  assert.deepEqual(distribucion.items, [
+    "Independiente: 18",
+    "Asistencia: 1",
+    "Ayuda moderada: 1",
+    "Dependiente: 1",
+  ]);
+});
+
+test("contarNivelesIndependencia ignora niveles vacíos o desconocidos", () => {
+  assert.deepEqual(contarNivelesIndependencia({}), {
+    independiente: 0,
+    supervision: 0,
+    asistencia: 0,
+    ayudaModerada: 0,
+    dependiente: 0,
+  });
+  assert.deepEqual(contarNivelesIndependencia({ alimentacion: "independiente", compras: "noExiste" }), {
+    independiente: 1,
+    supervision: 0,
+    asistencia: 0,
+    ayudaModerada: 0,
+    dependiente: 0,
+  });
+});
+
+test("etiquetasIndicadoresRiesgoSaludMental devuelve las etiquetas del impreso", () => {
+  const etiquetas = etiquetasIndicadoresRiesgoSaludMental({
+    buenAnimo: "no",
+    sinEsperanzas: "si",
+    alucinaciones: "si",
+  });
+  assert.deepEqual(etiquetas, ["¿Tiene buen ánimo?", "¿Se ha sentido sin esperanzas?"]);
+});

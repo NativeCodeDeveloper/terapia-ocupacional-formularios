@@ -13,7 +13,8 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Teraocupame.cl · Instrumentos de evaluación",
-  description: "Formularios del Perfil Sensorial 2 (SPM-2) con descarga en PDF y Word",
+  description:
+    "Formularios del SPM-2 y Perfil Sensorial 2 con fichas de Evaluación Inicial y descarga del informe en PDF",
 };
 
 export default function RootLayout({ children }) {
