@@ -238,7 +238,7 @@ test("la tabla de independencia lista las 11 escalas con su nivel o raya", () =>
   assert.deepEqual(tabla.filas[1], ["Aseo personal", "—"]);
 });
 
-test("todas las escalas en «Dependiente» generan alerta y distribución de 10", () => {
+test("todas las escalas en «Dependiente» generan alerta por conteo", () => {
   const valores = {};
   for (const campo of escalasDe("independencia-funcional")) {
     if (campo.id !== "descansoSueno") valores[campo.id] = "dependiente";
@@ -252,12 +252,8 @@ test("todas las escalas en «Dependiente» generan alerta y distribución de 10"
   const bloques = sintetizar(valores);
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
   assert.ok(alerta, "falta la bandera de alerta");
-  assert.match(alerta.texto, /^Requiere apoyo en: /);
-  for (const etiqueta of ["Comer", "Uso del baño", "Manejo de vejiga/intestinos", "Memoria"]) {
-    assert.ok(alerta.texto.includes(etiqueta), `falta ${etiqueta} en la alerta`);
-  }
-  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(lista.items, ["Dependiente: 10"]);
+  assert.equal(alerta.texto, "Requiere apoyo en 10 de los 10 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("todo independiente y descanso normal no genera alertas", () => {
@@ -273,8 +269,7 @@ test("todo independiente y descanso normal no genera alertas", () => {
   });
   const bloques = sintetizar(valores);
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(lista.items, ["Independiente: 10"]);
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("descanso y sueño distinto de normal genera alerta mencionando el nivel", () => {
@@ -317,15 +312,11 @@ test("la tabla de hitos registra las 6 edades y el retraso psicomotor marca la b
   assert.equal(sinRetraso.filter((b) => b.tipo === "bandera").length, 0);
 });
 
-test("las 6 funciones cognitivas en «No» generan alerta con las 6", () => {
+test("las 6 funciones cognitivas en «No» quedan en la lista, sin alerta", () => {
   const valores = {};
   for (const f of FUNCIONES_COGNITIVAS) valores[f.id] = "no";
   const bloques = sintetizar(valores);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
-  assert.match(alerta.texto, /^Dificultades referidas en: /);
-  for (const f of FUNCIONES_COGNITIVAS) {
-    assert.ok(alerta.texto.includes(f.etiqueta), `falta ${f.etiqueta} en la alerta`);
-  }
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
   assert.equal(lista.items.length, 6);
   assert.ok(lista.items.every((item) => item.endsWith(": No")));

@@ -131,16 +131,12 @@ test("sintetizar con valores vacíos no lanza y no genera bandera crítico", () 
   assert.ok(plan.filas.every((fila) => fila[1] === "—"));
 });
 
-test("todas las escalas dependiente → alerta y distribución de 11 dependientes", () => {
+test("todas las escalas dependiente → alerta por conteo, sin distribución", () => {
   const valores = todosLosNiveles("dependiente");
   const bloques = sintetizar(valores);
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, ["Dependiente: 11"]);
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
-  assert.ok(alerta.texto.startsWith("Requiere apoyo en:"));
-  for (const campo of CAMPOS_INDEPENDENCIA) {
-    assert.ok(alerta.texto.includes(campo.etiqueta), `${campo.etiqueta} debe aparecer en la alerta`);
-  }
+  assert.equal(alerta.texto, "Requiere apoyo en 11 de los 11 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
   // El descanso y sueño se modela aparte: sin responder no genera bandera propia.
   assert.equal(contarNivelesIndependencia(valores).dependiente, 11);
 });
@@ -152,8 +148,7 @@ test("todo independiente y descanso normal no genera banderas", () => {
   };
   const bloques = sintetizar(valores);
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, ["Independiente: 11"]);
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("descanso y sueño distinto de normal → bandera alerta que menciona el nivel", () => {
@@ -176,17 +171,12 @@ test("retrasoPsicomotor «si» → alerta; «no» → fila en la tabla de hitos,
   assert.equal(filaRetraso[1], "No");
 });
 
-test("las 6 funciones cognitivas en «No» → alerta con las 6 y detalle ¿en qué?", () => {
+test("las 6 funciones cognitivas en «No» quedan en la lista, sin alerta", () => {
   const valores = Object.fromEntries(
     FUNCIONES_COGNITIVAS.map((c) => [c.id, "no"]).concat([["atencionSelectivaEnQue", "en la tarea de poner la mesa"]])
   );
   const bloques = sintetizar(valores);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Dificultades referidas en:"));
-  assert.ok(alerta);
-  assert.equal(alerta.nivel, "alerta");
-  for (const campo of FUNCIONES_COGNITIVAS) {
-    assert.ok(alerta.texto.includes(campo.etiqueta), `${campo.etiqueta} debe aparecer en la alerta`);
-  }
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
   assert.equal(lista.items.length, 6);
   assert.ok(lista.items.some((item) => item === "Atención selectiva: No — en la tarea de poner la mesa"));
@@ -256,14 +246,8 @@ test("contarNivelesIndependencia y ambitosConApoyo sobre un caso mixto", () => {
 
   const bloques = sintetizar(valores);
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
-  assert.equal(alerta.texto, "Requiere apoyo en: Bañarse, Vestirse, Gatear.");
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, [
-    "Independiente: 8",
-    "Ayuda moderada: 1",
-    "Asistencia: 1",
-    "Dependiente: 1",
-  ]);
+  assert.equal(alerta.texto, "Requiere apoyo en 3 de los 11 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("contarNivelesIndependencia ignora niveles vacíos o desconocidos", () => {

@@ -188,7 +188,7 @@ test("alucinaciones en Sí generan una bandera de alerta propia", () => {
   assert.equal(alerta.nivel, "alerta");
 });
 
-test("todas las respuestas de riesgo → alerta de salud mental con 13 indicadores", () => {
+test("todas las respuestas de riesgo → tabla de salud mental, sin alerta", () => {
   const valores = {
     satisfaccionVida: "no",
     buenAnimo: "no",
@@ -205,18 +205,16 @@ test("todas las respuestas de riesgo → alerta de salud mental con 13 indicador
     sinEsperanzas: "si",
   };
   const bloques = sintetizar(valores);
-  const tamizaje = bloques.find(
-    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (tamizaje integrado)"
-  );
-  assert.ok(tamizaje, "debe existir el párrafo de tamizaje integrado");
-  assert.match(tamizaje.texto, /Se aplicaron 13 de 15 ítems/);
-  assert.match(tamizaje.texto, /Se siente satisfecha de su vida: No/);
-  assert.match(tamizaje.texto, /¿Se ha sentido sin esperanzas\?: Sí/);
+  const tablaSM = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Salud mental (pauta integrada)");
+  assert.ok(tablaSM, "debe existir la tabla de resultados de salud mental");
+  assert.equal(tablaSM.filas.length, 13);
+  assert.ok(tablaSM.filas.some((fila) => fila[0] === "Se siente satisfecha de su vida" && fila[1] === "No"));
+  assert.ok(tablaSM.filas.some((fila) => fila[0] === "¿Se ha sentido sin esperanzas?" && fila[1] === "Sí"));
   // La pauta integrada no levanta alerta automática por sí sola.
   assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.texto.startsWith("Se registran 13 indicadores")));
 });
 
-test("perfil sano: sin banderas y con el tamizaje integrado de salud mental", () => {
+test("perfil sano: sin banderas y con la tabla de salud mental", () => {
   const valores = {
     satisfaccionVida: "si",
     buenAnimo: "si",
@@ -237,28 +235,19 @@ test("perfil sano: sin banderas y con el tamizaje integrado de salud mental", ()
 
   const bloques = sintetizar(valores);
   // Perfil sano: ninguna bandera (las ok/info no se imprimen y
-  // el tamizaje integrado de salud mental es un párrafo).
+  // la salud mental es una tabla de resultados).
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  const tamizaje = bloques.find((b) => b.titulo === "Salud mental (tamizaje integrado)");
-  assert.ok(tamizaje, "el tamizaje integrado resume los ítems aplicados");
-  assert.match(tamizaje.texto, /Se aplicaron 13 de 15 ítems/);
-
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, ["Independiente: 21 de 21"]);
+  const tablaSM = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Salud mental (pauta integrada)");
+  assert.ok(tablaSM, "la tabla de salud mental muestra los resultados");
+  assert.equal(tablaSM.filas.length, 13);
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
-test("una escala con apoyo genera la lista de distribución y la alerta con los ámbitos", () => {
+test("escalas con apoyo generan la alerta por conteo, sin distribución", () => {
   const bloques = sintetizar({ alimentacion: "asistencia", compras: "supervision", cuidadoOtros: "dependiente" });
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, [
-    "Supervisión: 1 de 3",
-    "Asistencia: 1 de 3",
-    "Dependiente: 1 de 3",
-  ]);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en:"));
-  assert.match(alerta.texto, /Alimentación \(Asistencia\)/);
-  assert.match(alerta.texto, /Compras \(Supervisión\)/);
-  assert.match(alerta.texto, /Cuidado de otros \(Dependiente\)/);
+  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en"));
+  assert.equal(alerta.texto, "Requiere apoyo en 3 de los 21 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("insomnio distinto de Normal genera alerta de descanso y sueño", () => {
@@ -290,7 +279,7 @@ test("un solo hallazgo positivo en otras consideraciones no genera alerta", () =
   assert.ok(!bloques.some((b) => b.texto?.includes("hallazgos positivos")));
 });
 
-test("funciones cognitivas en No → alerta con las funciones alteradas y su «Observación»", () => {
+test("funciones cognitivas en No quedan en la lista con su «Observación», sin alerta", () => {
   const bloques = sintetizar({
     atencionSelectiva: "no",
     atencionSelectivaEnQue: "lectura prolongada",
@@ -301,9 +290,7 @@ test("funciones cognitivas en No → alerta con las funciones alteradas y su «O
     "Atención selectiva: No (Observación: lectura prolongada)",
     "Memoria de trabajo: No",
   ]);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Dificultad referida en:"));
-  assert.equal(alerta.nivel, "alerta");
-  assert.match(alerta.texto, /Atención selectiva, Memoria de trabajo/);
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
 });
 
 test("funciones cognitivas todas en Sí no generan banderas", () => {

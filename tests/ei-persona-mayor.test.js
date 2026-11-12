@@ -13,7 +13,7 @@ import {
 
 /* ============================================================
    EVALUACIÓN INICIAL · PERSONA MAYOR (PESTAÑA PERSONA MAYOR)
-   Ficha de entrevista de 18 secciones y 136 campos. Las 22
+   Ficha de entrevista de 18 secciones y 144 campos. Las 22
    escalas (11 ámbitos básicos + descanso y sueño + 10
    instrumentales) generan su observación `${id}Obs` fuera del
    esquema y cada sí/no del área cognitiva lleva el companion
@@ -101,14 +101,19 @@ test("el esquema cubre las 18 secciones del impreso en su orden", () => {
   );
 });
 
-test("Síndromes geriátricos tiene los 8 campos con su pregunta literal", () => {
+test("Síndromes geriátricos: 8 sí/no con su pregunta y observación opcional", () => {
   const seccion = SECCIONES.find((s) => s.id === "sindromes-geriatricos");
-  assert.equal(seccion.campos.length, 8);
-  for (const campo of seccion.campos) {
-    assert.equal(campo.tipo, "textoLargo", campo.id);
+  assert.equal(seccion.campos.length, 16);
+  const siNo = seccion.campos.filter((c) => c.tipo === "siNo");
+  assert.equal(siNo.length, 8);
+  for (const campo of siNo) {
     assert.ok(campo.hint, `${campo.id} debe llevar la pregunta del impreso como hint`);
+    const obs = seccion.campos.find((c) => c.id === `${campo.id}Obs`);
+    assert.ok(obs, `falta la observación de ${campo.id}`);
+    assert.equal(obs.tipo, "textoLargo");
+    assert.equal(obs.requerido, false);
   }
-  assert.deepEqual(seccion.campos.map((c) => c.id), [
+  assert.deepEqual(siNo.map((c) => c.id), [
     "movilidadCaidas",
     "incontinencia",
     "deterioroCognitivo",
@@ -118,8 +123,8 @@ test("Síndromes geriátricos tiene los 8 campos con su pregunta literal", () =>
     "sensorial",
     "socioeconomico",
   ]);
-  assert.equal(seccion.campos[0].hint, "¿Ha sufrido alguna caída en los últimos 12 meses?");
-  assert.equal(seccion.campos[7].hint, "¿Considera que sus ingresos cubren sus necesidades básicas?");
+  assert.equal(siNo[0].hint, "¿Ha sufrido alguna caída en los últimos 12 meses?");
+  assert.equal(siNo[7].hint, "¿Considera que sus ingresos cubren sus necesidades básicas?");
 });
 
 test("Entorno y adaptaciones tiene los 3 campos propios de Persona Mayor", () => {
@@ -216,6 +221,8 @@ test("la síntesis arma las tablas del impreso: básica 12, instrumental 10, sí
   assert.equal(basica.filas.length, 12);
   assert.equal(instrumental.filas.length, 10);
   assert.equal(sindromes.filas.length, 8);
+  assert.deepEqual(sindromes.columnas.map((c) => c.titulo), ["Síndrome", "Respuesta", "Observación"]);
+  assert.deepEqual(sindromes.filas[0], ["Movilidad y caídas", "—", "—"]);
   assert.deepEqual(
     basica.filas.map((fila) => fila[0]),
     CAMPOS_BASICA.map((c) => c.etiqueta)
@@ -247,11 +254,13 @@ test("todas las respuestas de riesgo → párrafo de tamizaje integrado, sin ale
     Object.entries(INDICADORES_RIESGO_SALUD_MENTAL).map(([id, riesgo]) => [id, riesgo])
   );
   const bloques = sintetizar(valores);
-  const tamizaje = bloques.find(
-    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (tamizaje integrado)"
+  const tablaSM = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Salud mental (pauta integrada)");
+  assert.ok(tablaSM, "debe existir la tabla de resultados de salud mental");
+  assert.equal(tablaSM.filas.length, 13);
+  assert.ok(
+    tablaSM.filas.some((fila) => fila[0] === "Se siente satisfecha de su vida" && fila[1] === "No"),
+    "cada ítem muestra su respuesta"
   );
-  assert.ok(tamizaje, "debe existir el párrafo de tamizaje integrado");
-  assert.match(tamizaje.texto, /Respuestas de referencia/);
   assert.equal(contarIndicadoresRiesgoSaludMental(valores), 13);
   // La pauta integrada no levanta alerta automática por sí sola.
   assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.texto.includes("indicadores de riesgo")));
@@ -267,26 +276,32 @@ test("respuestas sanas de salud mental → tamizaje integrado sin banderas", () 
   const bloques = sintetizar(valores);
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   assert.ok(
-    bloques.some((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (tamizaje integrado)"),
-    "el tamizaje integrado resume los ítems aplicados"
+    bloques.some((b) => b.tipo === "tabla" && b.titulo === "Salud mental (pauta integrada)"),
+    "la tabla de salud mental muestra los resultados"
   );
   assert.equal(contarIndicadoresRiesgoSaludMental(valores), 0);
 });
 
 test("síndromes geriátricos quedan en la tabla del resumen sin banderas", () => {
   const bloques = sintetizar({
-    movilidadCaidas: "Dos caídas en el último año.",
-    incontinencia: "Escapes ocasionales al toser.",
-    polifarmacia: "Siete fármacos diarios.",
+    movilidadCaidas: "si",
+    movilidadCaidasObs: "Dos caídas en el último año.",
+    polifarmacia: "si",
+    polifarmaciaObs: "Siete fármacos diarios.",
   });
   // Los síndromes quedan registrados en su tabla del resumen, sin banderas.
   const tabla = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Síndromes geriátricos");
-  assert.ok(tabla.filas.some((fila) => fila[0] === "Movilidad y caídas" && fila[1].includes("Dos caídas")));
-  assert.ok(tabla.filas.some((fila) => fila[0] === "Polifarmacia" && fila[1].includes("Siete fármacos")));
+  assert.ok(
+    tabla.filas.some((fila) => fila[0] === "Movilidad y caídas" && fila[1] === "Sí" && fila[2] === "Dos caídas en el último año."),
+    "sí/no con la observación al lado"
+  );
+  assert.ok(
+    tabla.filas.some((fila) => fila[0] === "Polifarmacia" && fila[1] === "Sí" && fila[2].includes("Siete fármacos"))
+  );
   assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.texto.includes("síndromes geriátricos")));
   assert.equal(sintetizar({}).filter((b) => b.tipo === "bandera").length, 0);
   assert.equal(contarSindromesGeriatricos({}), 0);
-  assert.equal(contarSindromesGeriatricos({ movilidadCaidas: "Una caída." }), 1);
+  assert.equal(contarSindromesGeriatricos({ movilidadCaidas: "si" }), 1);
 });
 
 test("dos o más Sí en otras consideraciones → alerta; una sola no genera bandera", () => {
@@ -322,25 +337,24 @@ test("todo bien: sin banderas y con el tamizaje integrado de salud mental", () =
   assert.equal(bloques.some((b) => b.tipo === "bandera" && b.nivel === "critico"), false);
   assert.equal(bloques.some((b) => b.tipo === "bandera" && b.nivel === "alerta"), false);
 
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, ["Independiente: 21"]);
-
-  // Perfil sano: ninguna bandera (las ok/info no se imprimen y el
-  // tamizaje integrado de salud mental es un párrafo).
+  // Perfil sano: sin distribución ni banderas (las ok/info no se
+  // imprimen y la salud mental es una tabla de resultados).
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  assert.ok(bloques.some((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (tamizaje integrado)"));
+  const tablaSM = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Salud mental (pauta integrada)");
+  assert.ok(tablaSM, "la tabla de salud mental muestra los resultados");
+  assert.equal(tablaSM.filas.length, 15);
+  assert.ok(tablaSM.filas.every((fila) => fila[1] === "Sí" || fila[1] === "No"));
 });
 
-test("un ámbito con supervisión → alerta Requiere apoyo en el impreso", () => {
+test("un ámbito con supervisión → alerta por conteo, sin distribución", () => {
   const valores = todosLosNiveles("independiente");
   valores.marcha = "supervision";
   const bloques = sintetizar(valores);
   const alerta = bloques.find(
-    (b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en:")
+    (b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en")
   );
-  assert.equal(alerta.texto, "Requiere apoyo en: Marcha con o sin silla de ruedas.");
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, ["Independiente: 20", "Supervisión: 1"]);
+  assert.equal(alerta.texto, "Requiere apoyo en 1 de los 21 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("descanso y sueño distinto de normal → bandera alerta que menciona el nivel", () => {
@@ -370,17 +384,19 @@ test("el motivo de consulta arma el párrafo con origen, refiere y observación"
   );
 });
 
-test("el párrafo de entorno y adaptaciones recoge los tres campos", () => {
+test("el listado de entorno y adaptaciones recoge los tres campos uno por línea", () => {
   const bloques = sintetizar({
     barrerasEntorno: "Escalera sin baranda en el acceso.",
     adaptacionesDisponibles: "Barra de apoyo en la ducha.",
     adaptacionRequerida: "Rampa de acceso.",
   });
-  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Entorno y adaptaciones").texto;
-  assert.ok(texto.includes("Barreras en el entorno: Escalera sin baranda en el acceso."));
-  assert.ok(texto.includes("Adaptaciones disponibles: Barra de apoyo en la ducha."));
-  assert.ok(texto.includes("Adaptación requerida: Rampa de acceso."));
-  // Sin entorno registrado el párrafo no aparece.
+  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Entorno y adaptaciones");
+  assert.deepEqual(lista.items, [
+    "Barreras en el entorno: Escalera sin baranda en el acceso.",
+    "Adaptaciones disponibles: Barra de apoyo en la ducha.",
+    "Adaptación requerida: Rampa de acceso.",
+  ]);
+  // Sin entorno registrado el listado no aparece.
   assert.equal(
     sintetizar({}).some((b) => b.titulo === "Entorno y adaptaciones"),
     false
@@ -417,15 +433,9 @@ test("contarNivelesIndependencia y ambitosConApoyo sobre un caso mixto", () => {
   assert.deepEqual(ambitosConApoyo(valores), ["Alimentación", "Vestuario", "Compras"]);
 
   const bloques = sintetizar(valores);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en:"));
-  assert.equal(alerta.texto, "Requiere apoyo en: Alimentación, Vestuario, Compras.");
-  const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
-  assert.deepEqual(distribucion.items, [
-    "Independiente: 18",
-    "Asistencia: 1",
-    "Ayuda moderada: 1",
-    "Dependiente: 1",
-  ]);
+  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Requiere apoyo en"));
+  assert.equal(alerta.texto, "Requiere apoyo en 3 de los 21 ámbitos evaluados.");
+  assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
 });
 
 test("contarNivelesIndependencia ignora niveles vacíos o desconocidos", () => {

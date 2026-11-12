@@ -546,20 +546,12 @@ export function sintetizar(valores = {}) {
     filas: CAMPOS_ESCALA.map((campo) => [campo.etiqueta, etiquetaOpcion(campo, valores[campo.id]) || "—"]),
   });
 
-  const conteo = contarNivelesIndependencia(valores);
-  const distribucion = OPCIONES_INDEPENDENCIA.filter((nivel) => conteo[nivel.valor] > 0).map(
-    (nivel) => `${nivel.etiqueta}: ${conteo[nivel.valor]}`
-  );
-  if (distribucion.length > 0) {
-    bloques.push({ tipo: "lista", titulo: "Distribución de niveles", items: distribucion });
-  }
-
   const conApoyo = ambitosConApoyo(valores);
   if (conApoyo.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",
-      texto: `Requiere apoyo en: ${conApoyo.join(", ")}.`,
+      texto: `Requiere apoyo en ${conApoyo.length} de los ${CAMPOS_INDEPENDENCIA.length} ámbitos evaluados.`,
     });
   }
 
@@ -610,15 +602,6 @@ export function sintetizar(valores = {}) {
     bloques.push({ tipo: "lista", titulo: "Funciones cognitivas consultadas", items: itemsCognitivos });
   }
 
-  const conDificultad = FUNCIONES.filter((campo) => valores[campo.id] === "no");
-  if (conDificultad.length > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Dificultades referidas en: ${conDificultad.map((campo) => campo.etiqueta).join(", ")}.`,
-    });
-  }
-
   /* ---- Plan de intervención (en el orden del impreso) ---- */
   const filasPlan = [
     ["Problemática ocupacional", (valores.problemaOcupacional ?? "").trim() || "—"],
@@ -656,12 +639,6 @@ function configInforme(valores) {
     secciones: SECCIONES,
     valores,
     sintesis: sintetizar(valores),
-    introduccion:
-      "La ficha de evaluación inicial Infantil se completa en la primera atención junto al tutor/a: registra los datos " +
-      "de identificación e historial médico declarados por el adulto responsable, el motivo de consulta según la " +
-      "entrevista y las áreas sensorial, física, cognitiva y socioemocional según la observación del terapeuta. La " +
-      "síntesis automatizada resume la independencia funcional, los hitos del desarrollo y el plan de intervención " +
-      "propuesto.",
   };
 }
 

@@ -509,17 +509,6 @@ function bloqueTablaIndependencia(valores) {
   };
 }
 
-function bloqueDistribucion(valores) {
-  const conteo = contarNivelesIndependencia(valores);
-  const items = [];
-  for (const campo of ESCALAS_INDEPENDENCIA[0].opciones) {
-    const n = conteo[campo.valor];
-    if (n > 0) items.push(`${campo.etiqueta}: ${n}`);
-  }
-  if (items.length === 0) return null;
-  return { tipo: "lista", titulo: "Distribución de niveles", items };
-}
-
 function bloqueBanderaIndependencia(valores) {
   const conApoyo = ESCALAS_INDEPENDENCIA.filter((campo) =>
     ["ayudaModerada", "asistencia", "dependiente"].includes(valores[campo.id])
@@ -528,7 +517,7 @@ function bloqueBanderaIndependencia(valores) {
   return {
     tipo: "bandera",
     nivel: "alerta",
-    texto: `Requiere apoyo en: ${unirNatural(conApoyo)}.`,
+    texto: `Requiere apoyo en ${conApoyo.length} de los ${ESCALAS_INDEPENDENCIA.length} ámbitos evaluados.`,
   };
 }
 
@@ -583,12 +572,6 @@ function bloqueListaCognitiva(valores) {
   return { tipo: "lista", titulo: "Funciones cognitivas consultadas", items };
 }
 
-function bloqueBanderaCognitiva(valores) {
-  const conDificultad = FUNCIONES_COGNITIVAS.filter((f) => valores[f.id] === "no").map((f) => f.etiqueta);
-  if (conDificultad.length === 0) return null;
-  return { tipo: "bandera", nivel: "alerta", texto: `Dificultades referidas en: ${unirNatural(conDificultad)}.` };
-}
-
 function bloqueAreaAcademica(valores) {
   const rendimiento = limpiar(valores.rendimiento);
   const apoyos = limpiar(valores.apoyosAprendizaje);
@@ -619,8 +602,6 @@ export function sintetizar(valores = {}) {
   const bloques = [];
   bloques.push(bloqueMotivoConsulta(valores));
   bloques.push(bloqueTablaIndependencia(valores));
-  const distribucion = bloqueDistribucion(valores);
-  if (distribucion) bloques.push(distribucion);
   const banderaIndependencia = bloqueBanderaIndependencia(valores);
   if (banderaIndependencia) bloques.push(banderaIndependencia);
   const banderaDescanso = bloqueBanderaDescanso(valores);
@@ -630,8 +611,6 @@ export function sintetizar(valores = {}) {
   if (banderaHitos) bloques.push(banderaHitos);
   const listaCognitiva = bloqueListaCognitiva(valores);
   if (listaCognitiva) bloques.push(listaCognitiva);
-  const banderaCognitiva = bloqueBanderaCognitiva(valores);
-  if (banderaCognitiva) bloques.push(banderaCognitiva);
   const bloqueAcademico = bloqueAreaAcademica(valores);
   if (bloqueAcademico) bloques.push(bloqueAcademico);
   bloques.push(bloquePlanIntervencion(valores));
@@ -654,8 +633,6 @@ function configInforme(valores) {
     secciones: SECCIONES,
     valores,
     sintesis: sintetizar(valores),
-    introduccion:
-      "Ficha de evaluación inicial de terapia ocupacional para adolescentes. Se completa en la primera atención junto al tutor/a o al propio adolescente: registre los datos de identificación, la entrevista y la observación del terapeuta en cada área. La síntesis automatizada resume el motivo de consulta, la independencia funcional, los hitos del desarrollo, las funciones cognitivas consultadas y el plan de intervención.",
   };
 }
 

@@ -295,7 +295,8 @@ export function descargarInformePDFEvaluacionInicial(config) {
   }
 
   if (alertasRecabadas.length > 0) {
-    asegurar(120);
+    /* Las alertas van en hoja aparte. */
+    nuevaPagina();
     escribir("Alertas en información recabada", { tamano: 13, negrita: true, espacio: 8 });
     for (const alerta of alertasRecabadas) dibujarBandera(alerta);
   }
@@ -408,7 +409,7 @@ ${bloquesWordHTML(bloquesResumen, oscuro)}`
     : "";
 
   const alertasHTML = alertasRecabadas.length
-    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Alertas en información recabada</h2>
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">Alertas en información recabada</h2>
 ${bloquesWordHTML(alertasRecabadas, oscuro)}`
     : "";
 

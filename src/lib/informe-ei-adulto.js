@@ -40,8 +40,6 @@ const OPCIONES_ASISTENCIA = [
 
 /* Niveles que indican apoyo (cualquiera que no sea independiente). */
 const NIVELES_APOYO = new Set(["supervision", "asistencia", "ayudaModerada", "dependiente"]);
-const ORDEN_NIVELES = ["Independiente", "Supervisión", "Asistencia", "Ayuda moderada", "Dependiente"];
-
 /* Redacción en minúscula para la frase de observación del motivo
    de consulta («… se registran buenas condiciones generales,
    ánimo eutímico y orientación orientado temporoespacial.»). */
@@ -166,9 +164,9 @@ export const SECCIONES = [
     titulo: "Antecedentes familiares",
     campos: [
       { id: "hijasOs", etiqueta: "Hijas/os", tipo: "texto" },
-      { id: "ocupacionHijasOs", etiqueta: "Ocupación hijas/os", tipo: "texto" },
+      { id: "ocupacionHijasOs", etiqueta: "Ocupación hijas/os", tipo: "texto", requerido: false },
       { id: "pareja", etiqueta: "Pareja", tipo: "texto" },
-      { id: "ocupacionPareja", etiqueta: "Ocupación pareja", tipo: "texto" },
+      { id: "ocupacionPareja", etiqueta: "Ocupación pareja", tipo: "texto", requerido: false },
       { id: "viveCon", etiqueta: "Vive con", tipo: "texto" },
       { id: "nombres", etiqueta: "Nombres", tipo: "texto" },
       { id: "mascotas", etiqueta: "Mascotas", tipo: "texto" },
@@ -176,6 +174,7 @@ export const SECCIONES = [
         id: "mascotasUbicacion",
         etiqueta: "Ubicación de las mascotas",
         tipo: "radio",
+        requerido: false,
         opciones: [
           { valor: "adentro", etiqueta: "Adentro" },
           { valor: "afuera", etiqueta: "Afuera" },
@@ -462,16 +461,7 @@ function escalasDeIndependencia() {
   return [...basicas, ...instrumentales];
 }
 
-function distribucionDeNiveles(respondidas, v) {
-  const conteo = new Map();
-  for (const campo of respondidas) {
-    const nivel = etiquetaOpcion(campo, v[campo.id]);
-    conteo.set(nivel, (conteo.get(nivel) ?? 0) + 1);
-  }
-  return ORDEN_NIVELES.filter((nivel) => conteo.has(nivel)).map(
-    (nivel) => `${nivel}: ${conteo.get(nivel)} de ${respondidas.length}`
-  );
-}
+
 
 function bloqueDescanso(v) {
   const campo = campoPorId(seccionPorId("independencia-funcional-basica"), "descansoSueno");
@@ -524,21 +514,20 @@ function bloquesSaludMental(v) {
   const seccion = seccionPorId("salud-mental");
   const bloques = [];
 
-  /* Tamizaje integrado de salud mental: se describe el estado
-     de la pauta sin levantar alerta automática (pauta
-     integrada, no obligatoria de aplicar); la revisión
-     clínica decide. */
-  const consultados = seccion.campos.filter((campo) => campo.tipo === "siNo" && v[campo.id]);
-  const riesgos = Object.entries(REGLAS_RIESGO_SALUD_MENTAL)
-    .filter(([id, riesgo]) => v[id] === riesgo)
-    .map(([id, riesgo]) => `${campoPorId(seccion, id).etiqueta}: ${riesgo === "si" ? "Sí" : "No"}`);
-  if (consultados.length > 0) {
+  /* Pauta integrada de salud mental: resultados ítem por
+     ítem, sin alerta automática; la revisión clínica decide. */
+  const resultadosSM = seccion.campos
+    .filter((campo) => campo.tipo === "siNo" && (v[campo.id] === "si" || v[campo.id] === "no"))
+    .map((campo) => [campo.etiqueta, v[campo.id] === "si" ? "Sí" : "No"]);
+  if (resultadosSM.length > 0) {
     bloques.push({
-      tipo: "parrafo",
-      titulo: "Salud mental (tamizaje integrado)",
-      texto:
-        `Se aplicaron ${consultados.length} de ${seccion.campos.filter((c) => c.tipo === "siNo").length} ítems de la pauta integrada de salud mental.` +
-        (riesgos.length > 0 ? ` Respuestas de referencia: ${riesgos.join("; ")}.` : ""),
+      tipo: "tabla",
+      titulo: "Salud mental (pauta integrada)",
+      columnas: [
+        { titulo: "Ítem", fraccion: 0.72 },
+        { titulo: "Respuesta", fraccion: 0.28 },
+      ],
+      filas: resultadosSM,
     });
   }
 
@@ -580,15 +569,7 @@ function bloquesAreaCognitiva(v) {
     bloques.push({ tipo: "lista", titulo: "Funciones cognitivas consultadas", items });
   }
 
-  const alteradas = funciones.filter((campo) => v[campo.id] === "no").map((campo) => campo.etiqueta);
-  if (alteradas.length > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      titulo: "Funciones cognitivas",
-      texto: `Dificultad referida en: ${alteradas.join(", ")}.`,
-    });
-  }
+
   return bloques;
 }
 
@@ -624,23 +605,13 @@ export function sintetizar(valores = {}) {
   bloques.push(tablaDeEscalas("Independencia funcional instrumental", instrumental, v));
 
   const escalas = escalasDeIndependencia();
-  const respondidas = escalas.filter((campo) => v[campo.id]);
-  const conApoyo = respondidas.filter((campo) => NIVELES_APOYO.has(v[campo.id]));
-  if (respondidas.length > 0) {
-    bloques.push({
-      tipo: "lista",
-      titulo: "Distribución de niveles",
-      items: distribucionDeNiveles(respondidas, v),
-    });
-  }
+  const conApoyo = escalas.filter((campo) => NIVELES_APOYO.has(v[campo.id]));
   if (conApoyo.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",
       titulo: "Independencia funcional",
-      texto: `Requiere apoyo en: ${conApoyo
-        .map((campo) => `${campo.etiqueta} (${etiquetaOpcion(campo, v[campo.id])})`)
-        .join(", ")}.`,
+      texto: `Requiere apoyo en ${conApoyo.length} de los ${escalas.length} ámbitos evaluados.`,
     });
   }
 
@@ -669,10 +640,6 @@ function configInforme(valores) {
     secciones: SECCIONES,
     valores,
     sintesis: sintetizar(valores),
-    introduccion:
-      "La ficha de evaluación inicial se completa durante la primera atención: los datos se obtienen con la propia persona, " +
-      "a partir de sus palabras y de la observación del terapeuta. El informe reúne el registro completo de la entrevista " +
-      "y la síntesis automatizada con las banderas clínicas para su revisión antes de firmar e integrar a la ficha clínica.",
   };
 }
 

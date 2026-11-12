@@ -186,13 +186,13 @@ export const SECCIONES = [
     titulo: "Antecedentes familiares",
     campos: [
       { id: "hijasOs", etiqueta: "Hijas/os", tipo: "texto" },
-      { id: "ocupacionHijasOs", etiqueta: "Ocupación hijas/os", tipo: "texto" },
+      { id: "ocupacionHijasOs", etiqueta: "Ocupación hijas/os", tipo: "texto", requerido: false },
       { id: "pareja", etiqueta: "Pareja", tipo: "texto" },
-      { id: "ocupacionPareja", etiqueta: "Ocupación pareja", tipo: "texto" },
+      { id: "ocupacionPareja", etiqueta: "Ocupación pareja", tipo: "texto", requerido: false },
       { id: "viveCon", etiqueta: "Vive con", tipo: "texto" },
       { id: "nombres", etiqueta: "Nombres", tipo: "texto" },
       { id: "mascotas", etiqueta: "Mascotas", tipo: "texto" },
-      { id: "mascotasUbicacion", etiqueta: "Mascotas", tipo: "radio", opciones: OPCIONES_MASCOTAS },
+      { id: "mascotasUbicacion", etiqueta: "Ubicación de las mascotas", tipo: "radio", opciones: OPCIONES_MASCOTAS, requerido: false },
     ],
   },
   /* ==== 5. Independencia funcional básica (escalas con Obs) ==== */
@@ -293,20 +293,24 @@ export const SECCIONES = [
     id: "sindromes-geriatricos",
     titulo: "Síndromes geriátricos",
     descripcion:
-      "Sección propia de la ficha Persona mayor: consulte cada pregunta y registre la respuesta u observación.",
+      "Sección propia de la ficha Persona mayor: marque Sí o No según la pregunta del impreso y registre la observación al lado.",
     campos: [
-      textoConHint("movilidadCaidas", "Movilidad y caídas", "¿Ha sufrido alguna caída en los últimos 12 meses?"),
-      textoConHint("incontinencia", "Incontinencia", "¿Tiene escapes involuntarios de orina?"),
-      textoConHint("deterioroCognitivo", "Deterioro cognitivo", "¿Ha notado cambios en su memoria en el último año?"),
-      textoConHint(
-        "depresion",
-        "Depresión",
-        "¿Se ha sentido triste o desanimado la mayor parte del tiempo en las últimas dos semanas?"
-      ),
-      textoConHint("polifarmacia", "Polifarmacia", "¿Toma cinco o más medicamentos recetados diariamente?"),
-      textoConHint("fragilidad", "Fragilidad", "¿Se siente débil o cansado con frecuencia?"),
-      textoConHint("sensorial", "Sensorial", "¿Tiene dificultades para oír o ver?"),
-      textoConHint("socioeconomico", "Socioeconómico", "¿Considera que sus ingresos cubren sus necesidades básicas?"),
+      { id: "movilidadCaidas", etiqueta: "Movilidad y caídas", tipo: "siNo", hint: "¿Ha sufrido alguna caída en los últimos 12 meses?" },
+      { id: "movilidadCaidasObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "incontinencia", etiqueta: "Incontinencia", tipo: "siNo", hint: "¿Tiene escapes involuntarios de orina?" },
+      { id: "incontinenciaObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "deterioroCognitivo", etiqueta: "Deterioro cognitivo", tipo: "siNo", hint: "¿Ha notado cambios en su memoria en el último año?" },
+      { id: "deterioroCognitivoObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "depresion", etiqueta: "Depresión", tipo: "siNo", hint: "¿Se ha sentido triste o desanimado la mayor parte del tiempo en las últimas dos semanas?" },
+      { id: "depresionObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "polifarmacia", etiqueta: "Polifarmacia", tipo: "siNo", hint: "¿Toma cinco o más medicamentos recetados diariamente?" },
+      { id: "polifarmaciaObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "fragilidad", etiqueta: "Fragilidad", tipo: "siNo", hint: "¿Se siente débil o cansado con frecuencia?" },
+      { id: "fragilidadObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "sensorial", etiqueta: "Sensorial", tipo: "siNo", hint: "¿Tiene dificultades para oír o ver?" },
+      { id: "sensorialObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
+      { id: "socioeconomico", etiqueta: "Socioeconómico", tipo: "siNo", hint: "¿Considera que sus ingresos cubren sus necesidades básicas?" },
+      { id: "socioeconomicoObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
     ],
   },
   /* ==== 9. Otras consideraciones ==== */
@@ -523,6 +527,7 @@ const CAMPOS_OBSERVACION = ["condicionesGenerales", "animo", "orientacion"].map(
   SECCION_MOTIVO.campos.find((c) => c.id === id)
 );
 const SECCION_SINDROMES = SECCIONES.find((s) => s.id === "sindromes-geriatricos");
+const SINDROMES = SECCION_SINDROMES.campos.filter((c) => c.tipo === "siNo");
 const SECCION_OTRAS = SECCIONES.find((s) => s.id === "otras-consideraciones");
 const SI_NO_OTRAS = SECCION_OTRAS.campos.filter((c) => c.tipo === "siNo");
 const SECCION_SALUD_MENTAL = SECCIONES.find((s) => s.id === "salud-mental");
@@ -537,17 +542,6 @@ const PLAZOS = [
   { prefijo: "largo", nombre: "Largo plazo" },
 ];
 const NIVELES_APOYO = ["supervision", "asistencia", "ayudaModerada", "dependiente"];
-
-/* Etiquetas y orden de los niveles para la distribución
-   combinada de básica + instrumental (los valores del impreso). */
-const NIVEL_ETIQUETA = {
-  independiente: "Independiente",
-  supervision: "Supervisión",
-  asistencia: "Asistencia",
-  ayudaModerada: "Ayuda moderada",
-  dependiente: "Dependiente",
-};
-const ORDEN_NIVELES = ["independiente", "supervision", "asistencia", "ayudaModerada", "dependiente"];
 
 /* Respuesta que constituye indicador de riesgo en el
    autoinforme de salud mental. Alucinaciones e ideación,
@@ -603,10 +597,9 @@ export function contarIndicadoresRiesgoSaludMental(valores = {}) {
   return etiquetasIndicadoresRiesgoSaludMental(valores).length;
 }
 
-/* Síndromes geriátricos con texto registrado (respuesta
-   positiva u observación). */
+/* Síndromes geriátricos con respuesta Sí/No registrada. */
 export function contarSindromesGeriatricos(valores = {}) {
-  return SECCION_SINDROMES.campos.filter((campo) => (valores[campo.id] ?? "").trim() !== "").length;
+  return SINDROMES.filter((campo) => valores[campo.id] === "si" || valores[campo.id] === "no").length;
 }
 
 /* ============================================================
@@ -662,20 +655,12 @@ export function sintetizar(valores = {}) {
     filas: CAMPOS_INSTRUMENTAL.map((campo) => [campo.etiqueta, etiquetaOpcion(campo, valores[campo.id]) || "—"]),
   });
 
-  const conteo = contarNivelesIndependencia(valores);
-  const distribucion = ORDEN_NIVELES.filter((nivel) => conteo[nivel] > 0).map(
-    (nivel) => `${NIVEL_ETIQUETA[nivel]}: ${conteo[nivel]}`
-  );
-  if (distribucion.length > 0) {
-    bloques.push({ tipo: "lista", titulo: "Distribución de niveles", items: distribucion });
-  }
-
   const conApoyo = ambitosConApoyo(valores);
   if (conApoyo.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",
-      texto: `Requiere apoyo en: ${conApoyo.join(", ")}.`,
+      texto: `Requiere apoyo en ${conApoyo.length} de los ${CAMPOS_INDEPENDENCIA.length} ámbitos evaluados.`,
     });
   }
 
@@ -694,10 +679,15 @@ export function sintetizar(valores = {}) {
     tipo: "tabla",
     titulo: "Síndromes geriátricos",
     columnas: [
-      { titulo: "Síndrome", fraccion: 0.4 },
-      { titulo: "Respuesta registrada", fraccion: 0.6 },
+      { titulo: "Síndrome", fraccion: 0.3 },
+      { titulo: "Respuesta", fraccion: 0.17 },
+      { titulo: "Observación", fraccion: 0.53 },
     ],
-    filas: SECCION_SINDROMES.campos.map((campo) => [campo.etiqueta, textoValor(valores[campo.id])]),
+    filas: SINDROMES.map((campo) => [
+      campo.etiqueta,
+      valores[campo.id] === "si" ? "Sí" : valores[campo.id] === "no" ? "No" : "—",
+      textoValor(valores[`${campo.id}Obs`]),
+    ]),
   });
 
 
@@ -742,21 +732,22 @@ export function sintetizar(valores = {}) {
     });
   }
 
-  /* Tamizaje integrado de salud mental: se describe el estado
-     de la pauta sin levantar alerta automática (pauta
-     integrada, no obligatoria de aplicar); la revisión
+  /* Pauta integrada de salud mental: se muestran los
+     resultados ítem por ítem sin levantar alerta automática
+     (pauta integrada, no obligatoria de aplicar); la revisión
      clínica decide. */
-  const consultadosSM = SECCION_SALUD_MENTAL.campos.filter(
-    (campo) => campo.tipo === "siNo" && (valores[campo.id] === "si" || valores[campo.id] === "no")
-  );
-  if (consultadosSM.length > 0) {
-    const etiquetasRiesgo = etiquetasIndicadoresRiesgoSaludMental(valores);
+  const resultadosSM = CAMPOS_SALUD_MENTAL.filter(
+    (campo) => valores[campo.id] === "si" || valores[campo.id] === "no"
+  ).map((campo) => [campo.etiqueta, valores[campo.id] === "si" ? "Sí" : "No"]);
+  if (resultadosSM.length > 0) {
     bloques.push({
-      tipo: "parrafo",
-      titulo: "Salud mental (tamizaje integrado)",
-      texto:
-        `Se aplicaron ${consultadosSM.length} de ${SECCION_SALUD_MENTAL.campos.filter((c) => c.tipo === "siNo").length} ítems de la pauta integrada de salud mental.` +
-        (etiquetasRiesgo.length > 0 ? ` Respuestas de referencia: ${etiquetasRiesgo.join(", ")}.` : ""),
+      tipo: "tabla",
+      titulo: "Salud mental (pauta integrada)",
+      columnas: [
+        { titulo: "Ítem", fraccion: 0.72 },
+        { titulo: "Respuesta", fraccion: 0.28 },
+      ],
+      filas: resultadosSM,
     });
   }
 
@@ -772,14 +763,7 @@ export function sintetizar(valores = {}) {
     bloques.push({ tipo: "lista", titulo: "Funciones cognitivas consultadas", items: itemsCognitivos });
   }
 
-  const conDificultad = CAMPOS_COGNITIVOS.filter((campo) => valores[campo.id] === "no");
-  if (conDificultad.length > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Dificultades referidas en: ${conDificultad.map((campo) => campo.etiqueta).join(", ")}.`,
-    });
-  }
+
 
   /* ---- Entorno y adaptaciones ---- */
   const lineasEntorno = [];
@@ -788,7 +772,7 @@ export function sintetizar(valores = {}) {
     if (texto) lineasEntorno.push(`${campo.etiqueta}: ${texto}`);
   }
   if (lineasEntorno.length > 0) {
-    bloques.push({ tipo: "parrafo", titulo: "Entorno y adaptaciones", texto: lineasEntorno.join(" ") });
+    bloques.push({ tipo: "lista", titulo: "Entorno y adaptaciones", items: lineasEntorno });
   }
 
   /* ---- Plan de intervención (en el orden del impreso) ---- */
@@ -828,12 +812,6 @@ function configInforme(valores) {
     secciones: SECCIONES,
     valores,
     sintesis: sintetizar(valores),
-    introduccion:
-      "La ficha de evaluación inicial Persona mayor se completa en la primera atención con la propia persona, su " +
-      "cuidador y según la observación del terapeuta ocupacional: registra los datos de identificación y el " +
-      "historial médico declarados, el motivo de consulta, la independencia funcional básica e instrumental, los " +
-      "síndromes geriátricos, la salud mental, las áreas física y cognitiva, y el entorno y sus adaptaciones. La " +
-      "síntesis automatizada resume los hallazgos y el plan de intervención propuesto.",
   };
 }
 
