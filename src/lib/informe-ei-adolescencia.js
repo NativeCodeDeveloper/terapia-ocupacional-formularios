@@ -15,7 +15,7 @@ import {
    independencia funcional (esta versión NO evalúa «Gatear»,
    que solo aparece en hitos del desarrollo), hitos del
    desarrollo, áreas sensorial, física y cognitiva (cada
-   función con su «¿En qué?»), lenguaje, conducta, interacción
+   función con su «Observación»), lenguaje, conducta, interacción
    social, expresión y reconocimiento de emociones, área
    académica (aquí reemplaza al área de juego del infantil),
    habituación, esparcimiento, volición y plan de intervención.
@@ -50,7 +50,7 @@ const escalaIndependencia = (id, etiqueta) => ({
 });
 
 /* Funciones cognitivas del impreso: cada una es un sí/no con
-   descripción (hint) y su companion «¿En qué?». */
+   descripción (hint) y su companion «Observación». */
 const FUNCIONES_COGNITIVAS_BASE = [
   {
     id: "atencionSelectiva",
@@ -86,7 +86,7 @@ const FUNCIONES_COGNITIVAS_BASE = [
 
 const camposFuncionCognitiva = ({ id, etiqueta, hint }) => [
   { id, etiqueta, tipo: "siNo", hint },
-  { id: `${id}EnQue`, etiqueta: "¿En qué?", tipo: "textoLargo" },
+  { id: `${id}EnQue`, etiqueta: "Observación", tipo: "textoLargo" },
 ];
 
 /* ==== Esquema completo de la ficha ==== */
@@ -521,16 +521,6 @@ function bloqueDistribucion(valores) {
 }
 
 function bloqueBanderaIndependencia(valores) {
-  const conteo = contarNivelesIndependencia(valores);
-  const respondidos = conteo.independiente + conteo.ayudaModerada + conteo.asistencia + conteo.dependiente;
-  if (respondidos === 0) return null;
-  if (conteo.independiente === ESCALAS_INDEPENDENCIA.length) {
-    return {
-      tipo: "bandera",
-      nivel: "ok",
-      texto: `Independencia funcional conservada en los ${ESCALAS_INDEPENDENCIA.length} ámbitos evaluados.`,
-    };
-  }
   const conApoyo = ESCALAS_INDEPENDENCIA.filter((campo) =>
     ["ayudaModerada", "asistencia", "dependiente"].includes(valores[campo.id])
   ).map((campo) => campo.etiqueta);
@@ -544,10 +534,7 @@ function bloqueBanderaIndependencia(valores) {
 
 function bloqueBanderaDescanso(valores) {
   const nivel = valores[CAMPO_DESCANSO.id];
-  if (!nivel) return null;
-  if (nivel === "normal") {
-    return { tipo: "bandera", nivel: "ok", texto: "Descanso y sueño normal." };
-  }
+  if (!nivel || nivel === "normal") return null;
   return {
     tipo: "bandera",
     nivel: "alerta",
@@ -560,24 +547,22 @@ function bloqueTablaHitos(valores) {
     tipo: "tabla",
     titulo: "Hitos del desarrollo",
     columnas: [{ titulo: "Hito" }, { titulo: "Edad registrada" }],
-    filas: HITOS.map((campo) => [campo.etiqueta, textoValor(valores[campo.id])]),
+    filas: [
+      ...HITOS.map((campo) => [campo.etiqueta, textoValor(valores[campo.id])]),
+      [
+        "Retraso psicomotor (control de niño sano)",
+        valores.retrasoPsicomotor === "si" ? "Sí" : valores.retrasoPsicomotor === "no" ? "No" : "—",
+      ],
+    ],
   };
 }
 
 function bloqueBanderaHitos(valores) {
-  const retraso = valores.retrasoPsicomotor;
-  if (retraso === "si") {
+  if (valores.retrasoPsicomotor === "si") {
     return {
       tipo: "bandera",
       nivel: "alerta",
       texto: "Según el control de niño sano se registró retraso del desarrollo psicomotor.",
-    };
-  }
-  if (retraso === "no") {
-    return {
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Sin retraso del desarrollo psicomotor según el control de niño sano.",
     };
   }
   return null;
@@ -600,18 +585,8 @@ function bloqueListaCognitiva(valores) {
 
 function bloqueBanderaCognitiva(valores) {
   const conDificultad = FUNCIONES_COGNITIVAS.filter((f) => valores[f.id] === "no").map((f) => f.etiqueta);
-  if (conDificultad.length > 0) {
-    return { tipo: "bandera", nivel: "alerta", texto: `Dificultades referidas en: ${unirNatural(conDificultad)}.` };
-  }
-  const todasSi = FUNCIONES_COGNITIVAS.every((f) => valores[f.id] === "si");
-  if (todasSi) {
-    return {
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Las seis funciones cognitivas consultadas se encuentran presentes.",
-    };
-  }
-  return null;
+  if (conDificultad.length === 0) return null;
+  return { tipo: "bandera", nivel: "alerta", texto: `Dificultades referidas en: ${unirNatural(conDificultad)}.` };
 }
 
 function bloqueAreaAcademica(valores) {
@@ -624,25 +599,20 @@ function bloqueAreaAcademica(valores) {
   return { tipo: "parrafo", titulo: "Área académica", texto: partes.join(" ") };
 }
 
-function frasePlazo(nombre, objetivo, especificos) {
-  const partes = [];
-  if (objetivo) partes.push(`objetivo general: ${objetivo}`);
-  if (especificos) partes.push(`objetivos específicos: ${especificos}`);
-  if (partes.length === 0) return "";
-  return cerrar(`${nombre}: ${partes.join("; ")}`);
-}
-
+/* Plan de intervención en el orden del impreso: filas
+   [etiqueta, valor] para la tabla de dos columnas. */
 function bloquePlanIntervencion(valores) {
-  const problema = limpiar(valores.problemaOcupacional);
-  const partes = [];
-  if (problema) partes.push(cerrar(`Problemática ocupacional: ${problema}`));
-  partes.push(
-    frasePlazo("Corto plazo", limpiar(valores.cortoObjetivo), limpiar(valores.cortoEspecificos)),
-    frasePlazo("Mediano plazo", limpiar(valores.medianoObjetivo), limpiar(valores.medianoEspecificos)),
-    frasePlazo("Largo plazo", limpiar(valores.largoObjetivo), limpiar(valores.largoEspecificos))
-  );
-  const texto = partes.filter(Boolean).join(" ") || "Plan pendiente de definición por el terapeuta tratante.";
-  return { tipo: "parrafo", titulo: "Plan de intervención", texto };
+  const filas = [["Problemática ocupacional", limpiar(valores.problemaOcupacional) || "—"]];
+  const plazos = [
+    ["Corto plazo", "corto"],
+    ["Mediano plazo", "mediano"],
+    ["Largo plazo", "largo"],
+  ];
+  for (const [nombre, prefijo] of plazos) {
+    filas.push([`${nombre} · Objetivo general`, limpiar(valores[`${prefijo}Objetivo`]) || "—"]);
+    filas.push([`${nombre} · Objetivos específicos`, limpiar(valores[`${prefijo}Especificos`]) || "—"]);
+  }
+  return { tipo: "plan", titulo: "Plan de intervención", filas };
 }
 
 export function sintetizar(valores = {}) {

@@ -19,7 +19,7 @@ import {
    física, síndromes geriátricos y entorno y adaptaciones
    (secciones propias de esta ficha), otras consideraciones,
    salud mental (autoinforme de 15 ítems), área cognitiva
-   (sí/no con companion «¿En qué?»), lenguaje, participación
+   (sí/no con companion «Observación»), lenguaje, participación
    social, habituación, esparcimiento, volición y plan de
    intervención por plazo. La síntesis y los informes PDF y Word viven
    en src/lib/informe-ei-persona-mayor.js.

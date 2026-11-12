@@ -160,7 +160,7 @@ test("existe el área académica y no hay sección de juego", () => {
   ]);
 });
 
-test("cada función cognitiva sí/no tiene su companion «¿En qué?»", () => {
+test("cada función cognitiva sí/no tiene su companion «Observación»", () => {
   const campos = camposDe("area-cognitiva");
   const siNo = campos.filter((c) => c.tipo === "siNo");
   assert.equal(siNo.length, 6);
@@ -169,7 +169,7 @@ test("cada función cognitiva sí/no tiene su companion «¿En qué?»", () => {
     const companion = campos.find((c) => c.id === `${campo.id}EnQue`);
     assert.ok(companion, `falta ${campo.id}EnQue`);
     assert.equal(companion.tipo, "textoLargo");
-    assert.equal(companion.etiqueta, "¿En qué?");
+    assert.equal(companion.etiqueta, "Observación");
   }
   assert.deepEqual(FUNCIONES_COGNITIVAS.map((f) => f.id), [
     "atencionSelectiva",
@@ -224,8 +224,9 @@ test("sintetizar con valores vacíos no lanza y no marca crítico", () => {
   assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.nivel === "critico"));
   const motivo = bloques.find((b) => b.titulo === "Motivo de consulta");
   assert.equal(motivo.texto, "No se registra motivo de consulta en la entrevista.");
-  const plan = bloques.find((b) => b.titulo === "Plan de intervención");
-  assert.equal(plan.texto, "Plan pendiente de definición por el terapeuta tratante.");
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.equal(plan.filas.length, 7);
+  assert.ok(plan.filas.every((fila) => fila[1] === "—"));
   assert.ok(!bloques.some((b) => b.titulo === "Área académica"));
 });
 
@@ -271,13 +272,7 @@ test("todo independiente y descanso normal no genera alertas", () => {
     dependiente: 0,
   });
   const bloques = sintetizar(valores);
-  const banderas = bloques.filter((b) => b.tipo === "bandera").map((b) => `${b.nivel}: ${b.texto}`);
-  assert.ok(
-    banderas.some((t) => t === "ok: Independencia funcional conservada en los 10 ámbitos evaluados."),
-    JSON.stringify(banderas)
-  );
-  assert.ok(banderas.some((t) => t === "ok: Descanso y sueño normal."), JSON.stringify(banderas));
-  assert.ok(!banderas.some((t) => t.startsWith("alerta:")), JSON.stringify(banderas));
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
   assert.deepEqual(lista.items, ["Independiente: 10"]);
 });
@@ -287,10 +282,7 @@ test("descanso y sueño distinto de normal genera alerta mencionando el nivel", 
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
   assert.equal(alerta.texto, "Descanso y sueño alterado: Insomnio de conciliación.");
   assert.ok(!bloques.some((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles"));
-  const normal = sintetizar({ descansoSueno: "normal" }).find(
-    (b) => b.tipo === "bandera" && b.texto === "Descanso y sueño normal."
-  );
-  assert.ok(normal);
+  assert.equal(sintetizar({ descansoSueno: "normal" }).filter((b) => b.tipo === "bandera").length, 0);
 });
 
 test("la tabla de hitos registra las 6 edades y el retraso psicomotor marca la bandera", () => {
@@ -313,14 +305,16 @@ test("la tabla de hitos registra las 6 edades y el retraso psicomotor marca la b
     ["Primeras palabras", "18 meses"],
     ["Comprensión", "2 años"],
     ["Control de esfínteres", "3 años"],
+    ["Retraso psicomotor (control de niño sano)", "Sí"],
   ]);
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.nivel === "alerta" && b.texto.includes("retraso"));
   assert.ok(alerta, "falta la bandera de retraso psicomotor");
-  const sinRetraso = sintetizar({ retrasoPsicomotor: "no" }).find(
-    (b) => b.tipo === "bandera" && b.nivel === "ok" && b.texto.includes("psicomotor")
-  );
-  assert.ok(sinRetraso, "falta la bandera de ok sin retraso");
-  assert.ok(!sintetizar({}).some((b) => b.tipo === "bandera" && b.texto.includes("psicomotor")));
+  const sinRetraso = sintetizar({ retrasoPsicomotor: "no" });
+  const filaNo = sinRetraso
+    .find((b) => b.tipo === "tabla" && b.titulo === "Hitos del desarrollo")
+    .filas.find((fila) => fila[0].includes("Retraso psicomotor"));
+  assert.equal(filaNo[1], "No");
+  assert.equal(sinRetraso.filter((b) => b.tipo === "bandera").length, 0);
 });
 
 test("las 6 funciones cognitivas en «No» generan alerta con las 6", () => {
@@ -346,13 +340,11 @@ test("el texto de «¿En qué?» acompaña a la función respondida «No»", () 
   assert.deepEqual(lista.items, ["Atención selectiva: No — No logra sostener la lectura"]);
 });
 
-test("las 6 funciones cognitivas en «Sí» generan bandera ok", () => {
+test("las 6 funciones cognitivas en «Sí» no generan banderas", () => {
   const valores = {};
   for (const f of FUNCIONES_COGNITIVAS) valores[f.id] = "si";
   const bloques = sintetizar(valores);
-  const ok = bloques.find((b) => b.tipo === "bandera" && b.nivel === "ok");
-  assert.ok(ok, "falta la bandera ok de funciones cognitivas");
-  assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.nivel === "alerta"));
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
   assert.deepEqual(lista.items, [
     "Atención selectiva: Sí",
@@ -376,12 +368,15 @@ test("el área académica y el plan de intervención se resumen cuando hay conte
   assert.ok(academico, "falta el párrafo del área académica");
   assert.ok(academico.texto.includes("Rendimiento académico: Aprobado en todas las asignaturas."));
   assert.ok(academico.texto.includes("Apoyos al aprendizaje: Programa de integración escolar (PIE)."));
-  const plan = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención");
-  assert.ok(plan.texto.includes("Problemática ocupacional: Dificultad de autorregulación en la rutina escolar."));
-  assert.ok(plan.texto.includes("Corto plazo: objetivo general: Favorecer la autorregulación"));
-  assert.ok(plan.texto.includes("objetivos específicos: Trabajar pausas activas."));
-  assert.ok(!plan.texto.includes("Mediano plazo"));
-  assert.ok(!plan.texto.includes("Largo plazo"));
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.deepEqual(plan.filas[0], [
+    "Problemática ocupacional",
+    "Dificultad de autorregulación en la rutina escolar",
+  ]);
+  assert.deepEqual(plan.filas[1], ["Corto plazo · Objetivo general", "Favorecer la autorregulación"]);
+  assert.deepEqual(plan.filas[2], ["Corto plazo · Objetivos específicos", "Trabajar pausas activas"]);
+  assert.deepEqual(plan.filas[3], ["Mediano plazo · Objetivo general", "—"]);
+  assert.deepEqual(plan.filas[6], ["Largo plazo · Objetivos específicos", "—"]);
 });
 
 test("el motivo de consulta combina origen, motivo y observación", () => {

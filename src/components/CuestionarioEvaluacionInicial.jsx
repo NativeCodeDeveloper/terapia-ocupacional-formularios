@@ -201,8 +201,8 @@ export default function CuestionarioEvaluacionInicial({
           </div>
 
           <p className="mt-6 text-sm leading-relaxed text-neutral-600">
-            Descarga el informe con el registro completo de la evaluación y la síntesis clínica
-            automatizada, listo para firmar e integrar a la ficha.
+            Descarga el informe con la síntesis automatizada de la evaluación y el plan de
+            intervención, listo para firmar e integrar a la ficha.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">

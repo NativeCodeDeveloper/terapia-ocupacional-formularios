@@ -2,13 +2,16 @@ import { jsPDF } from "jspdf";
 
 /* ============================================================
    EVALUACIÓN INICIAL DE TERAPIA OCUPACIONAL · MOTOR COMÚN
-   Motor de informe PDF compartido por las cuatro fichas de
-   Evaluación Inicial (Infantil, Adolescencia, Adulto y Persona
-   Mayor). A diferencia del SPM-2 y del Perfil Sensorial 2, no
-   hay puntaje T ni tabla de corte: el informe se construye
-   con el registro completo de la entrevista más la síntesis
-   automatizada (bloques bandera / párrafo / lista / tabla)
-   que cada ficha genera en su propio módulo informe-ei-*.js.
+   Motor de informe (PDF y Word) compartido por las cuatro
+   fichas de Evaluación Inicial. A diferencia del SPM-2 y del
+   Perfil Sensorial 2, no hay puntaje T ni tabla de corte: el
+   informe se construye con la síntesis automatizada que cada
+   ficha genera en su módulo informe-ei-*.js. Los bloques
+   bandera (nivel alerta o critico) no se reparten por el
+   informe: se consolidan al final bajo «Alertas en
+   información recabada». El plan de intervención se entrega
+   como bloque tipo «plan» con filas [etiqueta, valor] en el
+   orden del impreso.
    ============================================================ */
 
 const GRIS = 110;
@@ -224,10 +227,44 @@ export function descargarInformePDFEvaluacionInicial(config) {
     y += 10;
   };
 
+  /* Plan de intervención en el orden del impreso: filas
+     [etiqueta, valor] como tabla de dos columnas. */
+  const dibujarPlan = (bloque) => {
+    if (bloque.titulo) {
+      asegurar(30);
+      escribir(bloque.titulo, { tamano: 10.5, negrita: true, espacio: 3 });
+      asegurar(30);
+    }
+    const anchoEtiqueta = anchoUtil * 0.32;
+    const anchoValor = anchoUtil - anchoEtiqueta;
+    for (const [etiqueta, valor] of bloque.filas) {
+      const lineasEtiqueta = doc.splitTextToSize(etiqueta, anchoEtiqueta - 12);
+      const lineasValor = doc.splitTextToSize(textoValor(valor), anchoValor - 12);
+      const alto = Math.max(lineasValor.length * 12 + 10, lineasEtiqueta.length * 11 + 10, 24);
+      asegurar(alto);
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.5);
+      doc.setFillColor(...colorFondo);
+      doc.rect(margen, y, anchoEtiqueta, alto, "FD");
+      doc.rect(margen + anchoEtiqueta, y, anchoValor, alto);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(GRIS);
+      lineasEtiqueta.forEach((linea, li) => doc.text(linea, margen + 6, y + 14 + li * 11));
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(25);
+      lineasValor.forEach((linea, li) => doc.text(linea, margen + anchoEtiqueta + 6, y + 14 + li * 12));
+      y += alto;
+    }
+    y += 10;
+  };
+
   const dibujarBloques = (bloques) => {
     for (const bloque of bloques) {
       if (bloque.tipo === "bandera") dibujarBandera(bloque);
       else if (bloque.tipo === "tabla") dibujarTabla(bloque);
+      else if (bloque.tipo === "plan") dibujarPlan(bloque);
       else if (bloque.tipo === "lista") {
         asegurar(50);
         escribir(bloque.titulo, { tamano: 10.5, negrita: true, espacio: 3 });
@@ -243,99 +280,24 @@ export function descargarInformePDFEvaluacionInicial(config) {
     }
   };
 
-  if (sintesis.length > 0) {
+  /* Las banderas alerta/critico no se reparten por el informe:
+     se consolidan al final en «Alertas en información
+     recabada». Las banderas ok/info no se imprimen. */
+  const bloquesResumen = sintesis.filter((b) => b.tipo !== "bandera");
+  const alertasRecabadas = sintesis.filter(
+    (b) => b.tipo === "bandera" && (b.nivel === "alerta" || b.nivel === "critico")
+  );
+
+  if (bloquesResumen.length > 0) {
     asegurar(80);
     escribir("Síntesis automatizada de la evaluación", { tamano: 13, negrita: true, espacio: 8 });
-    dibujarBloques(sintesis);
+    dibujarBloques(bloquesResumen);
   }
 
-  /* ---- Registro completo por sección ---- */
-  const dibujarCampo = (campo) => {
-    const valor = valores[campo.id];
-    if (campo.tipo === "radio" || campo.tipo === "siNo") {
-      const elegida = etiquetaOpcion(campo, valor) || "—";
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(GRIS);
-      asegurar(26);
-      doc.text(campo.etiqueta.toUpperCase(), margen, y);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
-      doc.setTextColor(25);
-      doc.text(elegida, margen + 14, y + 14);
-      y += 28;
-      return;
-    }
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(GRIS);
-    asegurar(24);
-    doc.text(campo.etiqueta.toUpperCase(), margen, y);
-    y += 11;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(25);
-    for (const linea of doc.splitTextToSize(textoValor(valor), anchoUtil)) {
-      asegurar(15);
-      doc.text(linea, margen, y);
-      y += 14;
-    }
-    y += 8;
-  };
-
-  const dibujarTablaEscalas = (campos) => {
-    const anchos = [anchoUtil * 0.3, anchoUtil * 0.24, anchoUtil * 0.46];
-    const xs = [margen, margen + anchos[0], margen + anchos[0] + anchos[1]];
-    const columnas = ["ÁMBITO", "NIVEL", "OBSERVACIÓN"];
-    const altoEncabezado = 16;
-    const dibujarEncabezado = () => {
-      doc.setFillColor(...oscuro);
-      doc.rect(margen, y, anchoUtil, altoEncabezado, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(255);
-      columnas.forEach((c, ci) => doc.text(c, xs[ci] + 6, y + 11.5));
-      y += altoEncabezado;
-    };
-    asegurar(altoEncabezado + 30);
-    dibujarEncabezado();
-    for (const campo of campos) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(25);
-      const nivel = etiquetaOpcion(campo, valores[campo.id]) || "—";
-      const obs = textoValor(valores[`${campo.id}Obs`]);
-      const celdas = [campo.etiqueta, nivel, obs];
-      const alto =
-        Math.max(...celdas.map((celda, ci) => doc.splitTextToSize(celda, anchos[ci] - 12).length)) * 12 + 10;
-      asegurar(alto);
-      doc.setDrawColor(180);
-      doc.setLineWidth(0.5);
-      celdas.forEach((celda, ci) => {
-        doc.rect(xs[ci], y, anchos[ci], alto);
-        for (const [li, linea] of doc.splitTextToSize(celda, anchos[ci] - 12).entries()) {
-          doc.text(linea, xs[ci] + 6, y + 14 + li * 12);
-        }
-      });
-      y += alto;
-    }
-    y += 10;
-  };
-
-  asegurar(70);
-  escribir("Registro completo de la evaluación", { tamano: 13, negrita: true, espacio: 10 });
-  for (const seccion of secciones) {
-    const escalas = seccion.campos.filter((c) => c.tipo === "escala");
-    const otros = seccion.campos.filter((c) => c.tipo !== "escala");
-    const altoEncabezado = escalas.length > 0 ? escalas.length * 22 + 40 : 40;
-    asegurar(altoEncabezado);
-    doc.setFillColor(...color);
-    doc.rect(margen, y, anchoUtil, 3, "F");
-    y += 12;
-    escribir(seccion.titulo.toUpperCase(), { tamano: 11.5, negrita: true, tinte: oscuro, espacio: 8 });
-    if (escalas.length > 0) dibujarTablaEscalas(escalas);
-    for (const campo of otros) dibujarCampo(campo);
-    y += 10;
+  if (alertasRecabadas.length > 0) {
+    asegurar(120);
+    escribir("Alertas en información recabada", { tamano: 13, negrita: true, espacio: 8 });
+    for (const alerta of alertasRecabadas) dibujarBandera(alerta);
   }
 
   if (notaPie) {
@@ -388,6 +350,18 @@ function bloquesWordHTML(bloques, oscuro) {
     .join("\n")}
 </table>`;
       }
+      if (bloque.tipo === "plan") {
+        return `<p style="margin:10px 0 2px;"><b>${escaparHTML(bloque.titulo ?? "")}</b></p>
+<table cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:10pt;table-layout:fixed;">
+  <colgroup><col style="width:32%" /><col style="width:68%" /></colgroup>
+  ${bloque.filas
+    .map(
+      ([etiqueta, valor]) =>
+        `<tr><td style="border:1px solid #999;background:#f3f4f6;"><b>${escaparHTML(etiqueta)}</b></td><td style="border:1px solid #999;">${escaparHTML(textoValor(valor)).replaceAll("\n", "<br/>")}</td></tr>`
+    )
+    .join("\n")}
+</table>`;
+      }
       if (bloque.tipo === "lista") {
         return `<p style="margin:10px 0 2px;"><b>${escaparHTML(bloque.titulo)}</b></p>
 <ul style="margin:0 0 8px 18px;padding:0;">${bloque.items.map((item) => `<li>${escaparHTML(item)}</li>`).join("")}</ul>`;
@@ -396,43 +370,6 @@ function bloquesWordHTML(bloques, oscuro) {
       return `<p style="margin:8px 0;">${titulo}${escaparHTML(bloque.texto)}</p>`;
     })
     .join("\n");
-}
-
-function seccionWordHTML(seccion, valores, oscuro) {
-  const escalas = seccion.campos.filter((c) => c.tipo === "escala");
-  const otros = seccion.campos.filter((c) => c.tipo !== "escala");
-
-  const escalasHTML = escalas.length
-    ? `<table cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:10pt;table-layout:fixed;">
-  <colgroup><col style="width:30%" /><col style="width:24%" /><col style="width:46%" /></colgroup>
-  <tr>
-    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">ÁMBITO</th>
-    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">NIVEL</th>
-    <th align="left" style="border:1px solid #666;background:${rgbCSS(oscuro)};color:#fff;">OBSERVACIÓN</th>
-  </tr>
-  ${escalas
-    .map((campo) => {
-      const nivel = etiquetaOpcion(campo, valores[campo.id]) || "—";
-      const obs = textoValor(valores[`${campo.id}Obs`]);
-      return `<tr><td style="border:1px solid #999;">${escaparHTML(campo.etiqueta)}</td><td style="border:1px solid #999;">${escaparHTML(nivel)}</td><td style="border:1px solid #999;">${escaparHTML(obs)}</td></tr>`;
-    })
-    .join("\n")}
-</table>`
-    : "";
-
-  const otrosHTML = otros
-    .map((campo) => {
-      const valor =
-        campo.tipo === "radio" || campo.tipo === "siNo"
-          ? etiquetaOpcion(campo, valores[campo.id]) || "—"
-          : textoValor(valores[campo.id]);
-      return `<p style="margin:6px 0;"><b style="font-size:8.5pt;color:#666;text-transform:uppercase;">${escaparHTML(campo.etiqueta)}</b><br/>${escaparHTML(valor).replaceAll("\n", "<br/>")}</p>`;
-    })
-    .join("\n");
-
-  return `<h2 style="font-size:12pt;color:${rgbCSS(oscuro)};border-bottom:2px solid ${rgbCSS(oscuro)};margin:16px 0 6px;">${escaparHTML(seccion.titulo)}</h2>
-${escalasHTML}
-${otrosHTML}`;
 }
 
 export function construirInformeWordHTML(config) {
@@ -457,14 +394,23 @@ export function construirInformeWordHTML(config) {
     .join("\n");
   const fechaHTML = `<p style="margin:2px 0;"><b>FECHA DE APLICACIÓN:</b> ${escaparHTML(fechaCorta())}</p>`;
 
-  const sintesisHTML = sintesis.length
+  /* Las banderas alerta/critico se consolidan al final en
+     «Alertas en información recabada»; las ok/info no se
+     imprimen. */
+  const bloquesResumen = sintesis.filter((b) => b.tipo !== "bandera");
+  const alertasRecabadas = sintesis.filter(
+    (b) => b.tipo === "bandera" && (b.nivel === "alerta" || b.nivel === "critico")
+  );
+
+  const sintesisHTML = bloquesResumen.length
     ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Síntesis automatizada de la evaluación</h2>
-${bloquesWordHTML(sintesis, oscuro)}`
+${bloquesWordHTML(bloquesResumen, oscuro)}`
     : "";
 
-  const registroHTML = secciones
-    .map((seccion) => seccionWordHTML(seccion, valores, oscuro))
-    .join("\n");
+  const alertasHTML = alertasRecabadas.length
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Alertas en información recabada</h2>
+${bloquesWordHTML(alertasRecabadas, oscuro)}`
+    : "";
 
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="utf-8" /><title>${escaparHTML(titulo)}</title></head>
@@ -477,8 +423,7 @@ ${bloquesWordHTML(sintesis, oscuro)}`
   ${identificacionHTML}
   ${fechaHTML}
   ${sintesisHTML}
-  <h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Registro completo de la evaluación</h2>
-  ${registroHTML}
+  ${alertasHTML}
   ${notaPie ? `<p style="margin:18px 0 0;font-size:9pt;color:#666;">${escaparHTML(notaPie)}</p>` : ""}
   <p style="margin:30px 0 0;text-align:center;">____________________________<br/>Firma Profesional</p>
 </body>

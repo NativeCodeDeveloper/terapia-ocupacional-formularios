@@ -102,28 +102,46 @@ const config = (sintesis) => ({
   sintesis,
 });
 
-test("Word: contiene encabezado, identificación, escalas y observaciones", () => {
-  const html = construirInformeWordHTML(config([]));
+test("Word: contiene encabezado, identificación y la síntesis en tablas", () => {
+  const html = construirInformeWordHTML(
+    config([
+      {
+        tipo: "tabla",
+        titulo: "Independencia funcional",
+        columnas: [{ titulo: "Ámbito" }, { titulo: "Nivel" }],
+        filas: [["Comer", "Dependiente"]],
+      },
+      { tipo: "plan", titulo: "Plan de intervención", filas: [["Problemática ocupacional", "Alimentación con ayuda"]] },
+    ])
+  );
   assert.match(html, /Informe de evaluación inicial/);
   assert.match(html, /<b>Nombre:<\/b> Ana/);
   assert.match(html, /FECHA DE APLICACIÓN/);
-  assert.match(html, /ÁMBITO/);
+  // Tabla de independencia de la síntesis con nivel y observación.
+  assert.match(html, /Ámbito/);
   assert.match(html, /Comer/);
   assert.match(html, /Dependiente/);
-  assert.match(html, /Requiere ayuda total\./);
+  // Plan de intervención como tabla de dos columnas.
+  assert.match(html, /Problemática ocupacional/);
+  assert.match(html, /Alimentación con ayuda/);
+  // El registro completo por sección ya no se imprime.
+  assert.ok(!html.includes("Registro completo de la evaluación"));
   assert.match(html, /Firma Profesional/);
 });
 
-test("Word: refleja las banderas de la síntesis automatizada", () => {
+test("Word: consolida las alertas al final y omite las banderas ok", () => {
   const html = construirInformeWordHTML(
     config([
       { tipo: "bandera", nivel: "critico", texto: "Se registra ideación suicida." },
       { tipo: "bandera", nivel: "ok", texto: "Independencia conservada." },
     ])
   );
+  assert.match(html, /Alertas en información recabada/);
   assert.match(html, /REQUIERE ATENCIÓN INMEDIATA/);
   assert.match(html, /Se registra ideación suicida\./);
-  assert.match(html, /SIN ALERTAS/);
+  // La bandera ok no se imprime en el informe.
+  assert.ok(!html.includes("SIN ALERTAS"));
+  assert.ok(!html.includes("Independencia conservada."));
 });
 
 test("Word: escapa HTML del contenido registrado", () => {

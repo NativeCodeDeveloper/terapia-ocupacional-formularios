@@ -305,17 +305,17 @@ export const SECCIONES = [
     campos: [
       { id: "generalidades", etiqueta: "Generalidades", tipo: "textoLargo", hint: "¿Ha tenido olvidos frecuentes?" },
       { id: "atencionSelectiva", etiqueta: "Atención selectiva", tipo: "siNo", hint: "centrar la atención en un estímulo por 15 minutos" },
-      { id: "atencionSelectivaEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "atencionSelectivaEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
       { id: "atencionSostenida", etiqueta: "Atención sostenida", tipo: "siNo", hint: "mantener la atención en una actividad o estímulo durante un largo periodo de tiempo" },
-      { id: "atencionSostenidaEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "atencionSostenidaEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
       { id: "atencionDividida", etiqueta: "Atención dividida", tipo: "siNo", hint: "capacidad de atender a dos o más tareas al mismo tiempo" },
-      { id: "atencionDivididaEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "atencionDivididaEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
       { id: "memoriaCortoPlazo", etiqueta: "Memoria corto plazo", tipo: "siNo", hint: "mantener información en la mente durante unos pocos segundos o minutos." },
-      { id: "memoriaCortoPlazoEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "memoriaCortoPlazoEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
       { id: "memoriaLargoPlazo", etiqueta: "Memoria largo plazo", tipo: "siNo", hint: "almacenar recuerdos, pensamientos, sensaciones, que posteriormente se recuerdan de forma voluntaria o no." },
-      { id: "memoriaLargoPlazoEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "memoriaLargoPlazoEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
       { id: "memoriaTrabajo", etiqueta: "Memoria de trabajo", tipo: "siNo", hint: "capacidad de retener y manejar información de una tarea" },
-      { id: "memoriaTrabajoEnQue", etiqueta: "¿En qué?", tipo: "textoLargo", filas: 2 },
+      { id: "memoriaTrabajoEnQue", etiqueta: "Observación", tipo: "textoLargo", filas: 2 },
     ],
   },
   {
@@ -475,10 +475,7 @@ function distribucionDeNiveles(respondidas, v) {
 
 function bloqueDescanso(v) {
   const campo = campoPorId(seccionPorId("independencia-funcional-basica"), "descansoSueno");
-  if (!v.descansoSueno) return null;
-  if (v.descansoSueno === "normal") {
-    return { tipo: "bandera", nivel: "ok", titulo: "Descanso y sueño", texto: "Descanso y sueño normal." };
-  }
+  if (!v.descansoSueno || v.descansoSueno === "normal") return null;
   return {
     tipo: "bandera",
     nivel: "alerta",
@@ -527,23 +524,21 @@ function bloquesSaludMental(v) {
   const seccion = seccionPorId("salud-mental");
   const bloques = [];
 
+  /* Tamizaje integrado de salud mental: se describe el estado
+     de la pauta sin levantar alerta automática (pauta
+     integrada, no obligatoria de aplicar); la revisión
+     clínica decide. */
+  const consultados = seccion.campos.filter((campo) => campo.tipo === "siNo" && v[campo.id]);
   const riesgos = Object.entries(REGLAS_RIESGO_SALUD_MENTAL)
     .filter(([id, riesgo]) => v[id] === riesgo)
     .map(([id, riesgo]) => `${campoPorId(seccion, id).etiqueta}: ${riesgo === "si" ? "Sí" : "No"}`);
-
-  if (riesgos.length === 0) {
+  if (consultados.length > 0) {
     bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      titulo: "Salud mental",
-      texto: "Sin indicadores de riesgo en la entrevista de salud mental.",
-    });
-  } else {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      titulo: "Salud mental",
-      texto: `Se registran ${riesgos.length} indicadores de riesgo de salud mental: ${riesgos.join("; ")}.`,
+      tipo: "parrafo",
+      titulo: "Salud mental (tamizaje integrado)",
+      texto:
+        `Se aplicaron ${consultados.length} de ${seccion.campos.filter((c) => c.tipo === "siNo").length} ítems de la pauta integrada de salud mental.` +
+        (riesgos.length > 0 ? ` Respuestas de referencia: ${riesgos.join("; ")}.` : ""),
     });
   }
 
@@ -578,7 +573,7 @@ function bloquesAreaCognitiva(v) {
       const respuesta = etiquetaRespuesta(campo, v[campo.id]);
       const enQue = limpiar(v[`${campo.id}EnQue`]);
       return enQue && v[campo.id] === "no"
-        ? `${campo.etiqueta}: ${respuesta} (¿En qué? ${enQue})`
+        ? `${campo.etiqueta}: ${respuesta} (Observación: ${enQue})`
         : `${campo.etiqueta}: ${respuesta}`;
     });
   if (items.length > 0) {
@@ -593,39 +588,24 @@ function bloquesAreaCognitiva(v) {
       titulo: "Funciones cognitivas",
       texto: `Dificultad referida en: ${alteradas.join(", ")}.`,
     });
-  } else if (funciones.every((campo) => v[campo.id] === "si")) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      titulo: "Funciones cognitivas",
-      texto: "Las funciones cognitivas consultadas se registran preservadas.",
-    });
   }
   return bloques;
 }
 
+/* Plan de intervención en el orden del impreso: filas
+   [etiqueta, valor] para la tabla de dos columnas. */
 function bloquePlan(v) {
-  const partes = [];
-  const problema = limpiar(v.problemaOcupacional);
-  if (problema) partes.push(`Problemática ocupacional: ${problema}.`);
-
+  const filas = [["Problemática ocupacional", limpiar(v.problemaOcupacional) || "—"]];
   const plazos = [
-    ["corto", "corto plazo"],
-    ["mediano", "mediano plazo"],
-    ["largo", "largo plazo"],
+    ["Corto plazo", "corto"],
+    ["Mediano plazo", "mediano"],
+    ["Largo plazo", "largo"],
   ];
-  for (const [prefijo, nombre] of plazos) {
-    const objetivo = limpiar(v[`${prefijo}Objetivo`]);
-    if (objetivo) partes.push(`Objetivo general (${nombre}): ${objetivo}.`);
-    const especificos = limpiar(v[`${prefijo}Especificos`]);
-    if (especificos) partes.push(`Objetivos específicos (${nombre}): ${especificos}.`);
+  for (const [nombre, prefijo] of plazos) {
+    filas.push([`${nombre} · Objetivo general`, limpiar(v[`${prefijo}Objetivo`]) || "—"]);
+    filas.push([`${nombre} · Objetivos específicos`, limpiar(v[`${prefijo}Especificos`]) || "—"]);
   }
-
-  return {
-    tipo: "parrafo",
-    titulo: "Plan de intervención",
-    texto: partes.length > 0 ? partes.join(" ") : "Plan pendiente de definición por el terapeuta tratante.",
-  };
+  return { tipo: "plan", titulo: "Plan de intervención", filas };
 }
 
 /* ============================================================
@@ -653,14 +633,7 @@ export function sintetizar(valores = {}) {
       items: distribucionDeNiveles(respondidas, v),
     });
   }
-  if (respondidas.length === escalas.length && conApoyo.length === 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      titulo: "Independencia funcional",
-      texto: `Independencia funcional conservada: los ${escalas.length} ámbitos se registran en nivel independiente.`,
-    });
-  } else if (conApoyo.length > 0) {
+  if (conApoyo.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",

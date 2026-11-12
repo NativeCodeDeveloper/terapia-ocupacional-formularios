@@ -15,7 +15,7 @@ import {
    del esquema y cada sí/no del área cognitiva lleva el
    companion `${id}EnQue`. La síntesis automatizada no usa
    puntajes: construye párrafos, tablas, listas y banderas
-   (ok/alerta/info, nunca crítico) a partir del registro.
+   (alerta, nunca crítico; las banderas ok/info no se imprimen) a partir del registro.
    ============================================================ */
 
 const TODOS_LOS_CAMPOS = SECCIONES.flatMap((s) => s.campos);
@@ -106,7 +106,7 @@ test("los 12 campos escala tienen 4 opciones y su Obs no está en el esquema", (
   );
 });
 
-test("cada función cognitiva tiene su companion ¿en qué?", () => {
+test("cada función cognitiva tiene su companion «Observación»", () => {
   assert.equal(FUNCIONES_COGNITIVAS.length, 6);
   for (const campo of FUNCIONES_COGNITIVAS) {
     const companion = SECCIONES.find((s) => s.id === "area-cognitiva").campos.find(
@@ -114,7 +114,7 @@ test("cada función cognitiva tiene su companion ¿en qué?", () => {
     );
     assert.ok(companion, `falta ${campo.id}EnQue`);
     assert.equal(companion.tipo, "textoLargo");
-    assert.equal(companion.etiqueta, "¿En qué?");
+    assert.equal(companion.etiqueta, "Observación");
   }
 });
 
@@ -126,10 +126,9 @@ test("sintetizar con valores vacíos no lanza y no genera bandera crítico", () 
     bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Motivo de consulta").texto,
     "No se registra motivo de consulta en la entrevista."
   );
-  assert.equal(
-    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto,
-    "Plan pendiente de definición por el terapeuta tratante."
-  );
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.equal(plan.filas.length, 7);
+  assert.ok(plan.filas.every((fila) => fila[1] === "—"));
 });
 
 test("todas las escalas dependiente → alerta y distribución de 11 dependientes", () => {
@@ -146,21 +145,15 @@ test("todas las escalas dependiente → alerta y distribución de 11 dependiente
   assert.equal(contarNivelesIndependencia(valores).dependiente, 11);
 });
 
-test("todo independiente y descanso normal → bandera ok", () => {
+test("todo independiente y descanso normal no genera banderas", () => {
   const valores = {
     ...todosLosNiveles("independiente"),
     descansoSueno: "normal",
   };
   const bloques = sintetizar(valores);
-  const ok = bloques.find(
-    (b) => b.tipo === "bandera" && b.nivel === "ok" && b.texto.includes("Independencia funcional conservada")
-  );
-  assert.ok(ok, "debe existir la bandera ok de independencia conservada");
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
   const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
   assert.deepEqual(distribucion.items, ["Independiente: 11"]);
-  const descanso = bloques.filter((b) => b.tipo === "bandera").find((b) => b.texto.includes("Descanso y sueño"));
-  assert.ok(descanso, "el descanso normal genera su propia bandera");
-  assert.equal(descanso.nivel, "ok");
 });
 
 test("descanso y sueño distinto de normal → bandera alerta que menciona el nivel", () => {
@@ -170,15 +163,17 @@ test("descanso y sueño distinto de normal → bandera alerta que menciona el ni
   assert.ok(alerta.texto.includes("descanso y sueño"));
 });
 
-test("retrasoPsicomotor «si» → alerta que menciona el retraso; «no» → ok", () => {
+test("retrasoPsicomotor «si» → alerta; «no» → fila en la tabla de hitos, sin bandera", () => {
   const conRetraso = sintetizar({ retrasoPsicomotor: "si" });
   const alerta = conRetraso.find((b) => b.tipo === "bandera" && b.nivel === "alerta");
   assert.ok(alerta.texto.includes("retraso"));
   assert.ok(alerta.texto.includes("control de niño sano"));
 
   const sinRetraso = sintetizar({ retrasoPsicomotor: "no" });
-  const ok = sinRetraso.find((b) => b.tipo === "bandera" && b.nivel === "ok");
-  assert.ok(ok.texto.includes("psicomotor"));
+  assert.equal(sinRetraso.filter((b) => b.tipo === "bandera").length, 0);
+  const hitos = sinRetraso.find((b) => b.tipo === "tabla" && b.titulo === "Hitos del desarrollo");
+  const filaRetraso = hitos.filas.find((fila) => fila[0].includes("Retraso psicomotor"));
+  assert.equal(filaRetraso[1], "No");
 });
 
 test("las 6 funciones cognitivas en «No» → alerta con las 6 y detalle ¿en qué?", () => {
@@ -198,13 +193,12 @@ test("las 6 funciones cognitivas en «No» → alerta con las 6 y detalle ¿en q
   assert.ok(lista.items.includes("Memoria de trabajo: No"));
 });
 
-test("las 6 funciones cognitivas en «Sí» → bandera ok", () => {
+test("las 6 funciones cognitivas en «Sí» no generan banderas", () => {
   const valores = Object.fromEntries(FUNCIONES_COGNITIVAS.map((c) => [c.id, "si"]));
   const bloques = sintetizar(valores);
-  const ok = bloques.find(
-    (b) => b.tipo === "bandera" && b.nivel === "ok" && b.texto.includes("funciones cognitivas")
-  );
-  assert.ok(ok, "debe existir la bandera ok cognitiva");
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
+  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
+  assert.deepEqual(lista.items, FUNCIONES_COGNITIVAS.map((c) => `${c.etiqueta}: Sí`));
 });
 
 test("el motivo de consulta arma el párrafo con origen, motivo y observación", () => {
@@ -228,18 +222,23 @@ test("el motivo de consulta arma el párrafo con origen, motivo y observación",
   );
 });
 
-test("el plan de intervención recoge la problemática y los objetivos por plazo", () => {
+test("el plan de intervención se estructura en el orden del impreso", () => {
   const bloques = sintetizar({
     problemaOcupacional: "Rendimiento escolar afectado por la motricidad fina.",
     cortoObjetivo: "Mejorar la pinza.",
     cortoEspecificos: "Tomar el lápiz con pinza trípode en 4 de 5 oportunidades.",
     largoEspecificos: "Escribir un párrafo sin fatiga.",
   });
-  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto;
-  assert.ok(texto.includes("Problemática ocupacional: Rendimiento escolar afectado por la motricidad fina."));
-  assert.ok(texto.includes("Corto plazo: objetivo general: Mejorar la pinza."));
-  assert.ok(texto.includes("objetivos específicos: Escribir un párrafo sin fatiga."));
-  assert.ok(!texto.includes("Mediano plazo"));
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.equal(plan.filas.length, 7);
+  assert.deepEqual(plan.filas[0], [
+    "Problemática ocupacional",
+    "Rendimiento escolar afectado por la motricidad fina.",
+  ]);
+  assert.deepEqual(plan.filas[1], ["Corto plazo · Objetivo general", "Mejorar la pinza."]);
+  assert.deepEqual(plan.filas[2], ["Corto plazo · Objetivos específicos", "Tomar el lápiz con pinza trípode en 4 de 5 oportunidades."]);
+  assert.deepEqual(plan.filas[3], ["Mediano plazo · Objetivo general", "—"]);
+  assert.deepEqual(plan.filas[6], ["Largo plazo · Objetivos específicos", "Escribir un párrafo sin fatiga."]);
 });
 
 test("contarNivelesIndependencia y ambitosConApoyo sobre un caso mixto", () => {

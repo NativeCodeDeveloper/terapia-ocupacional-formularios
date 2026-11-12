@@ -23,7 +23,7 @@ import {
    informe-evaluacion-inicial: cada campo tipo «escala» genera
    además su observación `${id}Obs` (no se declara en el
    esquema) y cada sí/no del área cognitiva lleva el companion
-   `${id}EnQue` («¿En qué?») del impreso.
+   `${id}EnQue` («Observación») del impreso.
    ============================================================ */
 
 /* ==== Opciones de las escalas del impreso ==== */
@@ -62,7 +62,7 @@ const OPCIONES_MASCOTAS = [
 ];
 
 /* Funciones del área cognitiva del impreso, con su descripción
-   como hint y el companion «¿En qué?» del impreso. */
+   como hint y el companion «Observación» del impreso. */
 const FUNCIONES_COGNITIVAS = [
   {
     id: "atencionSelectiva",
@@ -369,7 +369,7 @@ export const SECCIONES = [
     id: "area-cognitiva",
     titulo: "Área cognitiva",
     descripcion:
-      "Consulte si la función está presente. Si responde «No», registre en «¿En qué?» la situación observada.",
+      "Consulte si la función está presente. Si responde «No», registre en «Observación» la situación observada.",
     campos: [
       textoConHint("generalidades", "Generalidades", "¿Ha tenido olvidos frecuentes?", 4),
       ...FUNCIONES_COGNITIVAS.flatMap((funcion) => [
@@ -381,7 +381,7 @@ export const SECCIONES = [
         },
         {
           id: `${funcion.id}EnQue`,
-          etiqueta: "¿En qué?",
+          etiqueta: "Observación",
           tipo: "textoLargo",
           filas: 2,
         },
@@ -670,50 +670,23 @@ export function sintetizar(valores = {}) {
     bloques.push({ tipo: "lista", titulo: "Distribución de niveles", items: distribucion });
   }
 
-  const respondidos = Object.values(conteo).reduce((suma, n) => suma + n, 0);
   const conApoyo = ambitosConApoyo(valores);
-  if (respondidos > 0 && conteo.independiente === respondidos && respondidos === CAMPOS_INDEPENDENCIA.length) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Independencia funcional conservada en los 21 ámbitos evaluados.",
-    });
-  } else if (conApoyo.length > 0) {
+  if (conApoyo.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",
       texto: `Requiere apoyo en: ${conApoyo.join(", ")}.`,
     });
-  } else if (respondidos > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "info",
-      texto: `Independencia funcional registrada en ${respondidos} de 21 ámbitos; complete los restantes durante la entrevista.`,
-    });
-  } else {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "info",
-      texto: "Independencia funcional pendiente de registro en la entrevista.",
-    });
   }
 
   /* ---- Descanso y sueño (escala aparte) ---- */
   const descanso = etiquetaOpcion(CAMPO_DESCANSO, valores.descansoSueno);
-  if (descanso) {
-    bloques.push(
-      valores.descansoSueno === "normal"
-        ? {
-            tipo: "bandera",
-            nivel: "ok",
-            texto: "Descanso y sueño normal, sin fármacos ni insomnio referido.",
-          }
-        : {
-            tipo: "bandera",
-            nivel: "alerta",
-            texto: `El descanso y sueño se registran como «${descanso}».`,
-          }
-    );
+  if (descanso && valores.descansoSueno !== "normal") {
+    bloques.push({
+      tipo: "bandera",
+      nivel: "alerta",
+      texto: `El descanso y sueño se registran como «${descanso}».`,
+    });
   }
 
   /* ---- Síndromes geriátricos ---- */
@@ -727,30 +700,7 @@ export function sintetizar(valores = {}) {
     filas: SECCION_SINDROMES.campos.map((campo) => [campo.etiqueta, textoValor(valores[campo.id])]),
   });
 
-  const sindromes = SECCION_SINDROMES.campos.filter((campo) => (valores[campo.id] ?? "").trim() !== "");
-  if (sindromes.length >= 3) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Se registran ${sindromes.length} síndromes geriátricos con respuesta positiva u observación: ${sindromes
-        .map((campo) => campo.etiqueta)
-        .join(", ")}.`,
-    });
-  } else if (sindromes.length > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "info",
-      texto: `Se registran ${sindromes.length} síndrome${sindromes.length === 1 ? "" : "s"} geriátrico${
-        sindromes.length === 1 ? "" : "s"
-      } con respuesta positiva u observación: ${sindromes.map((campo) => campo.etiqueta).join(", ")}.`,
-    });
-  } else {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Sin síndromes geriátricos con respuesta positiva u observación registrada.",
-    });
-  }
+
 
   /* ---- Otras consideraciones ---- */
   const itemsOtras = [];
@@ -772,12 +722,6 @@ export function sintetizar(valores = {}) {
         .map((campo) => campo.etiqueta)
         .join(", ")}.`,
     });
-  } else if (positivos.length === 1) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "info",
-      texto: `Se registra hallazgo positivo en otras consideraciones: ${positivos[0].etiqueta}.`,
-    });
   }
 
   /* ---- Salud mental ---- */
@@ -798,18 +742,21 @@ export function sintetizar(valores = {}) {
     });
   }
 
-  const etiquetasRiesgo = etiquetasIndicadoresRiesgoSaludMental(valores);
-  if (etiquetasRiesgo.length > 0) {
+  /* Tamizaje integrado de salud mental: se describe el estado
+     de la pauta sin levantar alerta automática (pauta
+     integrada, no obligatoria de aplicar); la revisión
+     clínica decide. */
+  const consultadosSM = SECCION_SALUD_MENTAL.campos.filter(
+    (campo) => campo.tipo === "siNo" && (valores[campo.id] === "si" || valores[campo.id] === "no")
+  );
+  if (consultadosSM.length > 0) {
+    const etiquetasRiesgo = etiquetasIndicadoresRiesgoSaludMental(valores);
     bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Se registran ${etiquetasRiesgo.length} indicadores de riesgo de salud mental: ${etiquetasRiesgo.join(", ")}.`,
-    });
-  } else {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Sin indicadores de riesgo de salud mental en las respuestas registradas de la entrevista.",
+      tipo: "parrafo",
+      titulo: "Salud mental (tamizaje integrado)",
+      texto:
+        `Se aplicaron ${consultadosSM.length} de ${SECCION_SALUD_MENTAL.campos.filter((c) => c.tipo === "siNo").length} ítems de la pauta integrada de salud mental.` +
+        (etiquetasRiesgo.length > 0 ? ` Respuestas de referencia: ${etiquetasRiesgo.join(", ")}.` : ""),
     });
   }
 
@@ -826,26 +773,11 @@ export function sintetizar(valores = {}) {
   }
 
   const conDificultad = CAMPOS_COGNITIVOS.filter((campo) => valores[campo.id] === "no");
-  const consultadas = CAMPOS_COGNITIVOS.filter(
-    (campo) => valores[campo.id] === "si" || valores[campo.id] === "no"
-  ).length;
   if (conDificultad.length > 0) {
     bloques.push({
       tipo: "bandera",
       nivel: "alerta",
       texto: `Dificultades referidas en: ${conDificultad.map((campo) => campo.etiqueta).join(", ")}.`,
-    });
-  } else if (consultadas === CAMPOS_COGNITIVOS.length) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "ok",
-      texto: "Las 6 funciones cognitivas consultadas se registran conservadas.",
-    });
-  } else if (consultadas > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "info",
-      texto: `Funciones cognitivas consultadas en ${consultadas} de 6; complete las restantes durante la entrevista.`,
     });
   }
 
@@ -859,25 +791,21 @@ export function sintetizar(valores = {}) {
     bloques.push({ tipo: "parrafo", titulo: "Entorno y adaptaciones", texto: lineasEntorno.join(" ") });
   }
 
-  /* ---- Plan de intervención ---- */
-  const lineasPlan = [];
-  const problema = (valores.problemaOcupacional ?? "").trim();
-  if (problema) lineasPlan.push(`Problemática ocupacional: ${problema}`);
+  /* ---- Plan de intervención (en el orden del impreso) ---- */
+  const filasPlan = [
+    ["Problemática ocupacional", (valores.problemaOcupacional ?? "").trim() || "—"],
+  ];
   for (const plazo of PLAZOS) {
-    const objetivo = (valores[`${plazo.prefijo}Objetivo`] ?? "").trim();
-    const especificos = (valores[`${plazo.prefijo}Especificos`] ?? "").trim();
-    if (objetivo || especificos) {
-      const detalle = [];
-      if (objetivo) detalle.push(`objetivo general: ${objetivo}`);
-      if (especificos) detalle.push(`objetivos específicos: ${especificos}`);
-      lineasPlan.push(`${plazo.nombre}: ${detalle.join("; ")}.`);
-    }
+    filasPlan.push([
+      `${plazo.nombre} · Objetivo general`,
+      (valores[`${plazo.prefijo}Objetivo`] ?? "").trim() || "—",
+    ]);
+    filasPlan.push([
+      `${plazo.nombre} · Objetivos específicos`,
+      (valores[`${plazo.prefijo}Especificos`] ?? "").trim() || "—",
+    ]);
   }
-  bloques.push({
-    tipo: "parrafo",
-    titulo: "Plan de intervención",
-    texto: lineasPlan.length > 0 ? lineasPlan.join(" ") : "Plan pendiente de definición por el terapeuta tratante.",
-  });
+  bloques.push({ tipo: "plan", titulo: "Plan de intervención", filas: filasPlan });
 
   return bloques;
 }

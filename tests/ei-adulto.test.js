@@ -126,7 +126,7 @@ test("transcripción verbatim del impreso: Alimentación también usa Asistencia
   );
 });
 
-test("área cognitiva: cada función sí/no lleva su campo «¿En qué?»", () => {
+test("área cognitiva: cada función sí/no lleva su campo «Observación»", () => {
   const cognitiva = seccionPorId("area-cognitiva");
   const funciones = cognitiva.campos.filter((c) => c.tipo === "siNo");
   assert.deepEqual(
@@ -142,8 +142,8 @@ test("área cognitiva: cada función sí/no lleva su campo «¿En qué?»", () =
   );
   for (const campo of funciones) {
     const enQue = cognitiva.campos.find((c) => c.id === `${campo.id}EnQue`);
-    assert.ok(enQue, `falta el campo ¿En qué? de ${campo.id}`);
-    assert.equal(enQue.etiqueta, "¿En qué?");
+    assert.ok(enQue, `falta el campo Observación de ${campo.id}`);
+    assert.equal(enQue.etiqueta, "Observación");
     assert.equal(enQue.tipo, "textoLargo");
     assert.equal(enQue.requerido ?? false, false);
   }
@@ -157,10 +157,9 @@ test("sintetizar con valores vacíos: no lanza y no hay bandera crítica", () =>
     bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Motivo de consulta").texto,
     "No se registra motivo de consulta en la entrevista."
   );
-  assert.equal(
-    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto,
-    "Plan pendiente de definición por el terapeuta tratante."
-  );
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.equal(plan.filas.length, 7);
+  assert.ok(plan.filas.every((fila) => fila[1] === "—"));
 });
 
 test("las tablas de la síntesis tienen 12 y 10 filas", () => {
@@ -206,14 +205,18 @@ test("todas las respuestas de riesgo → alerta de salud mental con 13 indicador
     sinEsperanzas: "si",
   };
   const bloques = sintetizar(valores);
-  const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Se registran 13 indicadores de riesgo"));
-  assert.ok(alerta, "debe existir la bandera con los 13 indicadores");
-  assert.equal(alerta.nivel, "alerta");
-  assert.match(alerta.texto, /Se siente satisfecha de su vida: No/);
-  assert.match(alerta.texto, /¿Se ha sentido sin esperanzas\?: Sí/);
+  const tamizaje = bloques.find(
+    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (tamizaje integrado)"
+  );
+  assert.ok(tamizaje, "debe existir el párrafo de tamizaje integrado");
+  assert.match(tamizaje.texto, /Se aplicaron 13 de 15 ítems/);
+  assert.match(tamizaje.texto, /Se siente satisfecha de su vida: No/);
+  assert.match(tamizaje.texto, /¿Se ha sentido sin esperanzas\?: Sí/);
+  // La pauta integrada no levanta alerta automática por sí sola.
+  assert.ok(!bloques.some((b) => b.tipo === "bandera" && b.texto.startsWith("Se registran 13 indicadores")));
 });
 
-test("perfil sano: escalas independientes, descanso normal y sin riesgos → banderas ok", () => {
+test("perfil sano: sin banderas y con el tamizaje integrado de salud mental", () => {
   const valores = {
     satisfaccionVida: "si",
     buenAnimo: "si",
@@ -233,10 +236,12 @@ test("perfil sano: escalas independientes, descanso normal y sin riesgos → ban
   for (const campo of escalasDeIndependencia()) valores[campo.id] = "independiente";
 
   const bloques = sintetizar(valores);
-  const textosOk = bloques.filter((b) => b.tipo === "bandera" && b.nivel === "ok").map((b) => b.texto);
-  assert.ok(textosOk.some((t) => t.startsWith("Sin indicadores de riesgo")), "bandera ok de salud mental");
-  assert.ok(textosOk.some((t) => t.startsWith("Independencia funcional conservada")), "bandera ok de independencia");
-  assert.ok(textosOk.some((t) => t.startsWith("Descanso y sueño normal")), "bandera ok de descanso");
+  // Perfil sano: ninguna bandera (las ok/info no se imprimen y
+  // el tamizaje integrado de salud mental es un párrafo).
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
+  const tamizaje = bloques.find((b) => b.titulo === "Salud mental (tamizaje integrado)");
+  assert.ok(tamizaje, "el tamizaje integrado resume los ítems aplicados");
+  assert.match(tamizaje.texto, /Se aplicaron 13 de 15 ítems/);
 
   const distribucion = bloques.find((b) => b.tipo === "lista" && b.titulo === "Distribución de niveles");
   assert.deepEqual(distribucion.items, ["Independiente: 21 de 21"]);
@@ -285,7 +290,7 @@ test("un solo hallazgo positivo en otras consideraciones no genera alerta", () =
   assert.ok(!bloques.some((b) => b.texto?.includes("hallazgos positivos")));
 });
 
-test("funciones cognitivas en No → alerta con las funciones alteradas y el «¿En qué?»", () => {
+test("funciones cognitivas en No → alerta con las funciones alteradas y su «Observación»", () => {
   const bloques = sintetizar({
     atencionSelectiva: "no",
     atencionSelectivaEnQue: "lectura prolongada",
@@ -293,7 +298,7 @@ test("funciones cognitivas en No → alerta con las funciones alteradas y el «�
   });
   const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
   assert.deepEqual(lista.items, [
-    "Atención selectiva: No (¿En qué? lectura prolongada)",
+    "Atención selectiva: No (Observación: lectura prolongada)",
     "Memoria de trabajo: No",
   ]);
   const alerta = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Dificultad referida en:"));
@@ -301,26 +306,27 @@ test("funciones cognitivas en No → alerta con las funciones alteradas y el «�
   assert.match(alerta.texto, /Atención selectiva, Memoria de trabajo/);
 });
 
-test("funciones cognitivas todas en Sí → bandera ok", () => {
+test("funciones cognitivas todas en Sí no generan banderas", () => {
   const valores = {};
   for (const campo of seccionPorId("area-cognitiva").campos.filter((c) => c.tipo === "siNo")) {
     valores[campo.id] = "si";
   }
   const bloques = sintetizar(valores);
-  const ok = bloques.find((b) => b.tipo === "bandera" && b.texto.startsWith("Las funciones cognitivas consultadas"));
-  assert.ok(ok);
-  assert.equal(ok.nivel, "ok");
+  assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
 });
 
-test("el plan de intervención se narra con problemática y objetivos por plazo", () => {
+test("el plan de intervención se estructura en el orden del impreso", () => {
   const bloques = sintetizar({
     problemaOcupacional: "Dificultad para vestirse de forma independiente",
     cortoObjetivo: "Recuperar la autonomía en el vestuario superior",
     largoEspecificos: "Retomar el rol laboral con adaptaciones",
   });
-  const texto = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Plan de intervención").texto;
-  assert.match(texto, /Problemática ocupacional: Dificultad para vestirse de forma independiente\./);
-  assert.match(texto, /Objetivo general \(corto plazo\): Recuperar la autonomía en el vestuario superior\./);
-  assert.match(texto, /Objetivos específicos \(largo plazo\): Retomar el rol laboral con adaptaciones\./);
-  assert.ok(!texto.includes("mediano plazo"));
+  const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
+  assert.deepEqual(plan.filas[0], [
+    "Problemática ocupacional",
+    "Dificultad para vestirse de forma independiente",
+  ]);
+  assert.deepEqual(plan.filas[1], ["Corto plazo · Objetivo general", "Recuperar la autonomía en el vestuario superior"]);
+  assert.deepEqual(plan.filas[6], ["Largo plazo · Objetivos específicos", "Retomar el rol laboral con adaptaciones"]);
+  assert.deepEqual(plan.filas[3], ["Mediano plazo · Objetivo general", "—"]);
 });

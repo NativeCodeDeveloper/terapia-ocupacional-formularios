@@ -17,7 +17,7 @@ import {
    consulta, antecedentes familiares, independencia funcional
    (10 ámbitos + descanso y sueño, sin «Gatear»), hitos del
    desarrollo, áreas sensorial, física y cognitiva (funciones
-   con «¿En qué?»), lenguaje, conducta, interacción social,
+   con «Observación»), lenguaje, conducta, interacción social,
    emociones, área académica (aquí reemplaza al área de juego
    del infantil), habituación, esparcimiento, volición y plan
    de intervención con objetivos por plazo. La síntesis y el
