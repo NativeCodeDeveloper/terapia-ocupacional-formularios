@@ -579,7 +579,18 @@ test("caso salud mental completo: numeración, punto por ítem y resultado por c
   );
   assert.equal(
     parrafoSM.texto,
-    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage. Puntuación total: 15 de 15 puntos. Resultado según punto de corte: Depresión establecida."
+    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage."
+  );
+  assert.ok(!parrafoSM.texto.includes("Puntuación total"), "el párrafo previo no adelanta el resultado");
+  const recuadro = bloques.find((b) => b.tipo === "recuadro" && b.titulo === "Resultado del tamizaje");
+  assert.ok(recuadro, "el resultado va en recuadro debajo de la pauta");
+  assert.ok(
+    bloques.indexOf(recuadro) > bloques.indexOf(tablaSM),
+    "el recuadro aparece después de la tabla de ítems"
+  );
+  assert.equal(
+    recuadro.texto,
+    "Puntuación total: 15 de 15 puntos. Resultado según punto de corte: Depresión establecida. Resultado de tamizaje referido, no constituye diagnóstico."
   );
   const hallazgo = bloques.find((b) => esBandera(b) && b.texto.includes("Yesavage"));
   assert.equal(hallazgo.categoria, "hallazgo");
@@ -598,11 +609,14 @@ test("caso salud mental con 6 puntos: probable depresión", () => {
     ])
   );
   const bloques = sintetizar(valores);
+  const recuadro = bloques.find((b) => b.tipo === "recuadro" && b.titulo === "Resultado del tamizaje");
+  assert.ok(recuadro, "el resultado va en recuadro debajo de la pauta");
+  assert.ok(recuadro.texto.includes("Puntuación total: 6 de 15 puntos."));
+  assert.ok(recuadro.texto.includes("Resultado según punto de corte: Probable depresión."));
   const parrafoSM = bloques.find(
     (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)"
   );
-  assert.ok(parrafoSM.texto.includes("Puntuación total: 6 de 15 puntos."));
-  assert.ok(parrafoSM.texto.includes("Resultado según punto de corte: Probable depresión."));
+  assert.ok(!parrafoSM.texto.includes("Puntuación total"));
   const hallazgo = bloques.find((b) => esBandera(b) && b.texto.includes("Yesavage"));
   assert.ok(
     hallazgo.texto.includes("arroja 6 de 15 puntos: Probable depresión"),
@@ -623,8 +637,9 @@ test("caso salud mental parcial: puntaje sin categoría e ítems faltantes por n
   // Los dos respondidos no figuran como faltantes.
   assert.ok(!parrafoSM.texto.includes("ítem 5 (¿Está Ud. de buen ánimo la mayoría del tiempo?)"));
   assert.ok(!parrafoSM.texto.includes("ítem 14 (¿Se encuentra sin esperanza ante su situación actual?)"));
-  // Escala incompleta no genera hallazgo de tamizaje.
+  // Escala incompleta no genera hallazgo de tamizaje ni recuadro de resultado.
   assert.ok(!bloques.some((b) => esBandera(b) && b.texto.includes("Yesavage")));
+  assert.ok(!bloques.some((b) => b.tipo === "recuadro"), "sin las 15 respuestas no hay recuadro de resultado");
   const tablaSM = bloques.find(
     (b) => b.tipo === "tabla" && b.titulo === "Salud mental (respuesta por ítem)"
   );
@@ -647,9 +662,15 @@ test("respuestas sanas de salud mental → 0 puntos, sin hallazgos ni alertas", 
   const resultado = calcularResultadoYesavage(valores);
   assert.equal(resultado.puntaje, 0);
   assert.equal(resultado.categoria, "No depresión");
+  const recuadro = bloques.find((b) => b.tipo === "recuadro" && b.titulo === "Resultado del tamizaje");
+  assert.ok(recuadro, "el resultado va en recuadro debajo de la pauta");
+  assert.equal(
+    recuadro.texto,
+    "Puntuación total: 0 de 15 puntos. Resultado según punto de corte: No depresión. Resultado de tamizaje referido, no constituye diagnóstico."
+  );
   assert.equal(
     bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)").texto,
-    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage. Puntuación total: 0 de 15 puntos. Resultado según punto de corte: No depresión."
+    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage."
   );
 });
 

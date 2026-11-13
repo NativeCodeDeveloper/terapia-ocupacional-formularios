@@ -927,16 +927,16 @@ export function sintetizar(valores = {}) {
   /* ---- Otras consideraciones (registro completo) ---- */
   bloques.push(bloquesRegistro(SECCION_OTRAS, valores));
 
-  /* ---- Salud mental: escala de Yesavage numerada con
-     puntuación total y resultado por punto de corte ---- */
+  /* ---- Salud mental: escala de Yesavage numerada. El párrafo
+     registra solo las respuestas; la puntuación total y el
+     resultado por punto de corte van en recuadro debajo de la
+     pauta (la tabla de ítems) ---- */
   const resultadoSM = calcularResultadoYesavage(valores);
   const faltantesSM = resultadoSM.faltantes;
   let textoSM =
     `Se respondieron ${resultadoSM.respondidos} de ${resultadoSM.total} ítems de la escala de depresión geriátrica de Yesavage.` +
     (faltantesSM.length > 0 ? ` Sin respuesta: ${unirLista(faltantesSM)}.` : "");
-  if (resultadoSM.completo) {
-    textoSM += ` Puntuación total: ${resultadoSM.puntaje} de ${resultadoSM.total} puntos. Resultado según punto de corte: ${resultadoSM.categoria}.`;
-  } else {
+  if (!resultadoSM.completo) {
     textoSM += " Escala incompleta: la pauta exige las 15 respuestas, por lo que no se calcula la puntuación total ni el resultado.";
   }
   bloques.push({ tipo: "parrafo", titulo: "Salud mental (escala de Yesavage)", texto: textoSM });
@@ -960,6 +960,14 @@ export function sintetizar(valores = {}) {
       ];
     }),
   });
+  /* El resultado destacado solo con la escala completa. */
+  if (resultadoSM.completo) {
+    bloques.push({
+      tipo: "recuadro",
+      titulo: "Resultado del tamizaje",
+      texto: `Puntuación total: ${resultadoSM.puntaje} de ${resultadoSM.total} puntos. Resultado según punto de corte: ${resultadoSM.categoria}. Resultado de tamizaje referido, no constituye diagnóstico.`,
+    });
+  }
 
   /* ---- Área cognitiva: generalidades y funciones con su
      respuesta y observación ---- */

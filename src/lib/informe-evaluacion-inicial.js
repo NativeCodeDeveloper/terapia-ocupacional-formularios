@@ -194,6 +194,31 @@ export function descargarInformePDFEvaluacionInicial(config) {
     y += alto + 8;
   };
 
+  /* Recuadro de resultado destacado: texto en negrita sobre el
+     fondo de la ficha, con borde. Se imprime donde se emite (a
+     diferencia de las banderas, no se consolida al final). */
+  const dibujarRecuadro = (bloque) => {
+    const lineas = doc.splitTextToSize(bloque.texto, anchoUtil - 30);
+    const alto = lineas.length * 13 + (bloque.titulo ? 26 : 20);
+    asegurar(alto + 8);
+    doc.setDrawColor(...oscuro);
+    doc.setLineWidth(0.8);
+    doc.setFillColor(...colorFondo);
+    doc.rect(margen, y, anchoUtil, alto, "FD");
+    const inicioTexto = y + (bloque.titulo ? 27 : 13);
+    if (bloque.titulo) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...oscuro);
+      doc.text(bloque.titulo.toUpperCase(), margen + 15, y + 13);
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(25);
+    lineas.forEach((linea, li) => doc.text(linea, margen + 15, inicioTexto + li * 13));
+    y += alto + 8;
+  };
+
   const dibujarTabla = (bloque) => {
     const fracciones = bloque.columnas.map((c) => c.fraccion ?? 1 / bloque.columnas.length);
     const anchos = fracciones.map((f) => anchoUtil * f);
@@ -276,6 +301,7 @@ export function descargarInformePDFEvaluacionInicial(config) {
   const dibujarBloques = (bloques) => {
     for (const bloque of bloques) {
       if (bloque.tipo === "bandera") dibujarBandera(bloque);
+      else if (bloque.tipo === "recuadro") dibujarRecuadro(bloque);
       else if (bloque.tipo === "tabla") dibujarTabla(bloque);
       else if (bloque.tipo === "plan") dibujarPlan(bloque);
       else if (bloque.tipo === "lista") {
@@ -373,6 +399,10 @@ function bloquesWordHTML(bloques, oscuro) {
       if (bloque.tipo === "bandera") {
         const tinte = TINTES_BANDERA[bloque.nivel] ?? TINTES_BANDERA.info;
         return `<p style="border-left:6px solid ${rgbCSS(tinte.franja)};background:${rgbCSS(tinte.fondo)};padding:8px 12px;margin:8px 0;"><b>${escaparHTML(tinte.etiqueta)}.</b> ${escaparHTML(bloque.texto)}</p>`;
+      }
+      if (bloque.tipo === "recuadro") {
+        const titulo = bloque.titulo ? `${escaparHTML(bloque.titulo)}. ` : "";
+        return `<p style="border:1.5px solid ${rgbCSS(oscuro)};background:#f3f4f6;padding:8px 12px;margin:8px 0;"><b>${titulo}${escaparHTML(bloque.texto)}</b></p>`;
       }
       if (bloque.tipo === "tabla") {
         return `<p style="margin:10px 0 2px;"><b>${escaparHTML(bloque.titulo ?? "")}</b></p>
