@@ -18,10 +18,10 @@ import {
    instrumental (10 ámbitos) en escalas con observación, área
    física, síndromes geriátricos (Sí/No con observación) y
    entorno y adaptaciones (secciones propias de esta ficha),
-   otras consideraciones, salud mental (autoinforme de 13
-   preguntas numeradas: el impreso repite una pregunta y el
-   cliente retiró alucinaciones e ideación suicida del
-   cuestionario activo), área cognitiva (sí/no con companion
+   otras consideraciones, salud mental (escala de depresión
+   geriátrica de Yesavage de 15 preguntas numeradas según la
+   Ficha N.º 3d, con puntuación total y punto de corte), área
+   cognitiva (sí/no con companion
    «Observación»), lenguaje, participación social, habituación,
    esparcimiento, volición y plan de intervención por plazo.
    La síntesis y los informes PDF y Word viven

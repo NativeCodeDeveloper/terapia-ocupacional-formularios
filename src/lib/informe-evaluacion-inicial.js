@@ -317,23 +317,24 @@ export function descargarInformePDFEvaluacionInicial(config) {
   }
 
   if (seccionHallazgos) {
-    /* Hoja final independiente con hallazgos y alertas separados. */
+    /* Hoja final independiente: hallazgos siempre; el bloque de
+       alertas clínicas solo aparece cuando hay alertas activadas. */
     nuevaPagina();
-    escribir("HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS", { tamano: 13, negrita: true, espacio: 10 });
+    const tituloHoja =
+      alertasRecabadas.length > 0
+        ? "HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS"
+        : "HALLAZGOS RELEVANTES";
+    escribir(tituloHoja, { tamano: 13, negrita: true, espacio: 10 });
     escribir("Hallazgos relevantes", { tamano: 11.5, negrita: true, espacio: 6 });
     if (hallazgosRelevantes.length > 0) {
       for (const hallazgo of hallazgosRelevantes) dibujarBandera(hallazgo);
     } else {
       escribir("No se registran hallazgos relevantes en esta evaluación.", { gris: true });
     }
-    y += 8;
-    escribir("Alertas clínicas", { tamano: 11.5, negrita: true, espacio: 6 });
     if (alertasRecabadas.length > 0) {
+      y += 8;
+      escribir("Alertas clínicas", { tamano: 11.5, negrita: true, espacio: 6 });
       for (const alerta of alertasRecabadas) dibujarBandera(alerta);
-    } else {
-      escribir("No se activaron alertas clínicas según los criterios documentados del instrumento.", {
-        gris: true,
-      });
     }
   } else if (alertasRecabadas.length > 0) {
     /* Las alertas van en hoja aparte (fichas Infantil, Adolescencia y Adulto). */
@@ -461,11 +462,14 @@ ${bloquesWordHTML(bloquesResumen, oscuro)}`
     `<p style="margin:4px 0;color:#666;">${escaparHTML(texto)}</p>`;
 
   const alertasHTML = seccionHallazgos
-    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS</h2>
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">${
+        alertasRecabadas.length > 0
+          ? "HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS"
+          : "HALLAZGOS RELEVANTES"
+      }</h2>
 <h3 style="font-size:11.5pt;margin:10px 0 4px;">Hallazgos relevantes</h3>
 ${hallazgosRelevantes.length ? bloquesWordHTML(hallazgosRelevantes, oscuro) : lineaVacia("No se registran hallazgos relevantes en esta evaluación.")}
-<h3 style="font-size:11.5pt;margin:10px 0 4px;">Alertas clínicas</h3>
-${alertasRecabadas.length ? bloquesWordHTML(alertasRecabadas, oscuro) : lineaVacia("No se activaron alertas clínicas según los criterios documentados del instrumento.")}`
+${alertasRecabadas.length ? `<h3 style="font-size:11.5pt;margin:10px 0 4px;">Alertas clínicas</h3>\n${bloquesWordHTML(alertasRecabadas, oscuro)}` : ""}`
     : alertasRecabadas.length
       ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">Alertas en información recabada</h2>
 ${bloquesWordHTML(alertasRecabadas, oscuro)}`

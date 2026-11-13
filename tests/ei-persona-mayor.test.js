@@ -4,11 +4,11 @@ import {
   SECCIONES,
   sintetizar,
   configInforme,
-  INDICADORES_RIESGO_SALUD_MENTAL,
+  PUNTUACION_YESAVAGE,
+  calcularResultadoYesavage,
+  categoriaYesavage,
   contarNivelesIndependencia,
   ambitosConApoyo,
-  contarIndicadoresRiesgoSaludMental,
-  etiquetasIndicadoresRiesgoSaludMental,
   contarSindromesGeriatricos,
 } from "../src/lib/informe-ei-persona-mayor.js";
 
@@ -20,11 +20,12 @@ import {
    `${id}Obs` fuera del esquema y cada sí/no del área cognitiva
    lleva el companion `${id}EnQue`. Secciones propias de esta
    ficha: Síndromes geriátricos y Entorno y adaptaciones.
-   Salud mental: autoinforme de 13 preguntas numeradas (el
-   impreso repite una pregunta y el cliente retiró
-   alucinaciones e ideación suicida del cuestionario activo),
-   con 13 indicadores de riesgo referido como referencia
-   descriptiva, sin puntos de corte. La síntesis reproduce el
+   Salud mental: escala de depresión geriátrica de Yesavage
+   (Ficha N.º 3d entregada por el cliente) de 15 preguntas
+   numeradas 1-15, con 1 punto por respuesta en dirección de
+   depresión y cortes No depresión 0-5, Probable depresión 6-9,
+   Depresión establecida 10-15; el resultado solo se calcula
+   con la escala completa. La síntesis reproduce el
    registro completo del impreso, arma el análisis narrativo de
    las independencias y separa hallazgos de alertas.
    ============================================================ */
@@ -153,36 +154,102 @@ test("Entorno y adaptaciones tiene los 3 campos propios de Persona Mayor", () =>
   ]);
 });
 
-test("Salud mental: 13 preguntas numeradas 1-13 sin las dos retiradas por el cliente", () => {
-  assert.equal(CAMPOS_SALUD_MENTAL.length, 13);
-  assert.equal(SECCIONES.find((s) => s.id === "salud-mental").campos.length, 13);
-  // Las dos preguntas retiradas del cuestionario activo.
+test("Salud mental: escala de Yesavage con 15 preguntas numeradas 1-15", () => {
+  assert.equal(CAMPOS_SALUD_MENTAL.length, 15);
+  assert.equal(SECCIONES.find((s) => s.id === "salud-mental").campos.length, 15);
+  // Fuera del cuestionario activo: duplicada del impreso, las dos
+  // retiradas por el cliente y las dos sin ítem propio en la pauta.
   const ids = CAMPOS_SALUD_MENTAL.map((c) => c.id);
-  assert.equal(ids.includes("alucinaciones"), false);
-  assert.equal(ids.includes("ideacionSuicida"), false);
-  // La pregunta repetida del impreso aparece una sola vez.
-  assert.equal(ids.filter((id) => id === "maravillosoVivo").length, 1);
-  // Numeración correlativa 1..13.
+  for (const fuera of [
+    "alucinaciones",
+    "ideacionSuicida",
+    "pocaEnergia",
+    "perdidoInteres",
+  ]) {
+    assert.equal(ids.includes(fuera), false, `${fuera} no debe estar en la escala`);
+  }
+  // Numeración correlativa 1..15 en el orden de la pauta.
   assert.deepEqual(
     CAMPOS_SALUD_MENTAL.map((c) => c.numero),
-    Array.from({ length: 13 }, (_, i) => i + 1)
+    Array.from({ length: 15 }, (_, i) => i + 1)
   );
   assert.deepEqual(CAMPOS_SALUD_MENTAL.map((c) => c.id), [
     "satisfaccionVida",
     "abandonoActividades",
-    "maravillosoVivo",
-    "llenaEnergia",
-    "muyPreocupado",
-    "dificultadConcentrarse",
+    "vidaVacia",
+    "seAburre",
     "buenAnimo",
+    "muyPreocupado",
+    "seSienteFeliz",
+    "seSienteDesamparado",
     "prefiereCasa",
+    "dificultadConcentrarse",
+    "maravillosoVivo",
     "seSienteInutil",
-    "mayoriaMejor",
-    "pocaEnergia",
-    "perdidoInteres",
+    "llenaEnergia",
     "sinEsperanzas",
+    "mayoriaMejor",
   ]);
-  assert.equal(Object.keys(INDICADORES_RIESGO_SALUD_MENTAL).length, 13);
+  // Puntuación de la pauta: 15 ítems con la respuesta que puntúa.
+  assert.equal(Object.keys(PUNTUACION_YESAVAGE).length, 15);
+  assert.equal(CAMPOS_SALUD_MENTAL.every((c) => c.id in PUNTUACION_YESAVAGE), true);
+  // Redacción de la pauta en los ítems 1, 11 y 15.
+  assert.equal(
+    CAMPOS_SALUD_MENTAL[0].etiqueta,
+    "¿Está Ud. básicamente satisfecho con su vida?"
+  );
+  assert.equal(
+    CAMPOS_SALUD_MENTAL[10].etiqueta,
+    "¿Cree Ud. que es maravilloso estar vivo?"
+  );
+  assert.equal(
+    CAMPOS_SALUD_MENTAL[14].etiqueta,
+    "¿Cree Ud. que las otras personas están en general mejor que Usted?"
+  );
+});
+
+test("puntos de corte de Yesavage: 0-5 no depresión, 6-9 probable, 10-15 establecida", () => {
+  assert.equal(categoriaYesavage(0), "No depresión");
+  assert.equal(categoriaYesavage(5), "No depresión");
+  assert.equal(categoriaYesavage(6), "Probable depresión");
+  assert.equal(categoriaYesavage(9), "Probable depresión");
+  assert.equal(categoriaYesavage(10), "Depresión establecida");
+  assert.equal(categoriaYesavage(15), "Depresión establecida");
+  assert.equal(categoriaYesavage(null), null);
+});
+
+test("calcularResultadoYesavage: puntaje completo, parcial y faltantes", () => {
+  // Todo en dirección que puntúa: 15 puntos, depresión establecida.
+  const maximo = Object.fromEntries(
+    CAMPOS_SALUD_MENTAL.map((c) => [c.id, PUNTUACION_YESAVAGE[c.id]])
+  );
+  assert.deepEqual(calcularResultadoYesavage(maximo), {
+    puntaje: 15,
+    respondidos: 15,
+    total: 15,
+    completo: true,
+    faltantes: [],
+    categoria: "Depresión establecida",
+  });
+
+  // Todo en dirección contraria: 0 puntos, no depresión.
+  const sano = Object.fromEntries(
+    CAMPOS_SALUD_MENTAL.map((c) => [c.id, PUNTUACION_YESAVAGE[c.id] === "si" ? "no" : "si"])
+  );
+  const resultadoSano = calcularResultadoYesavage(sano);
+  assert.equal(resultadoSano.puntaje, 0);
+  assert.equal(resultadoSano.categoria, "No depresión");
+
+  // Escala incompleta: puntaje parcial sin categoría.
+  const parcial = { ...maximo };
+  delete parcial.vidaVacia;
+  delete parcial.seAburre;
+  const resultadoParcial = calcularResultadoYesavage(parcial);
+  assert.equal(resultadoParcial.puntaje, 13);
+  assert.equal(resultadoParcial.respondidos, 13);
+  assert.equal(resultadoParcial.completo, false);
+  assert.equal(resultadoParcial.categoria, null);
+  assert.equal(resultadoParcial.faltantes.length, 2);
 });
 
 test("básica 12 escalas e instrumental 10, con Obs fuera del esquema", () => {
@@ -261,7 +328,9 @@ test("caso respuestas vacías: sin banderas y con el registro declarado como sin
 
   // El registro completo declara los vacíos, no los omite.
   const historial = bloques.find((b) => b.tipo === "lista" && b.titulo === "Historial médico");
-  assert.ok(historial.items.includes("Hábitos · Tabaco: Sin respuesta"));
+  assert.ok(historial.items.includes("Tabaco: Sin respuesta"));
+  assert.ok(historial.items.includes("Alcohol: Sin respuesta"));
+  assert.ok(historial.items.includes("Drogas: Sin respuesta"));
   assert.ok(historial.items.includes("Ayudas técnicas: —"));
   const familiares = bloques.find(
     (b) => b.tipo === "lista" && b.titulo === "Antecedentes familiares"
@@ -277,9 +346,10 @@ test("caso respuestas vacías: sin banderas y con el registro declarado como sin
     "Adaptaciones disponibles: —",
     "Adaptación requerida: —",
   ]);
-  const sm = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (autoinforme numerado)");
-  assert.ok(sm.texto.includes("Se respondieron 0 de 13 ítems"));
-  assert.ok(sm.texto.includes("ítem 1 (Se siente satisfecha de su vida)"));
+  const sm = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)");
+  assert.ok(sm.texto.includes("Se respondieron 0 de 15 ítems"));
+  assert.ok(sm.texto.includes("no se calcula la puntuación total ni el resultado"));
+  assert.ok(sm.texto.includes("ítem 1 (¿Está Ud. básicamente satisfecho con su vida?)"));
   const narrativaBasica = bloques.find(
     (b) => b.tipo === "parrafo" && b.titulo === "Independencia funcional básica (análisis narrativo)"
   );
@@ -305,7 +375,7 @@ test("la síntesis reproduce el registro del impreso en su orden", () => {
     "Área física",
     "Síndromes geriátricos",
     "Otras consideraciones",
-    "Salud mental (autoinforme numerado)",
+    "Salud mental (escala de Yesavage)",
     "Salud mental (respuesta por ítem)",
     "Área cognitiva",
     "Lenguaje",
@@ -481,78 +551,106 @@ test("el motivo de consulta arma el párrafo solo con lo registrado", () => {
   assert.ok(!textoParcial.includes("—, ánimo"));
 });
 
-test("caso salud mental completo: numeración, respuesta individual y conteo", () => {
+test("caso salud mental completo: numeración, punto por ítem y resultado por corte", () => {
   const valores = Object.fromEntries(
-    CAMPOS_SALUD_MENTAL.map((c) => [c.id, INDICADORES_RIESGO_SALUD_MENTAL[c.id]])
+    CAMPOS_SALUD_MENTAL.map((c) => [c.id, PUNTUACION_YESAVAGE[c.id]])
   );
   const bloques = sintetizar(valores);
   const tablaSM = bloques.find(
     (b) => b.tipo === "tabla" && b.titulo === "Salud mental (respuesta por ítem)"
   );
   assert.ok(tablaSM, "debe existir la tabla numerada de salud mental");
-  assert.equal(tablaSM.filas.length, 13);
-  assert.deepEqual(tablaSM.columnas.map((c) => c.titulo), ["N.º", "Ítem", "Respuesta"]);
-  assert.deepEqual(tablaSM.filas[0], ["1", "Se siente satisfecha de su vida", "No"]);
-  assert.deepEqual(tablaSM.filas[6], ["7", "¿Tiene buen ánimo?", "No"]);
+  assert.equal(tablaSM.filas.length, 15);
+  assert.deepEqual(tablaSM.columnas.map((c) => c.titulo), ["N.º", "Ítem", "Respuesta", "Punto"]);
+  assert.deepEqual(tablaSM.filas[0], [
+    "1",
+    "¿Está Ud. básicamente satisfecho con su vida?",
+    "No",
+    "1",
+  ]);
+  assert.deepEqual(tablaSM.filas[4], [
+    "5",
+    "¿Está Ud. de buen ánimo la mayoría del tiempo?",
+    "No",
+    "1",
+  ]);
   const parrafoSM = bloques.find(
-    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (autoinforme numerado)"
+    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)"
   );
   assert.equal(
     parrafoSM.texto,
-    "Se respondieron 13 de 13 ítems del autoinforme de salud mental."
+    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage. Puntuación total: 15 de 15 puntos. Resultado según punto de corte: Depresión establecida."
   );
-  assert.equal(contarIndicadoresRiesgoSaludMental(valores), 13);
-  const hallazgo = bloques.find((b) => esBandera(b) && b.texto.includes("salud mental"));
+  const hallazgo = bloques.find((b) => esBandera(b) && b.texto.includes("Yesavage"));
   assert.equal(hallazgo.categoria, "hallazgo");
-  assert.ok(hallazgo.texto.includes("13 respuestas en la dirección de riesgo referido"));
-  assert.ok(
-    hallazgo.texto.includes("no se aplican puntos de corte ni interpretación diagnóstica"),
-    "sin puntos de corte inventados"
+  assert.equal(
+    hallazgo.texto,
+    "El tamizaje de depresión (escala de depresión geriátrica de Yesavage) arroja 15 de 15 puntos: Depresión establecida. Resultado de tamizaje referido, no constituye diagnóstico."
   );
   assert.ok(!bloques.some((b) => esBandera(b) && b.nivel === "critico"));
 });
 
-test("caso salud mental parcial: identifica los ítems faltantes por número", () => {
-  const bloques = sintetizar({ buenAnimo: "no", sinEsperanzas: "si" });
-  const parrafoSM = bloques.find(
-    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (autoinforme numerado)"
-  );
-  assert.ok(parrafoSM.texto.includes("Se respondieron 2 de 13 ítems"));
-  assert.ok(parrafoSM.texto.includes("ítem 1 (Se siente satisfecha de su vida)"));
-  assert.ok(parrafoSM.texto.includes("ítem 3 (¿Piensa que es maravilloso estar vivo?)"));
-  // Los dos respondidos no figuran como faltantes.
-  assert.ok(!parrafoSM.texto.includes("ítem 7 (¿Tiene buen ánimo?)"));
-  assert.ok(!parrafoSM.texto.includes("ítem 13 (¿Se ha sentido sin esperanzas?)"));
-  const tablaSM = bloques.find(
-    (b) => b.tipo === "tabla" && b.titulo === "Salud mental (respuesta por ítem)"
-  );
-  assert.deepEqual(tablaSM.filas[12], ["13", "¿Se ha sentido sin esperanzas?", "Sí"]);
-  assert.deepEqual(tablaSM.filas[0][2], "Sin respuesta");
-});
-
-test("respuestas sanas de salud mental → sin hallazgos ni alertas", () => {
+test("caso salud mental con 6 puntos: probable depresión", () => {
   const valores = Object.fromEntries(
-    Object.entries(INDICADORES_RIESGO_SALUD_MENTAL).map(([id, riesgo]) => [
-      id,
-      riesgo === "si" ? "no" : "si",
+    CAMPOS_SALUD_MENTAL.map((c, i) => [
+      c.id,
+      i < 9 ? (PUNTUACION_YESAVAGE[c.id] === "si" ? "no" : "si") : PUNTUACION_YESAVAGE[c.id],
     ])
   );
   const bloques = sintetizar(valores);
-  assert.equal(bloques.filter(esBandera).length, 0);
-  assert.equal(contarIndicadoresRiesgoSaludMental(valores), 0);
-  assert.equal(
-    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (autoinforme numerado)").texto,
-    "Se respondieron 13 de 13 ítems del autoinforme de salud mental."
+  const parrafoSM = bloques.find(
+    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)"
+  );
+  assert.ok(parrafoSM.texto.includes("Puntuación total: 6 de 15 puntos."));
+  assert.ok(parrafoSM.texto.includes("Resultado según punto de corte: Probable depresión."));
+  const hallazgo = bloques.find((b) => esBandera(b) && b.texto.includes("Yesavage"));
+  assert.ok(
+    hallazgo.texto.includes("arroja 6 de 15 puntos: Probable depresión"),
+    "superar el corte genera hallazgo de tamizaje"
   );
 });
 
-test("etiquetasIndicadoresRiesgoSaludMental devuelve las etiquetas del impreso", () => {
-  const etiquetas = etiquetasIndicadoresRiesgoSaludMental({
-    buenAnimo: "no",
-    sinEsperanzas: "si",
-    alucinaciones: "si",
-  });
-  assert.deepEqual(etiquetas, ["¿Tiene buen ánimo?", "¿Se ha sentido sin esperanzas?"]);
+test("caso salud mental parcial: puntaje sin categoría e ítems faltantes por número", () => {
+  const bloques = sintetizar({ buenAnimo: "no", sinEsperanzas: "si" });
+  const parrafoSM = bloques.find(
+    (b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)"
+  );
+  assert.ok(parrafoSM.texto.includes("Se respondieron 2 de 15 ítems"));
+  assert.ok(parrafoSM.texto.includes("Escala incompleta"));
+  assert.ok(parrafoSM.texto.includes("no se calcula la puntuación total ni el resultado"));
+  assert.ok(parrafoSM.texto.includes("ítem 1 (¿Está Ud. básicamente satisfecho con su vida?)"));
+  assert.ok(parrafoSM.texto.includes("ítem 3 (¿Siente que su vida está vacía?)"));
+  // Los dos respondidos no figuran como faltantes.
+  assert.ok(!parrafoSM.texto.includes("ítem 5 (¿Está Ud. de buen ánimo la mayoría del tiempo?)"));
+  assert.ok(!parrafoSM.texto.includes("ítem 14 (¿Se encuentra sin esperanza ante su situación actual?)"));
+  // Escala incompleta no genera hallazgo de tamizaje.
+  assert.ok(!bloques.some((b) => esBandera(b) && b.texto.includes("Yesavage")));
+  const tablaSM = bloques.find(
+    (b) => b.tipo === "tabla" && b.titulo === "Salud mental (respuesta por ítem)"
+  );
+  assert.deepEqual(tablaSM.filas[13], [
+    "14",
+    "¿Se encuentra sin esperanza ante su situación actual?",
+    "Sí",
+    "1",
+  ]);
+  assert.deepEqual(tablaSM.filas[0][2], "Sin respuesta");
+  assert.deepEqual(tablaSM.filas[0][3], "—");
+});
+
+test("respuestas sanas de salud mental → 0 puntos, sin hallazgos ni alertas", () => {
+  const valores = Object.fromEntries(
+    CAMPOS_SALUD_MENTAL.map((c) => [c.id, PUNTUACION_YESAVAGE[c.id] === "si" ? "no" : "si"])
+  );
+  const bloques = sintetizar(valores);
+  assert.equal(bloques.filter(esBandera).length, 0);
+  const resultado = calcularResultadoYesavage(valores);
+  assert.equal(resultado.puntaje, 0);
+  assert.equal(resultado.categoria, "No depresión");
+  assert.equal(
+    bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Salud mental (escala de Yesavage)").texto,
+    "Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage. Puntuación total: 0 de 15 puntos. Resultado según punto de corte: No depresión."
+  );
 });
 
 test("caso síndromes geriátricos: Sí/No con observación, antecedentes referidos sin diagnóstico", () => {
@@ -688,13 +786,12 @@ test("datos históricos retirados del formulario: la información se conserva co
     (b) => esBandera(b) && b.nivel === "alerta" && b.texto.includes("alucinaciones")
   );
   assert.equal(alerta.categoria, "alerta");
-  // Las alucinaciones no cuentan como indicador de riesgo general.
-  assert.equal(contarIndicadoresRiesgoSaludMental({ alucinaciones: "si" }), 0);
-  // La tabla numerada de salud mental sigue en 13 ítems activos.
+  // La escala activa sigue en 15 ítems de Yesavage; los datos
+  // históricos no la alteran ni puntúan.
   const tablaSM = bloques.find(
     (b) => b.tipo === "tabla" && b.titulo === "Salud mental (respuesta por ítem)"
   );
-  assert.equal(tablaSM.filas.length, 13);
+  assert.equal(tablaSM.filas.length, 15);
 });
 
 test("las banderas del informe son hallazgos o alertas categorizadas, nunca sueltas", () => {

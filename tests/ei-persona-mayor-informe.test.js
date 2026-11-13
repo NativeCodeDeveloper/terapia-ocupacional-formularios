@@ -76,9 +76,11 @@ function valoresCompletos() {
   valores.higieneMenor = "supervision";
   valores.transferenciasDucha = "ayudaModerada";
   valores.compras = "dependiente";
-  // Autoinforme con respuestas en ambas direcciones.
+  // Autoinforme: dos respuestas en dirección que puntúa alcanzan
+  // el corte de probable depresión (7 puntos con los «no» por defecto).
   valores.sinEsperanzas = "si";
-  valores.perdidoInteres = "si";
+  valores.vidaVacia = "si";
+  valores.seAburre = "si";
   // Caso 9 · datos históricos de preguntas retiradas del formulario.
   valores.alucinaciones = "si";
   valores.ideacionSuicida = "si";
@@ -127,7 +129,7 @@ const TITULOS_SECCION = [
   "Área física",
   "Síndromes geriátricos",
   "Otras consideraciones",
-  "Salud mental (autoinforme numerado)",
+  "Salud mental (escala de Yesavage)",
   "Salud mental (respuesta por ítem)",
   "Área cognitiva",
   "Lenguaje",
@@ -206,19 +208,25 @@ test("caso 1 y 8 · informe completo: encabezado directo, registro completo y ho
     assert.ok(plano.includes(sinEspacios("Requiere apoyo (supervisión, asistencia, ayuda moderada o dependencia) en 3 de los 21 ámbitos")));
     assert.ok(!plano.includes(sinEspacios("Distribución de niveles")));
 
-    /* Caso 5 · salud mental numerada y respondida en completo.
-       Con el patrón de respuestas del caso, los indicadores de
-       riesgo referido son los ítems 1, 3, 4, 7, 12 y 13. */
-    assert.ok(plano.includes(sinEspacios("Se respondieron 13 de 13 ítems del autoinforme de salud mental.")));
-    assert.ok(plano.includes(sinEspacios("N.º")));
-    assert.ok(plano.includes(sinEspacios("Se siente satisfecha de su vida No")));
-    assert.ok(plano.includes(sinEspacios("¿Se ha sentido sin esperanzas? Sí")));
+    /* Caso 5 · escala de Yesavage completa con resultado por
+       punto de corte. Puntúan los «no» de los ítems 1, 5, 7,
+       11 y 13 y los «sí» de los ítems 3, 4 y 14: 8 puntos,
+       probable depresión. */
     assert.ok(
       plano.includes(
-        sinEspacios("6 respuestas en la dirección de riesgo referido (ítem 1, ítem 3, ítem 4, ítem 7, ítem 12 y ítem 13)")
+        sinEspacios("Se respondieron 15 de 15 ítems de la escala de depresión geriátrica de Yesavage.")
       )
     );
-    assert.ok(plano.includes(sinEspacios("no se aplican puntos de corte ni interpretación diagnóstica")));
+    assert.ok(plano.includes(sinEspacios("N.º")));
+    assert.ok(plano.includes(sinEspacios("¿Está Ud. básicamente satisfecho con su vida? No 1")));
+    assert.ok(plano.includes(sinEspacios("¿Se encuentra sin esperanza ante su situación actual? Sí 1")));
+    assert.ok(plano.includes(sinEspacios("Puntuación total: 8 de 15 puntos.")));
+    assert.ok(plano.includes(sinEspacios("Resultado según punto de corte: Probable depresión.")));
+    assert.ok(
+      plano.includes(
+        sinEspacios("arroja 8 de 15 puntos: Probable depresión. Resultado de tamizaje referido, no constituye diagnóstico.")
+      )
+    );
 
     /* Caso 6 · síndromes con pregunta, respuesta y observación. */
     assert.ok(plano.includes(sinEspacios("¿Ha sufrido alguna caída en los últimos 12 meses?")));
@@ -254,10 +262,14 @@ test("caso 4 · informe con respuestas vacías: sin hallazgos ni alertas falsas"
     const texto = extraerTextoPDF(ruta);
     const plano = sinEspacios(texto);
     assert.ok(plano.includes(sinEspacios("No se registran hallazgos relevantes en esta evaluación.")));
-    assert.ok(plano.includes(sinEspacios("No se activaron alertas clínicas según los criterios documentados del instrumento.")));
+    /* Sin alertas activadas no se imprime el bloque de alertas. */
+    assert.ok(!plano.includes(sinEspacios("No se activaron alertas clínicas")));
+    assert.ok(!plano.includes(sinEspacios("Y ALERTAS CLÍNICAS")));
+    assert.ok(plano.includes(sinEspacios("HALLAZGOS RELEVANTES")));
     assert.ok(!plano.includes(sinEspacios("Requiere apoyo")));
     assert.ok(!plano.includes(sinEspacios("Antecedentes referidos")));
-    assert.ok(plano.includes(sinEspacios("Se respondieron 0 de 13 ítems")));
+    assert.ok(plano.includes(sinEspacios("Se respondieron 0 de 15 ítems")));
+    assert.ok(plano.includes(sinEspacios("Escala incompleta")));
     assert.ok(!texto.includes("undefined"));
   } finally {
     process.chdir(cwdOriginal);
@@ -280,8 +292,10 @@ test("el informe Word replica estructura, numeración y separación de hallazgos
   );
   assert.ok(html.includes("María Teresa Rojas Silva"));
   assert.ok(html.includes("Ocupación pareja: —"));
-  assert.ok(html.includes(">13</td>"));
-  assert.ok(html.includes("¿Se ha sentido sin esperanzas?"));
+  assert.ok(html.includes(">15</td>"));
+  assert.ok(html.includes("¿Se encuentra sin esperanza ante su situación actual?"));
+  assert.ok(html.includes("Puntuación total: 8 de 15 puntos."));
+  assert.ok(html.includes("Resultado según punto de corte: Probable depresión."));
   assert.ok(!html.includes("undefined"));
   assert.ok(html.includes("Firma Profesional"));
 });

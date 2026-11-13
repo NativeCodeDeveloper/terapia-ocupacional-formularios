@@ -12,20 +12,23 @@ import {
    titula la segunda sección «HISTORAL MÉDICO» por un error
    ortográfico del original; aquí se usa «Historial médico».
    Decisiones de la revisión de auditoría (fuente: impreso +
-   instrucciones del cliente):
-   · Salud mental: el impreso repite «¿Piensa que es maravilloso
-     estar vivo?» (16 casillas, 15 preguntas únicas) y el cliente
-     pidió retirar del cuestionario activo «¿Ha tenido
-     alucinaciones visuales o auditivas?» y «¿Presenta ideación,
-     comunicación o acto suicida?». El cuestionario activo queda
-     en 13 preguntas numeradas 1-13 en el orden de lectura del
-     impreso. La pauta adicional de tamizaje (15 ítems) no está
-     disponible en el proyecto: no se agregan ni se puntúan
-     ítems para completar un total de 15 y no se aplican puntos
-     de corte. Las dos preguntas retiradas solo pueden llegar
-     con datos históricos; en ese caso sus respuestas siguen
-     generando alerta clínica en el informe (no se borra
-     información previa).
+   instrucciones del cliente + pauta adjunta):
+   · Salud mental: el cuestionario activo es la Escala de
+     depresión geriátrica de Yesavage (Ficha N.º 3d, MIES
+     Ecuador) que el cliente entregó como pauta: 15 preguntas
+     numeradas 1-15 con redacción y orden de la pauta, 1 punto
+     por respuesta en dirección de depresión (PUNTUACION_
+     YESAVAGE) y puntos de corte No depresión 0-5, Probable
+     depresión 6-9, Depresión establecida 10-15. El resultado
+     solo se calcula con las 15 respuestas. Del impreso salieron
+     del cuestionario activo: la pregunta duplicada («¿Piensa
+     que es maravilloso estar vivo?»), «¿Ha tenido
+     alucinaciones visuales o auditivas?» y «¿Presenta
+     ideación, comunicación o acto suicida?» (pedido del
+     cliente, con alerta clínica conservada para datos
+     históricos) y «¿Se ha quedado con poca energía?» /
+     «¿Ha perdido el interés por las cosas?» (sin ítem propio
+     en la pauta: duplican los ítems 13 y 2).
    · Síndromes geriátricos: cada ítem se presenta como Sí/No con
      su observación al lado y la pregunta original del impreso.
    · El informe reproduce el registro completo del impreso en su
@@ -168,24 +171,32 @@ const SINDROMES_GERIATRICOS = [
   },
 ];
 
-/* Autoinforme de salud mental: 13 preguntas numeradas en el
-   orden de lectura del impreso (columna izquierda y luego
-   derecha), tras retirar la pregunta duplicada del impreso y
-   las dos que el cliente pidió sacar del cuestionario activo. */
+/* Autoinforme de salud mental: Escala de depresión geriátrica
+   de Yesavage (screening de 15 preguntas), transcrita de la
+   Ficha N.º 3d (MIES, Ecuador) que el cliente entregó como
+   pauta. Orden y redacción de la pauta, numeradas 1-15. Las
+   preguntas del impreso sin respaldo en la pauta («¿Se ha
+   quedado con poca energía?», «¿Ha perdido el interés por las
+   cosas?» — duplican ítems 13 y 2 de la escala) y las dos que
+   el cliente retiró (alucinaciones, ideación suicida) salieron
+   del cuestionario activo; sus respuestas históricas no
+   alimentan la puntuación. */
 const PREGUNTAS_SALUD_MENTAL = [
-  { id: "satisfaccionVida", etiqueta: "Se siente satisfecha de su vida" },
-  { id: "abandonoActividades", etiqueta: "¿Ha abandonado actividades de su interés?" },
-  { id: "maravillosoVivo", etiqueta: "¿Piensa que es maravilloso estar vivo?" },
-  { id: "llenaEnergia", etiqueta: "¿Se siente llena de energía?" },
-  { id: "muyPreocupado", etiqueta: "¿Ha estado muy preocupado por algo?" },
-  { id: "dificultadConcentrarse", etiqueta: "¿Ha tenido dificultad para concentrarse?" },
-  { id: "buenAnimo", etiqueta: "¿Tiene buen ánimo?" },
-  { id: "prefiereCasa", etiqueta: "¿Prefiere quedarse en casa que salir?" },
-  { id: "seSienteInutil", etiqueta: "¿Se siente «inútil» en este momento?" },
-  { id: "mayoriaMejor", etiqueta: "¿Cree que la mayoría está mejor que usted?" },
-  { id: "pocaEnergia", etiqueta: "¿Se ha quedado con poca energía?" },
-  { id: "perdidoInteres", etiqueta: "¿Ha perdido el interés por las cosas?" },
-  { id: "sinEsperanzas", etiqueta: "¿Se ha sentido sin esperanzas?" },
+  { id: "satisfaccionVida", etiqueta: "¿Está Ud. básicamente satisfecho con su vida?" },
+  { id: "abandonoActividades", etiqueta: "¿Ha disminuido o abandonado muchos de sus intereses o actividades previas?" },
+  { id: "vidaVacia", etiqueta: "¿Siente que su vida está vacía?" },
+  { id: "seAburre", etiqueta: "¿Se siente aburrido frecuentemente?" },
+  { id: "buenAnimo", etiqueta: "¿Está Ud. de buen ánimo la mayoría del tiempo?" },
+  { id: "muyPreocupado", etiqueta: "¿Está preocupado o teme que algo malo le va a pasar?" },
+  { id: "seSienteFeliz", etiqueta: "¿Se siente feliz la mayor parte del tiempo?" },
+  { id: "seSienteDesamparado", etiqueta: "¿Se siente con frecuencia desamparado?" },
+  { id: "prefiereCasa", etiqueta: "¿Prefiere Ud. quedarse en casa a salir a hacer cosas nuevas?" },
+  { id: "dificultadConcentrarse", etiqueta: "¿Siente Ud. que tiene más problemas con su memoria que otras personas de su edad?" },
+  { id: "maravillosoVivo", etiqueta: "¿Cree Ud. que es maravilloso estar vivo?" },
+  { id: "seSienteInutil", etiqueta: "¿Se siente inútil o despreciable como está Ud. actualmente?" },
+  { id: "llenaEnergia", etiqueta: "¿Se siente lleno de energía?" },
+  { id: "sinEsperanzas", etiqueta: "¿Se encuentra sin esperanza ante su situación actual?" },
+  { id: "mayoriaMejor", etiqueta: "¿Cree Ud. que las otras personas están en general mejor que Usted?" },
 ];
 
 /* Texto largo con descripción del impreso como hint. */
@@ -224,9 +235,9 @@ export const SECCIONES = [
       { id: "antecedentesQuirurgicos", etiqueta: "Antecedentes quirúrgicos", tipo: "textoLargo" },
       { id: "farmacos", etiqueta: "Fármacos", tipo: "textoLargo" },
       { id: "alergias", etiqueta: "Alergias", tipo: "textoLargo" },
-      { id: "habitoTabaco", etiqueta: "Hábitos · Tabaco", tipo: "siNo" },
-      { id: "habitoAlcohol", etiqueta: "Hábitos · Alcohol", tipo: "siNo" },
-      { id: "habitoDrogas", etiqueta: "Hábitos · Drogas", tipo: "siNo" },
+      { id: "habitoTabaco", etiqueta: "Tabaco", tipo: "siNo", hint: "Hábitos declarados" },
+      { id: "habitoAlcohol", etiqueta: "Alcohol", tipo: "siNo" },
+      { id: "habitoDrogas", etiqueta: "Drogas", tipo: "siNo" },
       { id: "situacionDiscapacidad", etiqueta: "Situación de discapacidad", tipo: "siNo" },
       { id: "credencialDiscapacidad", etiqueta: "Credencial de discapacidad", tipo: "siNo" },
       { id: "ayudasTecnicasHistorial", etiqueta: "Ayudas técnicas", tipo: "texto", placeholder: "Bastón, andador, silla de ruedas, audífonos…" },
@@ -430,15 +441,13 @@ export const SECCIONES = [
       },
     ],
   },
-  /* ==== 10. Salud mental: autoinforme de 13 preguntas
-     numeradas (el impreso repite «¿Piensa que es maravilloso
-     estar vivo?» y el cliente retiró del cuestionario activo
-     alucinaciones e ideación/acto suicida) ==== */
+  /* ==== 10. Salud mental: escala de depresión geriátrica de
+     Yesavage (Ficha N.º 3d), 15 preguntas numeradas 1-15 ==== */
   {
     id: "salud-mental",
     titulo: "Salud mental",
     descripcion:
-      "Autoinforme: consulte cada pregunta numerada con la propia persona mayor y registre su respuesta.",
+      "Escala de Yesavage (screening de depresión, Ficha N.º 3d): lea cada pregunta tal como está redactada, sin interpretar los ítems, y registre sí o no según cómo se ha sentido la persona la última semana.",
     campos: PREGUNTAS_SALUD_MENTAL.map((pregunta, indice) => ({
       id: pregunta.id,
       numero: indice + 1,
@@ -629,26 +638,63 @@ const PLAZOS = [
 ];
 const NIVELES_APOYO = ["supervision", "asistencia", "ayudaModerada", "dependiente"];
 
-/* Respuesta que constituye indicador de riesgo referido en el
-   autoinforme de salud mental. Se usa solo como referencia
-   descriptiva: no hay puntos de corte ni interpretación
-   diagnóstica (la pauta de tamizaje validada no está
-   disponible). */
-export const INDICADORES_RIESGO_SALUD_MENTAL = {
+/* Escala de Yesavage (Ficha N.º 3d): respuesta que puntúa 1
+   punto por ítem («Las respuestas que indican depresión están
+   en negrita y mayúsculas. Cada una de estas respuestas cuenta
+   1 punto»). Puntuación total: 15 puntos. */
+export const PUNTUACION_YESAVAGE = {
   satisfaccionVida: "no",
-  buenAnimo: "no",
   abandonoActividades: "si",
+  vidaVacia: "si",
+  seAburre: "si",
+  buenAnimo: "no",
+  muyPreocupado: "si",
+  seSienteFeliz: "no",
+  seSienteDesamparado: "si",
   prefiereCasa: "si",
+  dificultadConcentrarse: "si",
   maravillosoVivo: "no",
   seSienteInutil: "si",
   llenaEnergia: "no",
-  mayoriaMejor: "si",
-  pocaEnergia: "si",
-  muyPreocupado: "si",
-  perdidoInteres: "si",
-  dificultadConcentrarse: "si",
   sinEsperanzas: "si",
+  mayoriaMejor: "si",
 };
+
+/* Puntos de corte de la pauta: No depresión 0-5, Probable
+   depresión 6-9, Depresión establecida 10-15. */
+export function categoriaYesavage(puntaje) {
+  if (puntaje == null || !Number.isInteger(puntaje) || puntaje < 0) return null;
+  if (puntaje <= 5) return "No depresión";
+  if (puntaje <= 9) return "Probable depresión";
+  return "Depresión establecida";
+}
+
+/* Resultado de la escala: puntaje por ítems respondidos en la
+   dirección que puntúa, respuestas completadas y faltantes. El
+   resultado por corte solo se calcula con la escala completa. */
+export function calcularResultadoYesavage(valores = {}) {
+  let puntaje = 0;
+  let respondidos = 0;
+  const faltantes = [];
+  for (const campo of CAMPOS_SALUD_MENTAL) {
+    const valor = valores[campo.id];
+    if (valor === "si" || valor === "no") {
+      respondidos += 1;
+      if (PUNTUACION_YESAVAGE[campo.id] === valor) puntaje += 1;
+    } else {
+      faltantes.push(`ítem ${campo.numero} (${campo.etiqueta})`);
+    }
+  }
+  const completo = respondidos === CAMPOS_SALUD_MENTAL.length;
+  return {
+    puntaje,
+    respondidos,
+    total: CAMPOS_SALUD_MENTAL.length,
+    completo,
+    faltantes,
+    categoria: completo ? categoriaYesavage(puntaje) : null,
+  };
+}
 
 /* «Sí», «No» o «Sin respuesta» para los ítems de respuesta
    cerrada del registro: las preguntas sin contestar se
@@ -763,19 +809,6 @@ export function ambitosConApoyo(valores = {}) {
   return CAMPOS_INDEPENDENCIA.filter((campo) => NIVELES_APOYO.includes(valores[campo.id])).map(
     (campo) => campo.etiqueta
   );
-}
-
-/* Etiquetas de los indicadores de riesgo referido de salud
-   mental efectivamente presentes según las respuestas. */
-export function etiquetasIndicadoresRiesgoSaludMental(valores = {}) {
-  return CAMPOS_SALUD_MENTAL.filter((campo) => {
-    const riesgo = INDICADORES_RIESGO_SALUD_MENTAL[campo.id];
-    return riesgo !== undefined && valores[campo.id] === riesgo;
-  }).map((campo) => campo.etiqueta);
-}
-
-export function contarIndicadoresRiesgoSaludMental(valores = {}) {
-  return etiquetasIndicadoresRiesgoSaludMental(valores).length;
 }
 
 /* Síndromes geriátricos con respuesta Sí/No registrada. */
@@ -894,31 +927,38 @@ export function sintetizar(valores = {}) {
   /* ---- Otras consideraciones (registro completo) ---- */
   bloques.push(bloquesRegistro(SECCION_OTRAS, valores));
 
-  /* ---- Salud mental: numeración, respuesta individual y
-     respuestas completadas vs. faltantes ---- */
-  const respondidasSM = CAMPOS_SALUD_MENTAL.filter(
-    (campo) => valores[campo.id] === "si" || valores[campo.id] === "no"
-  );
-  const faltantesSM = CAMPOS_SALUD_MENTAL.filter(
-    (campo) => valores[campo.id] !== "si" && valores[campo.id] !== "no"
-  ).map((campo) => `ítem ${campo.numero} (${campo.etiqueta})`);
-  const textoSM =
-    `Se respondieron ${respondidasSM.length} de ${CAMPOS_SALUD_MENTAL.length} ítems del autoinforme de salud mental.` +
+  /* ---- Salud mental: escala de Yesavage numerada con
+     puntuación total y resultado por punto de corte ---- */
+  const resultadoSM = calcularResultadoYesavage(valores);
+  const faltantesSM = resultadoSM.faltantes;
+  let textoSM =
+    `Se respondieron ${resultadoSM.respondidos} de ${resultadoSM.total} ítems de la escala de depresión geriátrica de Yesavage.` +
     (faltantesSM.length > 0 ? ` Sin respuesta: ${unirLista(faltantesSM)}.` : "");
-  bloques.push({ tipo: "parrafo", titulo: "Salud mental (autoinforme numerado)", texto: textoSM });
+  if (resultadoSM.completo) {
+    textoSM += ` Puntuación total: ${resultadoSM.puntaje} de ${resultadoSM.total} puntos. Resultado según punto de corte: ${resultadoSM.categoria}.`;
+  } else {
+    textoSM += " Escala incompleta: la pauta exige las 15 respuestas, por lo que no se calcula la puntuación total ni el resultado.";
+  }
+  bloques.push({ tipo: "parrafo", titulo: "Salud mental (escala de Yesavage)", texto: textoSM });
   bloques.push({
     tipo: "tabla",
     titulo: "Salud mental (respuesta por ítem)",
     columnas: [
       { titulo: "N.º", fraccion: 0.08 },
-      { titulo: "Ítem", fraccion: 0.7 },
-      { titulo: "Respuesta", fraccion: 0.22 },
+      { titulo: "Ítem", fraccion: 0.62 },
+      { titulo: "Respuesta", fraccion: 0.16 },
+      { titulo: "Punto", fraccion: 0.14 },
     ],
-    filas: CAMPOS_SALUD_MENTAL.map((campo) => [
-      String(campo.numero),
-      campo.etiqueta,
-      respuestaCerrada(valores[campo.id]),
-    ]),
+    filas: CAMPOS_SALUD_MENTAL.map((campo) => {
+      const valor = valores[campo.id];
+      const respondido = valor === "si" || valor === "no";
+      return [
+        String(campo.numero),
+        campo.etiqueta,
+        respuestaCerrada(valor),
+        respondido ? (PUNTUACION_YESAVAGE[campo.id] === valor ? "1" : "0") : "—",
+      ];
+    }),
   });
 
   /* ---- Área cognitiva: generalidades y funciones con su
@@ -1001,17 +1041,13 @@ export function sintetizar(valores = {}) {
     );
   }
 
-  const etiquetasRiesgoSM = [];
-  for (const campo of CAMPOS_SALUD_MENTAL) {
-    const riesgo = INDICADORES_RIESGO_SALUD_MENTAL[campo.id];
-    if (riesgo !== undefined && valores[campo.id] === riesgo) {
-      etiquetasRiesgoSM.push(`ítem ${campo.numero}`);
-    }
-  }
-  if (etiquetasRiesgoSM.length > 0) {
+  /* Tamizaje de depresión (escala de Yesavage): solo con la
+     escala completa y superando el corte de «No depresión».
+     Resultado de screening, no diagnóstico. */
+  if (resultadoSM.completo && resultadoSM.categoria !== "No depresión") {
     bloques.push(
       hallazgo(
-        `En el autoinforme de salud mental se registran ${etiquetasRiesgoSM.length} respuestas en la dirección de riesgo referido (${unirLista(etiquetasRiesgoSM)}). Referencia descriptiva: no se aplican puntos de corte ni interpretación diagnóstica.`
+        `El tamizaje de depresión (escala de depresión geriátrica de Yesavage) arroja ${resultadoSM.puntaje} de ${resultadoSM.total} puntos: ${resultadoSM.categoria}. Resultado de tamizaje referido, no constituye diagnóstico.`
       )
     );
   }
