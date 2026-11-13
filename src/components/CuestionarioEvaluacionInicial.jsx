@@ -89,7 +89,10 @@ function CampoEscala({ campo, valores, conError, alCambiar }) {
   return (
     <div id={`campo-${campo.id}`} className={`p-5 transition-colors ${TARJETA} ${conError ? "border-red-300 ring-4 ring-red-500/5" : ""}`}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[15px] font-medium leading-relaxed text-neutral-900">{campo.etiqueta}</p>
+        <p className="text-[15px] font-medium leading-relaxed text-neutral-900">
+          {campo.numero ? `${campo.numero}. ` : ""}
+          {campo.etiqueta}
+        </p>
         {campo.hint && <p className="shrink-0 text-xs text-neutral-400">{campo.hint}</p>}
       </div>
       <BotonesOpciones
@@ -114,7 +117,9 @@ function CampoEscala({ campo, valores, conError, alCambiar }) {
         </div>
       )}
       {conError && (
-        <p className="mt-3 text-xs text-red-600">Seleccione el nivel que corresponde para continuar.</p>
+        <p className="mt-3 text-xs text-red-600">
+          {campo.mensajeError ?? "Seleccione el nivel que corresponde para continuar."}
+        </p>
       )}
     </div>
   );
@@ -322,6 +327,7 @@ export default function CuestionarioEvaluacionInicial({
                               htmlFor={campo.tipo === "texto" || campo.tipo === "numero" || campo.tipo === "fecha" || campo.tipo === "textoLargo" ? campo.id : undefined}
                               className="mb-1.5 block text-[13px] font-medium text-neutral-700"
                             >
+                              {campo.numero ? `${campo.numero}. ` : ""}
                               {campo.etiqueta}{" "}
                               {requerido ? (
                                 <span className="text-red-500">*</span>

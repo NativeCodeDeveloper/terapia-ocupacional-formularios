@@ -16,12 +16,15 @@ import {
    orientación), antecedentes familiares, independencia
    funcional básica (11 ámbitos más descanso y sueño) e
    instrumental (10 ámbitos) en escalas con observación, área
-   física, síndromes geriátricos y entorno y adaptaciones
-   (secciones propias de esta ficha), otras consideraciones,
-   salud mental (autoinforme de 15 ítems), área cognitiva
-   (sí/no con companion «Observación»), lenguaje, participación
-   social, habituación, esparcimiento, volición y plan de
-   intervención por plazo. La síntesis y los informes PDF y Word viven
+   física, síndromes geriátricos (Sí/No con observación) y
+   entorno y adaptaciones (secciones propias de esta ficha),
+   otras consideraciones, salud mental (autoinforme de 13
+   preguntas numeradas: el impreso repite una pregunta y el
+   cliente retiró alucinaciones e ideación suicida del
+   cuestionario activo), área cognitiva (sí/no con companion
+   «Observación»), lenguaje, participación social, habituación,
+   esparcimiento, volición y plan de intervención por plazo.
+   La síntesis y los informes PDF y Word viven
    en src/lib/informe-ei-persona-mayor.js.
    ============================================================ */
 

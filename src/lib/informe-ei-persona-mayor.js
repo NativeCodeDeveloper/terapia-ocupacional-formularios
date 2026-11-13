@@ -11,12 +11,32 @@ import {
    TeraOcupame, transcrita del impreso de 10 páginas. La pauta
    titula la segunda sección «HISTORAL MÉDICO» por un error
    ortográfico del original; aquí se usa «Historial médico».
-   La pregunta «¿Piensa que es maravilloso estar vivo?» está
-   repetida en Salud mental del impreso; se incluye una sola
-   vez. El impreso tiene dos secciones propias de esta ficha:
-   «Síndromes geriátricos» y «Entorno y adaptaciones». En las
-   escalas del impreso, «Alimentación» (básica) y «Cuidado de
-   otros» (instrumental) usan «Asistencia» como segunda opción
+   Decisiones de la revisión de auditoría (fuente: impreso +
+   instrucciones del cliente):
+   · Salud mental: el impreso repite «¿Piensa que es maravilloso
+     estar vivo?» (16 casillas, 15 preguntas únicas) y el cliente
+     pidió retirar del cuestionario activo «¿Ha tenido
+     alucinaciones visuales o auditivas?» y «¿Presenta ideación,
+     comunicación o acto suicida?». El cuestionario activo queda
+     en 13 preguntas numeradas 1-13 en el orden de lectura del
+     impreso. La pauta adicional de tamizaje (15 ítems) no está
+     disponible en el proyecto: no se agregan ni se puntúan
+     ítems para completar un total de 15 y no se aplican puntos
+     de corte. Las dos preguntas retiradas solo pueden llegar
+     con datos históricos; en ese caso sus respuestas siguen
+     generando alerta clínica en el informe (no se borra
+     información previa).
+   · Síndromes geriátricos: cada ítem se presenta como Sí/No con
+     su observación al lado y la pregunta original del impreso.
+   · El informe reproduce el registro completo del impreso en su
+     orden, con análisis narrativo de las independencias
+     funcional básica e instrumental (construido solo con
+     respuestas registradas), sin «Distribución de niveles» y
+     cerrando con «Hallazgos relevantes y alertas clínicas» en
+     hoja propia: los hallazgos son descriptivos y las alertas
+     solo se activan con criterios definidos.
+   En las escalas del impreso, «Alimentación» (básica) y «Cuidado
+   de otros» (instrumental) usan «Asistencia» como segunda opción
    y el resto usa «Supervisión»: se transcribe tal cual.
    El esquema sigue el contrato del componente
    CuestionarioEvaluacionInicial y del motor
@@ -61,6 +81,11 @@ const OPCIONES_MASCOTAS = [
   { valor: "fuera", etiqueta: "Afuera" },
 ];
 
+const OPCIONES_SI_NO = [
+  { valor: "si", etiqueta: "Sí" },
+  { valor: "no", etiqueta: "No" },
+];
+
 /* Funciones del área cognitiva del impreso, con su descripción
    como hint y el companion «Observación» del impreso. */
 const FUNCIONES_COGNITIVAS = [
@@ -94,6 +119,73 @@ const FUNCIONES_COGNITIVAS = [
     etiqueta: "Memoria de trabajo",
     hint: "Capacidad de retener y manejar información de una tarea.",
   },
+];
+
+/* Síndromes geriátricos del impreso: dominio + pregunta
+   original. Cada ítem se completa como Sí/No con observación
+   (escala del componente: la observación `${id}Obs` se genera
+   fuera del esquema). */
+const SINDROMES_GERIATRICOS = [
+  {
+    id: "movilidadCaidas",
+    etiqueta: "Movilidad y caídas",
+    hint: "¿Ha sufrido alguna caída en los últimos 12 meses?",
+  },
+  {
+    id: "incontinencia",
+    etiqueta: "Incontinencia",
+    hint: "¿Tiene escapes involuntarios de orina?",
+  },
+  {
+    id: "deterioroCognitivo",
+    etiqueta: "Deterioro cognitivo",
+    hint: "¿Ha notado cambios en su memoria en el último año?",
+  },
+  {
+    id: "depresion",
+    etiqueta: "Depresión",
+    hint: "¿Se ha sentido triste o desanimado la mayor parte del tiempo en las últimas dos semanas?",
+  },
+  {
+    id: "polifarmacia",
+    etiqueta: "Polifarmacia",
+    hint: "¿Toma cinco o más medicamentos recetados diariamente?",
+  },
+  {
+    id: "fragilidad",
+    etiqueta: "Fragilidad",
+    hint: "¿Se siente débil o cansado con frecuencia?",
+  },
+  {
+    id: "sensorial",
+    etiqueta: "Sensorial",
+    hint: "¿Tiene dificultades para oír o ver?",
+  },
+  {
+    id: "socioeconomico",
+    etiqueta: "Socioeconómico",
+    hint: "¿Considera que sus ingresos cubren sus necesidades básicas?",
+  },
+];
+
+/* Autoinforme de salud mental: 13 preguntas numeradas en el
+   orden de lectura del impreso (columna izquierda y luego
+   derecha), tras retirar la pregunta duplicada del impreso y
+   las dos que el cliente pidió sacar del cuestionario activo. */
+const PREGUNTAS_SALUD_MENTAL = [
+  { id: "satisfaccionVida", etiqueta: "Se siente satisfecha de su vida" },
+  { id: "abandonoActividades", etiqueta: "¿Ha abandonado actividades de su interés?" },
+  { id: "maravillosoVivo", etiqueta: "¿Piensa que es maravilloso estar vivo?" },
+  { id: "llenaEnergia", etiqueta: "¿Se siente llena de energía?" },
+  { id: "muyPreocupado", etiqueta: "¿Ha estado muy preocupado por algo?" },
+  { id: "dificultadConcentrarse", etiqueta: "¿Ha tenido dificultad para concentrarse?" },
+  { id: "buenAnimo", etiqueta: "¿Tiene buen ánimo?" },
+  { id: "prefiereCasa", etiqueta: "¿Prefiere quedarse en casa que salir?" },
+  { id: "seSienteInutil", etiqueta: "¿Se siente «inútil» en este momento?" },
+  { id: "mayoriaMejor", etiqueta: "¿Cree que la mayoría está mejor que usted?" },
+  { id: "pocaEnergia", etiqueta: "¿Se ha quedado con poca energía?" },
+  { id: "perdidoInteres", etiqueta: "¿Ha perdido el interés por las cosas?" },
+  { id: "sinEsperanzas", etiqueta: "¿Se ha sentido sin esperanzas?" },
 ];
 
 /* Texto largo con descripción del impreso como hint. */
@@ -163,8 +255,8 @@ export const SECCIONES = [
         etiqueta: "Ánimo",
         tipo: "radio",
         opciones: [
-          { valor: "eutimico", etiqueta: "Eutímico" },
-          { valor: "deprimido", etiqueta: "Deprimido" },
+          { valor: "eutimico", etiqueta: "Ánimo eutímico" },
+          { valor: "deprimido", etiqueta: "Ánimo deprimido" },
           { valor: "aplanamiento", etiqueta: "Aplanamiento afectivo" },
         ],
       },
@@ -180,7 +272,9 @@ export const SECCIONES = [
       },
     ],
   },
-  /* ==== 4. Antecedentes familiares ==== */
+  /* ==== 4. Antecedentes familiares (las ocupaciones de
+     hijas/os y pareja y la ubicación de las mascotas son
+     opcionales a pedido del cliente) ==== */
   {
     id: "antecedentes-familiares",
     titulo: "Antecedentes familiares",
@@ -288,30 +382,22 @@ export const SECCIONES = [
       textoConHint("eva", "EVA", "Escala visual análoga del dolor", 2),
     ],
   },
-  /* ==== 8. Síndromes geriátricos (sección propia de Persona Mayor) ==== */
+  /* ==== 8. Síndromes geriátricos (sección propia de Persona
+     Mayor): Sí/No con la pregunta del impreso y observación al
+     lado ==== */
   {
     id: "sindromes-geriatricos",
     titulo: "Síndromes geriátricos",
     descripcion:
       "Sección propia de la ficha Persona mayor: marque Sí o No según la pregunta del impreso y registre la observación al lado.",
-    campos: [
-      { id: "movilidadCaidas", etiqueta: "Movilidad y caídas", tipo: "siNo", hint: "¿Ha sufrido alguna caída en los últimos 12 meses?" },
-      { id: "movilidadCaidasObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "incontinencia", etiqueta: "Incontinencia", tipo: "siNo", hint: "¿Tiene escapes involuntarios de orina?" },
-      { id: "incontinenciaObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "deterioroCognitivo", etiqueta: "Deterioro cognitivo", tipo: "siNo", hint: "¿Ha notado cambios en su memoria en el último año?" },
-      { id: "deterioroCognitivoObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "depresion", etiqueta: "Depresión", tipo: "siNo", hint: "¿Se ha sentido triste o desanimado la mayor parte del tiempo en las últimas dos semanas?" },
-      { id: "depresionObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "polifarmacia", etiqueta: "Polifarmacia", tipo: "siNo", hint: "¿Toma cinco o más medicamentos recetados diariamente?" },
-      { id: "polifarmaciaObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "fragilidad", etiqueta: "Fragilidad", tipo: "siNo", hint: "¿Se siente débil o cansado con frecuencia?" },
-      { id: "fragilidadObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "sensorial", etiqueta: "Sensorial", tipo: "siNo", hint: "¿Tiene dificultades para oír o ver?" },
-      { id: "sensorialObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-      { id: "socioeconomico", etiqueta: "Socioeconómico", tipo: "siNo", hint: "¿Considera que sus ingresos cubren sus necesidades básicas?" },
-      { id: "socioeconomicoObs", etiqueta: "Observación", tipo: "textoLargo", requerido: false },
-    ],
+    campos: SINDROMES_GERIATRICOS.map((sindrome) => ({
+      id: sindrome.id,
+      etiqueta: sindrome.etiqueta,
+      tipo: "escala",
+      hint: sindrome.hint,
+      opciones: OPCIONES_SI_NO,
+      mensajeError: "Seleccione Sí o No para continuar.",
+    })),
   },
   /* ==== 9. Otras consideraciones ==== */
   {
@@ -344,29 +430,21 @@ export const SECCIONES = [
       },
     ],
   },
-  /* ==== 10. Salud mental (autoinforme; la pregunta «¿Piensa que
-     es maravilloso estar vivo?» del impreso se incluye una vez) ==== */
+  /* ==== 10. Salud mental: autoinforme de 13 preguntas
+     numeradas (el impreso repite «¿Piensa que es maravilloso
+     estar vivo?» y el cliente retiró del cuestionario activo
+     alucinaciones e ideación/acto suicida) ==== */
   {
     id: "salud-mental",
     titulo: "Salud mental",
-    descripcion: "Consulte con la propia persona mayor y registre cada respuesta del autoinforme.",
-    campos: [
-      { id: "satisfaccionVida", etiqueta: "Se siente satisfecha de su vida", tipo: "siNo" },
-      { id: "buenAnimo", etiqueta: "¿Tiene buen ánimo?", tipo: "siNo" },
-      { id: "abandonoActividades", etiqueta: "¿Ha abandonado actividades de su interés?", tipo: "siNo" },
-      { id: "prefiereCasa", etiqueta: "¿Prefiere quedarse en casa que salir?", tipo: "siNo" },
-      { id: "maravillosoVivo", etiqueta: "¿Piensa que es maravilloso estar vivo?", tipo: "siNo" },
-      { id: "seSienteInutil", etiqueta: "¿Se siente «inútil» en este momento?", tipo: "siNo" },
-      { id: "llenaEnergia", etiqueta: "¿Se siente llena de energía?", tipo: "siNo" },
-      { id: "mayoriaMejor", etiqueta: "¿Cree que la mayoría está mejor que usted?", tipo: "siNo" },
-      { id: "alucinaciones", etiqueta: "¿Ha tenido alucinaciones visuales o auditivas?", tipo: "siNo" },
-      { id: "ideacionSuicida", etiqueta: "¿Presenta ideación, comunicación o acto suicida?", tipo: "siNo" },
-      { id: "pocaEnergia", etiqueta: "¿Se ha quedado con poca energía?", tipo: "siNo" },
-      { id: "muyPreocupado", etiqueta: "¿Ha estado muy preocupado por algo?", tipo: "siNo" },
-      { id: "perdidoInteres", etiqueta: "¿Ha perdido el interés por las cosas?", tipo: "siNo" },
-      { id: "dificultadConcentrarse", etiqueta: "¿Ha tenido dificultad para concentrarse?", tipo: "siNo" },
-      { id: "sinEsperanzas", etiqueta: "¿Se ha sentido sin esperanzas?", tipo: "siNo" },
-    ],
+    descripcion:
+      "Autoinforme: consulte cada pregunta numerada con la propia persona mayor y registre su respuesta.",
+    campos: PREGUNTAS_SALUD_MENTAL.map((pregunta, indice) => ({
+      id: pregunta.id,
+      numero: indice + 1,
+      etiqueta: pregunta.etiqueta,
+      tipo: "siNo",
+    })),
   },
   /* ==== 11. Área cognitiva ==== */
   {
@@ -519,23 +597,31 @@ export const SECCIONES = [
 const CAMPOS_ESCALA = SECCIONES.flatMap((s) => s.campos).filter((c) => c.tipo === "escala");
 const CAMPOS_BASICA = SECCIONES.find((s) => s.id === "independencia-basica").campos;
 const CAMPOS_INSTRUMENTAL = SECCIONES.find((s) => s.id === "independencia-instrumental").campos;
-const CAMPOS_INDEPENDENCIA = CAMPOS_ESCALA.filter((c) => c.id !== "descansoSueno");
+/* 21 ámbitos de independencia (11 básicos + 10 instrumentales);
+   el descanso y sueño y los síndromes Sí/No son escalas pero no
+   son de independencia. */
+const CAMPOS_INDEPENDENCIA = [...CAMPOS_BASICA, ...CAMPOS_INSTRUMENTAL].filter(
+  (c) => c.id !== "descansoSueno"
+);
 const CAMPO_DESCANSO = CAMPOS_ESCALA.find((c) => c.id === "descansoSueno");
 const SECCION_MOTIVO = SECCIONES.find((s) => s.id === "motivo-consulta");
 const CAMPO_ORIGEN = SECCION_MOTIVO.campos.find((c) => c.id === "origen");
 const CAMPOS_OBSERVACION = ["condicionesGenerales", "animo", "orientacion"].map((id) =>
   SECCION_MOTIVO.campos.find((c) => c.id === id)
 );
-const SECCION_SINDROMES = SECCIONES.find((s) => s.id === "sindromes-geriatricos");
-const SINDROMES = SECCION_SINDROMES.campos.filter((c) => c.tipo === "siNo");
+const SECCIONES_REGISTRO = ["historial-medico", "antecedentes-familiares", "area-fisica", "lenguaje", "participacion-social", "entorno-adaptaciones", "habitucion", "esparcimiento", "volicion", "otras-consideraciones"].map((id) =>
+  SECCIONES.find((s) => s.id === id)
+);
+const SINDROMES = SECCIONES.find((s) => s.id === "sindromes-geriatricos").campos;
 const SECCION_OTRAS = SECCIONES.find((s) => s.id === "otras-consideraciones");
 const SI_NO_OTRAS = SECCION_OTRAS.campos.filter((c) => c.tipo === "siNo");
-const SECCION_SALUD_MENTAL = SECCIONES.find((s) => s.id === "salud-mental");
-const CAMPOS_SALUD_MENTAL = SECCION_SALUD_MENTAL.campos.filter((c) => c.tipo === "siNo");
+const ESCALA_BUENA_MALA = ["vision", "audicion"].map((id) => SECCION_OTRAS.campos.find((c) => c.id === id));
+const CAMPOS_SALUD_MENTAL = SECCIONES.find((s) => s.id === "salud-mental").campos.filter(
+  (c) => c.tipo === "siNo"
+);
 const CAMPOS_COGNITIVOS = SECCIONES.find((s) => s.id === "area-cognitiva").campos.filter(
   (c) => c.tipo === "siNo"
 );
-const CAMPOS_ENTORNO = SECCIONES.find((s) => s.id === "entorno-adaptaciones").campos;
 const PLAZOS = [
   { prefijo: "corto", nombre: "Corto plazo" },
   { prefijo: "mediano", nombre: "Mediano plazo" },
@@ -543,10 +629,11 @@ const PLAZOS = [
 ];
 const NIVELES_APOYO = ["supervision", "asistencia", "ayudaModerada", "dependiente"];
 
-/* Respuesta que constituye indicador de riesgo en el
-   autoinforme de salud mental. Alucinaciones e ideación,
-   comunicación o acto suicida se modelan como banderas
-   propias, fuera de este conteo. */
+/* Respuesta que constituye indicador de riesgo referido en el
+   autoinforme de salud mental. Se usa solo como referencia
+   descriptiva: no hay puntos de corte ni interpretación
+   diagnóstica (la pauta de tamizaje validada no está
+   disponible). */
 export const INDICADORES_RIESGO_SALUD_MENTAL = {
   satisfaccionVida: "no",
   buenAnimo: "no",
@@ -563,6 +650,100 @@ export const INDICADORES_RIESGO_SALUD_MENTAL = {
   sinEsperanzas: "si",
 };
 
+/* «Sí», «No» o «Sin respuesta» para los ítems de respuesta
+   cerrada del registro: las preguntas sin contestar se
+   declaran como sin respuesta, nunca como afirmativas. */
+function respuestaCerrada(valor) {
+  if (valor === "si") return "Sí";
+  if (valor === "no") return "No";
+  return "Sin respuesta";
+}
+
+/* «a», «a y b», «a, b y c». */
+function unirLista(palabras) {
+  if (palabras.length === 1) return palabras[0];
+  return `${palabras.slice(0, -1).join(", ")} y ${palabras[palabras.length - 1]}`;
+}
+
+/* Valor legible de un campo del registro según su tipo. */
+function valorRegistro(campo, valores) {
+  const valor = valores[campo.id];
+  if (campo.tipo === "siNo") return respuestaCerrada(valor);
+  if (campo.tipo === "radio") return etiquetaOpcion(campo, valor) || "Sin respuesta";
+  return textoValor(valor);
+}
+
+/* Lista vertical «Etiqueta: valor» para una sección del
+   impreso, con todos sus campos (los vacíos se declaran como
+   sin respuesta o «—», no se omiten). */
+function bloquesRegistro(seccion, valores) {
+  return {
+    tipo: "lista",
+    titulo: seccion.titulo,
+    items: seccion.campos.map((campo) => `${campo.etiqueta}: ${valorRegistro(campo, valores)}`),
+  };
+}
+
+/* Observación de una escala (o «—» si quedó vacía). */
+function obsEscala(id, valores) {
+  return (valores[`${id}Obs`] ?? "").trim() || "—";
+}
+
+/* Análisis narrativo de una sección de independencia
+   funcional, construido exclusivamente con los niveles
+   efectivamente registrados. */
+function narrativaIndependencia(campos, valores, { conDescanso = false } = {}) {
+  const grupos = [
+    {
+      nivel: "independiente",
+      conApoyo: false,
+      oracion: (lista, primero) =>
+        `${primero ? "La persona evaluada " : ""}presenta independencia en ${lista}.`,
+    },
+    {
+      nivel: "supervision",
+      conApoyo: true,
+      oracion: (lista) => `Requiere supervisión en ${lista}.`,
+    },
+    {
+      nivel: "asistencia",
+      conApoyo: true,
+      oracion: (lista) => `Requiere asistencia en ${lista}.`,
+    },
+    {
+      nivel: "ayudaModerada",
+      conApoyo: true,
+      oracion: (lista) => `Requiere ayuda moderada en ${lista}.`,
+    },
+    {
+      nivel: "dependiente",
+      conApoyo: true,
+      oracion: (lista) => `Presenta dependencia en ${lista}.`,
+    },
+  ];
+  const camposNivel = campos.filter((c) => c.id !== "descansoSueno");
+  const oraciones = [];
+  let conApoyo = false;
+  for (const grupo of grupos) {
+    const ambitos = camposNivel
+      .filter((campo) => valores[campo.id] === grupo.nivel)
+      .map((campo) => campo.etiqueta);
+    if (ambitos.length === 0) continue;
+    if (grupo.conApoyo) conApoyo = true;
+    oraciones.push(grupo.oracion(unirLista(ambitos), oraciones.length === 0));
+  }
+  if (oraciones.length === 0) {
+    oraciones.push("No se registran niveles de independencia para esta sección.");
+  } else if (conApoyo) {
+    oraciones.push("Estos resultados evidencian necesidades específicas de apoyo en las actividades de la vida diaria.");
+  }
+  if (conDescanso && valores.descansoSueno != null && valores.descansoSueno !== "") {
+    const nivel = etiquetaOpcion(CAMPO_DESCANSO, valores.descansoSueno);
+    if (nivel) oraciones.push(`El descanso y sueño se registra como «${nivel}».`);
+  }
+  return oraciones.join(" ");
+}
+
 /* Conteo de niveles elegidos en los 21 ámbitos de independencia
    funcional (11 básicos + 10 instrumentales; el descanso y
    sueño se modela aparte). */
@@ -576,16 +757,16 @@ export function contarNivelesIndependencia(valores = {}) {
 }
 
 /* Ámbitos de independencia funcional que requieren apoyo
-   (supervisión, asistencia, ayuda moderada o dependiente). */
+   (supervisión, asistencia, ayuda moderada o dependiente). Una
+   actividad independiente jamás se clasifica como apoyo. */
 export function ambitosConApoyo(valores = {}) {
   return CAMPOS_INDEPENDENCIA.filter((campo) => NIVELES_APOYO.includes(valores[campo.id])).map(
     (campo) => campo.etiqueta
   );
 }
 
-/* Etiquetas de los indicadores de riesgo de salud mental
-   efectivamente presentes según las respuestas. Los campos sin
-   regla (alucinaciones e ideación suicida) quedan fuera. */
+/* Etiquetas de los indicadores de riesgo referido de salud
+   mental efectivamente presentes según las respuestas. */
 export function etiquetasIndicadoresRiesgoSaludMental(valores = {}) {
   return CAMPOS_SALUD_MENTAL.filter((campo) => {
     const riesgo = INDICADORES_RIESGO_SALUD_MENTAL[campo.id];
@@ -602,8 +783,17 @@ export function contarSindromesGeriatricos(valores = {}) {
   return SINDROMES.filter((campo) => valores[campo.id] === "si" || valores[campo.id] === "no").length;
 }
 
+/* Bandera de hallazgo relevante: información descriptiva
+   registrada en la evaluación. No constituye alerta clínica ni
+   diagnóstico. */
+function hallazgo(texto) {
+  return { tipo: "bandera", nivel: "hallazgo", categoria: "hallazgo", texto };
+}
+
 /* ============================================================
    SÍNTESIS AUTOMATIZADA
+   El informe reproduce el registro completo del impreso en su
+   orden y cierra con hallazgos y alertas separados.
    ============================================================ */
 
 export function sintetizar(valores = {}) {
@@ -620,13 +810,9 @@ export function sintetizar(valores = {}) {
 
   const registroObservacion = CAMPOS_OBSERVACION.map((campo) =>
     etiquetaOpcion(campo, valores[campo.id])
-  );
-  if (registroObservacion.some((registro) => registro)) {
-    partesMotivo.push(
-      `En la observación se registran ${registroObservacion[0] || "—"}, ánimo ${
-        registroObservacion[1] ? registroObservacion[1].toLowerCase() : "—"
-      } y orientación ${registroObservacion[2] ? registroObservacion[2].toLowerCase() : "—"}.`
-    );
+  ).filter((registro) => registro);
+  if (registroObservacion.length > 0) {
+    partesMotivo.push(`En la observación se registran: ${registroObservacion.join(" · ")}.`);
   }
 
   bloques.push({
@@ -635,144 +821,125 @@ export function sintetizar(valores = {}) {
     texto: partesMotivo.length > 0 ? partesMotivo.join(" ") : "No se registra motivo de consulta en la entrevista.",
   });
 
-  /* ---- Independencia funcional básica e instrumental ---- */
+  /* ---- Historial médico y antecedentes familiares (registro
+     completo, uno por línea) ---- */
+  bloques.push(bloquesRegistro(SECCIONES_REGISTRO[0], valores));
+  bloques.push(bloquesRegistro(SECCIONES_REGISTRO[1], valores));
+
+  /* ---- Independencia funcional básica: análisis narrativo y
+     resultado por actividad con la observación registrada ---- */
   bloques.push({
-    tipo: "tabla",
-    titulo: "Independencia funcional básica",
-    columnas: [
-      { titulo: "Ámbito", fraccion: 0.6 },
-      { titulo: "Nivel", fraccion: 0.4 },
-    ],
-    filas: CAMPOS_BASICA.map((campo) => [campo.etiqueta, etiquetaOpcion(campo, valores[campo.id]) || "—"]),
+    tipo: "parrafo",
+    titulo: "Independencia funcional básica (análisis narrativo)",
+    texto: narrativaIndependencia(CAMPOS_BASICA, valores, { conDescanso: true }),
   });
   bloques.push({
     tipo: "tabla",
-    titulo: "Independencia funcional instrumental",
+    titulo: "Independencia funcional básica (resultado por actividad)",
     columnas: [
-      { titulo: "Ámbito", fraccion: 0.6 },
-      { titulo: "Nivel", fraccion: 0.4 },
+      { titulo: "Actividad", fraccion: 0.3 },
+      { titulo: "Nivel", fraccion: 0.3 },
+      { titulo: "Observación", fraccion: 0.4 },
     ],
-    filas: CAMPOS_INSTRUMENTAL.map((campo) => [campo.etiqueta, etiquetaOpcion(campo, valores[campo.id]) || "—"]),
+    filas: CAMPOS_BASICA.map((campo) => [
+      campo.etiqueta,
+      etiquetaOpcion(campo, valores[campo.id]) || "Sin respuesta",
+      obsEscala(campo.id, valores),
+    ]),
   });
 
-  const conApoyo = ambitosConApoyo(valores);
-  if (conApoyo.length > 0) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Requiere apoyo en ${conApoyo.length} de los ${CAMPOS_INDEPENDENCIA.length} ámbitos evaluados.`,
-    });
-  }
+  /* ---- Independencia funcional instrumental ---- */
+  bloques.push({
+    tipo: "parrafo",
+    titulo: "Independencia funcional instrumental (análisis narrativo)",
+    texto: narrativaIndependencia(CAMPOS_INSTRUMENTAL, valores),
+  });
+  bloques.push({
+    tipo: "tabla",
+    titulo: "Independencia funcional instrumental (resultado por actividad)",
+    columnas: [
+      { titulo: "Actividad", fraccion: 0.3 },
+      { titulo: "Nivel", fraccion: 0.3 },
+      { titulo: "Observación", fraccion: 0.4 },
+    ],
+    filas: CAMPOS_INSTRUMENTAL.map((campo) => [
+      campo.etiqueta,
+      etiquetaOpcion(campo, valores[campo.id]) || "Sin respuesta",
+      obsEscala(campo.id, valores),
+    ]),
+  });
 
-  /* ---- Descanso y sueño (escala aparte) ---- */
-  const descanso = etiquetaOpcion(CAMPO_DESCANSO, valores.descansoSueno);
-  if (descanso && valores.descansoSueno !== "normal") {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `El descanso y sueño se registran como «${descanso}».`,
-    });
-  }
+  /* ---- Área física ---- */
+  bloques.push(bloquesRegistro(SECCIONES_REGISTRO[2], valores));
 
-  /* ---- Síndromes geriátricos ---- */
+  /* ---- Síndromes geriátricos: dominio, pregunta original,
+     respuesta y observación ---- */
   bloques.push({
     tipo: "tabla",
     titulo: "Síndromes geriátricos",
     columnas: [
-      { titulo: "Síndrome", fraccion: 0.3 },
-      { titulo: "Respuesta", fraccion: 0.17 },
-      { titulo: "Observación", fraccion: 0.53 },
+      { titulo: "Dominio", fraccion: 0.2 },
+      { titulo: "Pregunta", fraccion: 0.37 },
+      { titulo: "Respuesta", fraccion: 0.13 },
+      { titulo: "Observación", fraccion: 0.3 },
     ],
     filas: SINDROMES.map((campo) => [
       campo.etiqueta,
-      valores[campo.id] === "si" ? "Sí" : valores[campo.id] === "no" ? "No" : "—",
-      textoValor(valores[`${campo.id}Obs`]),
+      campo.hint,
+      respuestaCerrada(valores[campo.id]),
+      obsEscala(campo.id, valores),
     ]),
   });
 
+  /* ---- Otras consideraciones (registro completo) ---- */
+  bloques.push(bloquesRegistro(SECCION_OTRAS, valores));
 
-
-  /* ---- Otras consideraciones ---- */
-  const itemsOtras = [];
-  for (const campo of SECCION_OTRAS.campos) {
-    const valor = valores[campo.id];
-    if (valor !== "si" && valor !== "no" && valor !== "buena" && valor !== "mala") continue;
-    itemsOtras.push(`${campo.etiqueta}: ${etiquetaOpcion(campo, valor)}`);
-  }
-  if (itemsOtras.length > 0) {
-    bloques.push({ tipo: "lista", titulo: "Otras consideraciones registradas", items: itemsOtras });
-  }
-
-  const positivos = SI_NO_OTRAS.filter((campo) => valores[campo.id] === "si");
-  if (positivos.length >= 2) {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: `Se registran ${positivos.length} hallazgos positivos en otras consideraciones: ${positivos
-        .map((campo) => campo.etiqueta)
-        .join(", ")}.`,
-    });
-  }
-
-  /* ---- Salud mental ---- */
-  if (valores.ideacionSuicida === "si") {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "critico",
-      texto:
-        "Se registra ideación/comunicación/acto suicida: activar protocolo de crisis y derivación inmediata.",
-    });
-  }
-
-  if (valores.alucinaciones === "si") {
-    bloques.push({
-      tipo: "bandera",
-      nivel: "alerta",
-      texto: "Se registran alucinaciones visuales o auditivas: derivar a evaluación médica y registrar contexto y frecuencia.",
-    });
-  }
-
-  /* Pauta integrada de salud mental: se muestran los
-     resultados ítem por ítem sin levantar alerta automática
-     (pauta integrada, no obligatoria de aplicar); la revisión
-     clínica decide. */
-  const resultadosSM = CAMPOS_SALUD_MENTAL.filter(
+  /* ---- Salud mental: numeración, respuesta individual y
+     respuestas completadas vs. faltantes ---- */
+  const respondidasSM = CAMPOS_SALUD_MENTAL.filter(
     (campo) => valores[campo.id] === "si" || valores[campo.id] === "no"
-  ).map((campo) => [campo.etiqueta, valores[campo.id] === "si" ? "Sí" : "No"]);
-  if (resultadosSM.length > 0) {
-    bloques.push({
-      tipo: "tabla",
-      titulo: "Salud mental (pauta integrada)",
-      columnas: [
-        { titulo: "Ítem", fraccion: 0.72 },
-        { titulo: "Respuesta", fraccion: 0.28 },
-      ],
-      filas: resultadosSM,
-    });
-  }
-
-  /* ---- Área cognitiva ---- */
-  const itemsCognitivos = CAMPOS_COGNITIVOS.filter(
-    (campo) => valores[campo.id] === "si" || valores[campo.id] === "no"
-  ).map((campo) => {
-    if (valores[campo.id] === "si") return `${campo.etiqueta}: Sí`;
-    const enQue = (valores[`${campo.id}EnQue`] ?? "").trim();
-    return enQue ? `${campo.etiqueta}: No — ${enQue}` : `${campo.etiqueta}: No`;
+  );
+  const faltantesSM = CAMPOS_SALUD_MENTAL.filter(
+    (campo) => valores[campo.id] !== "si" && valores[campo.id] !== "no"
+  ).map((campo) => `ítem ${campo.numero} (${campo.etiqueta})`);
+  const textoSM =
+    `Se respondieron ${respondidasSM.length} de ${CAMPOS_SALUD_MENTAL.length} ítems del autoinforme de salud mental.` +
+    (faltantesSM.length > 0 ? ` Sin respuesta: ${unirLista(faltantesSM)}.` : "");
+  bloques.push({ tipo: "parrafo", titulo: "Salud mental (autoinforme numerado)", texto: textoSM });
+  bloques.push({
+    tipo: "tabla",
+    titulo: "Salud mental (respuesta por ítem)",
+    columnas: [
+      { titulo: "N.º", fraccion: 0.08 },
+      { titulo: "Ítem", fraccion: 0.7 },
+      { titulo: "Respuesta", fraccion: 0.22 },
+    ],
+    filas: CAMPOS_SALUD_MENTAL.map((campo) => [
+      String(campo.numero),
+      campo.etiqueta,
+      respuestaCerrada(valores[campo.id]),
+    ]),
   });
-  if (itemsCognitivos.length > 0) {
-    bloques.push({ tipo: "lista", titulo: "Funciones cognitivas consultadas", items: itemsCognitivos });
+
+  /* ---- Área cognitiva: generalidades y funciones con su
+     respuesta y observación ---- */
+  const itemsCognitivos = [`Generalidades: ${textoValor(valores.generalidades)}`];
+  for (const campo of CAMPOS_COGNITIVOS) {
+    if (valores[campo.id] === "si") {
+      itemsCognitivos.push(`${campo.etiqueta}: Sí`);
+    } else if (valores[campo.id] === "no") {
+      const enQue = (valores[`${campo.id}EnQue`] ?? "").trim();
+      itemsCognitivos.push(enQue ? `${campo.etiqueta}: No — ${enQue}` : `${campo.etiqueta}: No`);
+    } else {
+      itemsCognitivos.push(`${campo.etiqueta}: Sin respuesta`);
+    }
   }
+  bloques.push({ tipo: "lista", titulo: "Área cognitiva", items: itemsCognitivos });
 
-
-
-  /* ---- Entorno y adaptaciones ---- */
-  const lineasEntorno = [];
-  for (const campo of CAMPOS_ENTORNO) {
-    const texto = (valores[campo.id] ?? "").trim();
-    if (texto) lineasEntorno.push(`${campo.etiqueta}: ${texto}`);
-  }
-  if (lineasEntorno.length > 0) {
-    bloques.push({ tipo: "lista", titulo: "Entorno y adaptaciones", items: lineasEntorno });
+  /* ---- Lenguaje, participación social, entorno, habituación,
+     esparcimiento y volición (registro completo) ---- */
+  for (const seccion of SECCIONES_REGISTRO.slice(3)) {
+    bloques.push(bloquesRegistro(seccion, valores));
   }
 
   /* ---- Plan de intervención (en el orden del impreso) ---- */
@@ -791,20 +958,119 @@ export function sintetizar(valores = {}) {
   }
   bloques.push({ tipo: "plan", titulo: "Plan de intervención", filas: filasPlan });
 
+  /* ============================================================
+     HALLAZGOS RELEVANTES (descriptivos, desde lo registrado)
+     ============================================================ */
+
+  const ambitosApoyo = ambitosConApoyo(valores);
+  if (ambitosApoyo.length > 0) {
+    bloques.push(
+      hallazgo(
+        `Requiere apoyo (supervisión, asistencia, ayuda moderada o dependencia) en ${ambitosApoyo.length} de los ${CAMPOS_INDEPENDENCIA.length} ámbitos de independencia funcional evaluados.`
+      )
+    );
+  }
+
+  const descanso = etiquetaOpcion(CAMPO_DESCANSO, valores.descansoSueno);
+  if (descanso && valores.descansoSueno !== "normal") {
+    bloques.push(hallazgo(`El descanso y sueño se registra como «${descanso}».`));
+  }
+
+  const sindromesPositivos = SINDROMES.filter((campo) => valores[campo.id] === "si").map(
+    (campo) => campo.etiqueta
+  );
+  if (sindromesPositivos.length > 0) {
+    /* Antecedentes referidos, no diagnósticos. */
+    bloques.push(
+      hallazgo(
+        `Antecedentes referidos en síndromes geriátricos: ${unirLista(sindromesPositivos)}.`
+      )
+    );
+  }
+
+  const positivosOtras = [];
+  for (const campo of SI_NO_OTRAS) {
+    if (valores[campo.id] === "si") positivosOtras.push(`${campo.etiqueta} (Sí)`);
+  }
+  for (const campo of ESCALA_BUENA_MALA) {
+    if (valores[campo.id] === "mala") positivosOtras.push(`${campo.etiqueta} (Mala)`);
+  }
+  if (positivosOtras.length > 0) {
+    bloques.push(
+      hallazgo(`Hallazgos registrados en otras consideraciones: ${unirLista(positivosOtras)}.`)
+    );
+  }
+
+  const etiquetasRiesgoSM = [];
+  for (const campo of CAMPOS_SALUD_MENTAL) {
+    const riesgo = INDICADORES_RIESGO_SALUD_MENTAL[campo.id];
+    if (riesgo !== undefined && valores[campo.id] === riesgo) {
+      etiquetasRiesgoSM.push(`ítem ${campo.numero}`);
+    }
+  }
+  if (etiquetasRiesgoSM.length > 0) {
+    bloques.push(
+      hallazgo(
+        `En el autoinforme de salud mental se registran ${etiquetasRiesgoSM.length} respuestas en la dirección de riesgo referido (${unirLista(etiquetasRiesgoSM)}). Referencia descriptiva: no se aplican puntos de corte ni interpretación diagnóstica.`
+      )
+    );
+  }
+
+  const dificultadesCognitivas = CAMPOS_COGNITIVOS.filter(
+    (campo) => valores[campo.id] === "no"
+  ).map((campo) => campo.etiqueta);
+  if (dificultadesCognitivas.length > 0) {
+    bloques.push(
+      hallazgo(
+        `Se registran dificultades referidas en funciones cognitivas: ${unirLista(dificultadesCognitivas)}.`
+      )
+    );
+  }
+
+  /* ============================================================
+     ALERTAS CLÍNICAS (solo con criterio definido)
+     Las preguntas de alucinaciones e ideación, comunicación o
+     acto suicida salieron del cuestionario activo; sus
+     respuestas solo pueden provenir de evaluaciones históricas
+     y en ese caso la información se conserva en el informe.
+     ============================================================ */
+
+  if (valores.ideacionSuicida === "si") {
+    bloques.push({
+      tipo: "bandera",
+      nivel: "critico",
+      categoria: "alerta",
+      texto:
+        "Se registra ideación/comunicación/acto suicida: activar protocolo de crisis y derivación inmediata.",
+    });
+  }
+
+  if (valores.alucinaciones === "si") {
+    bloques.push({
+      tipo: "bandera",
+      nivel: "alerta",
+      categoria: "alerta",
+      texto:
+        "Se registran alucinaciones visuales o auditivas: derivar a evaluación médica y registrar contexto y frecuencia.",
+    });
+  }
+
   return bloques;
 }
 
 /* ============================================================
-   INFORME EN PDF
+   INFORME EN PDF Y WORD
    ============================================================ */
 
-/* Configuración común del informe (PDF y Word). */
+/* Configuración común del informe (PDF y Word). El informe
+   inicia con el título del instrumento, sin párrafo
+   introductorio, y cierra con la hoja de hallazgos y alertas. */
 function configInforme(valores) {
   return {
     nombreArchivo: "Informe-Evaluacion-Inicial-Persona-Mayor",
-    instrumento: "Evaluación inicial · Persona mayor",
-    titulo: "Informe de evaluación inicial",
-    subtitulo: "Persona mayor · Entrevista inicial de terapia ocupacional",
+    instrumento: "",
+    titulo: "EVALUACIÓN INICIAL – PERSONA MAYOR",
+    subtitulo: "",
     autor: "TeraOcupame · Formulario NIÑO - ADOLESCENTE - ADULTO - PERSONA MAYOR",
     color: [139, 125, 224],
     colorOscuro: [99, 74, 191],
@@ -812,8 +1078,12 @@ function configInforme(valores) {
     secciones: SECCIONES,
     valores,
     sintesis: sintetizar(valores),
+    tituloSintesis: "Resultados de la evaluación",
+    seccionHallazgos: true,
   };
 }
+
+export { configInforme };
 
 export function descargarInformePDF(valores) {
   descargarInformePDFEvaluacionInicial(configInforme(valores));

@@ -21,6 +21,10 @@ const TINTES_BANDERA = {
   alerta: { fondo: [254, 243, 199], franja: [217, 119, 6], etiqueta: "ALERTA" },
   ok: { fondo: [220, 252, 231], franja: [22, 163, 74], etiqueta: "SIN ALERTAS" },
   info: { fondo: [224, 231, 255], franja: [79, 70, 229], etiqueta: "INFORMACIÓN" },
+  /* Hallazgo relevante: información descriptiva registrada en la
+     evaluación que merece atención sin constituir alerta clínica
+     (solo Persona mayor usa la categoría). */
+  hallazgo: { fondo: [237, 233, 254], franja: [99, 74, 191], etiqueta: "HALLAZGO RELEVANTE" },
 };
 
 /* Etiqueta elegida de un campo radio/siNo/escala (o el valor tal
@@ -81,6 +85,12 @@ export function descargarInformePDFEvaluacionInicial(config) {
     valores = {},
     sintesis = [],
     introduccion = "",
+    /* Título de la sección de resultados y sección final de
+       hallazgos/alertas (solo Persona mayor la activa; el resto
+       de las fichas conserva «Síntesis automatizada de la
+       evaluación» y «Alertas en información recabada»). */
+    tituloSintesis = "Síntesis automatizada de la evaluación",
+    seccionHallazgos = false,
   } = config;
   const oscuro = colorOscuro ?? color;
 
@@ -115,11 +125,14 @@ export function descargarInformePDFEvaluacionInicial(config) {
     y += espacio;
   };
 
-  /* ---- Encabezado ---- */
+  /* ---- Encabezado (el informe inicia con el título; si el
+     fichero define instrumento, se muestra como banda previa) ---- */
   doc.setFillColor(...color);
   doc.rect(margen, y, anchoUtil, 4, "F");
   y += 24;
-  escribir(instrumento.toUpperCase(), { tamano: 10.5, negrita: true, centrado: true, gris: true, espacio: 4 });
+  if (instrumento) {
+    escribir(instrumento.toUpperCase(), { tamano: 10.5, negrita: true, centrado: true, gris: true, espacio: 4 });
+  }
   escribir(titulo, { tamano: 17, negrita: true, centrado: true, espacio: subtitulo ? 2 : 6 });
   if (subtitulo) escribir(subtitulo, { tamano: 12, centrado: true, espacio: 6 });
   if (autor) escribir(autor, { tamano: 7.5, centrado: true, gris: true, espacio: 14 });
@@ -280,22 +293,50 @@ export function descargarInformePDFEvaluacionInicial(config) {
     }
   };
 
-  /* Las banderas alerta/critico no se reparten por el informe:
-     se consolidan al final en «Alertas en información
-     recabada». Las banderas ok/info no se imprimen. */
+  /* Las banderas no se reparten por el informe: se consolidan
+     al final. Con seccionHallazgos (Persona mayor) la hoja final
+     distingue hallazgos relevantes (descriptivos) de alertas
+     clínicas (con criterio definido); sin ella, las fichas
+     existentes conservan «Alertas en información recabada» con
+     sus banderas alerta/critico. Las ok/info no se imprimen. */
   const bloquesResumen = sintesis.filter((b) => b.tipo !== "bandera");
+  const hallazgosRelevantes = sintesis.filter(
+    (b) => b.tipo === "bandera" && b.categoria === "hallazgo"
+  );
   const alertasRecabadas = sintesis.filter(
-    (b) => b.tipo === "bandera" && (b.nivel === "alerta" || b.nivel === "critico")
+    (b) =>
+      b.tipo === "bandera" &&
+      b.categoria !== "hallazgo" &&
+      (b.nivel === "alerta" || b.nivel === "critico")
   );
 
   if (bloquesResumen.length > 0) {
     asegurar(80);
-    escribir("Síntesis automatizada de la evaluación", { tamano: 13, negrita: true, espacio: 8 });
+    escribir(tituloSintesis, { tamano: 13, negrita: true, espacio: 8 });
     dibujarBloques(bloquesResumen);
   }
 
-  if (alertasRecabadas.length > 0) {
-    /* Las alertas van en hoja aparte. */
+  if (seccionHallazgos) {
+    /* Hoja final independiente con hallazgos y alertas separados. */
+    nuevaPagina();
+    escribir("HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS", { tamano: 13, negrita: true, espacio: 10 });
+    escribir("Hallazgos relevantes", { tamano: 11.5, negrita: true, espacio: 6 });
+    if (hallazgosRelevantes.length > 0) {
+      for (const hallazgo of hallazgosRelevantes) dibujarBandera(hallazgo);
+    } else {
+      escribir("No se registran hallazgos relevantes en esta evaluación.", { gris: true });
+    }
+    y += 8;
+    escribir("Alertas clínicas", { tamano: 11.5, negrita: true, espacio: 6 });
+    if (alertasRecabadas.length > 0) {
+      for (const alerta of alertasRecabadas) dibujarBandera(alerta);
+    } else {
+      escribir("No se activaron alertas clínicas según los criterios documentados del instrumento.", {
+        gris: true,
+      });
+    }
+  } else if (alertasRecabadas.length > 0) {
+    /* Las alertas van en hoja aparte (fichas Infantil, Adolescencia y Adulto). */
     nuevaPagina();
     escribir("Alertas en información recabada", { tamano: 13, negrita: true, espacio: 8 });
     for (const alerta of alertasRecabadas) dibujarBandera(alerta);
@@ -386,6 +427,8 @@ export function construirInformeWordHTML(config) {
     valores = {},
     sintesis = [],
     introduccion = "",
+    tituloSintesis = "Síntesis automatizada de la evaluación",
+    seccionHallazgos = false,
   } = config;
   const oscuro = colorOscuro ?? color;
 
@@ -395,28 +438,43 @@ export function construirInformeWordHTML(config) {
     .join("\n");
   const fechaHTML = `<p style="margin:2px 0;"><b>FECHA DE APLICACIÓN:</b> ${escaparHTML(fechaCorta())}</p>`;
 
-  /* Las banderas alerta/critico se consolidan al final en
-     «Alertas en información recabada»; las ok/info no se
-     imprimen. */
+  /* Misma consolidación que el PDF: hallazgos relevantes y
+     alertas clínicas separados en la hoja final (Persona
+     mayor); las demás fichas conservan su sección de alertas. */
   const bloquesResumen = sintesis.filter((b) => b.tipo !== "bandera");
+  const hallazgosRelevantes = sintesis.filter(
+    (b) => b.tipo === "bandera" && b.categoria === "hallazgo"
+  );
   const alertasRecabadas = sintesis.filter(
-    (b) => b.tipo === "bandera" && (b.nivel === "alerta" || b.nivel === "critico")
+    (b) =>
+      b.tipo === "bandera" &&
+      b.categoria !== "hallazgo" &&
+      (b.nivel === "alerta" || b.nivel === "critico")
   );
 
   const sintesisHTML = bloquesResumen.length
-    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">Síntesis automatizada de la evaluación</h2>
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;">${escaparHTML(tituloSintesis)}</h2>
 ${bloquesWordHTML(bloquesResumen, oscuro)}`
     : "";
 
-  const alertasHTML = alertasRecabadas.length
-    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">Alertas en información recabada</h2>
+  const lineaVacia = (texto) =>
+    `<p style="margin:4px 0;color:#666;">${escaparHTML(texto)}</p>`;
+
+  const alertasHTML = seccionHallazgos
+    ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">HALLAZGOS RELEVANTES Y ALERTAS CLÍNICAS</h2>
+<h3 style="font-size:11.5pt;margin:10px 0 4px;">Hallazgos relevantes</h3>
+${hallazgosRelevantes.length ? bloquesWordHTML(hallazgosRelevantes, oscuro) : lineaVacia("No se registran hallazgos relevantes en esta evaluación.")}
+<h3 style="font-size:11.5pt;margin:10px 0 4px;">Alertas clínicas</h3>
+${alertasRecabadas.length ? bloquesWordHTML(alertasRecabadas, oscuro) : lineaVacia("No se activaron alertas clínicas según los criterios documentados del instrumento.")}`
+    : alertasRecabadas.length
+      ? `<h2 style="font-size:13pt;color:${rgbCSS(oscuro)};margin:18px 0 6px;page-break-before:always;">Alertas en información recabada</h2>
 ${bloquesWordHTML(alertasRecabadas, oscuro)}`
-    : "";
+      : "";
 
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="utf-8" /><title>${escaparHTML(titulo)}</title></head>
 <body style="font-family: Arial, sans-serif; font-size:11pt; color:#111;">
-  <p style="text-align:center;margin:0;"><b>${escaparHTML(instrumento.toUpperCase())}</b></p>
+  ${instrumento ? `<p style="text-align:center;margin:0;"><b>${escaparHTML(instrumento.toUpperCase())}</b></p>` : ""}
   <h1 style="text-align:center;font-size:16pt;margin:4px 0 2px;">${escaparHTML(titulo)}</h1>
   ${subtitulo ? `<p style="text-align:center;margin:0;">${escaparHTML(subtitulo)}</p>` : ""}
   ${autor ? `<p style="text-align:center;margin:0 0 12px;font-size:8.5pt;color:#666;">${escaparHTML(autor)}</p>` : ""}
