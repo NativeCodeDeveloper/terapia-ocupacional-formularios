@@ -227,15 +227,74 @@ test("sintetizar con valores vacíos no lanza y no marca crítico", () => {
   const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
   assert.equal(plan.filas.length, 7);
   assert.ok(plan.filas.every((fila) => fila[1] === "—"));
-  assert.ok(!bloques.some((b) => b.titulo === "Área académica"));
 });
 
-test("la tabla de independencia lista las 11 escalas con su nivel o raya", () => {
-  const tabla = sintetizar({ comer: "independiente" }).find((b) => b.tipo === "tabla" && b.titulo === "Independencia funcional");
-  assert.deepEqual(tabla.columnas.map((c) => c.titulo), ["Ámbito", "Nivel"]);
+test("el informe reproduce el registro completo del impreso en su orden", () => {
+  const bloques = sintetizar({});
+  const titulos = bloques.map((b) => b.titulo);
+  assert.deepEqual(titulos, [
+    "Motivo de consulta",
+    "Historial médico",
+    "Antecedentes familiares",
+    "Independencia funcional",
+    "Hitos del desarrollo",
+    "Área sensorial",
+    "Área física",
+    "Área cognitiva",
+    "Lenguaje",
+    "Conducta",
+    "Interacción social",
+    "Expresión y reconocimiento de emociones",
+    "Área académica",
+    "Habituación",
+    "Esparcimiento",
+    "Volición",
+    "Plan de intervención",
+  ]);
+  // Cada lista del registro declara todos los campos de su sección.
+  const CUENTA_REGISTRO = {
+    "Historial médico": 5,
+    "Antecedentes familiares": 9,
+    "Área sensorial": 7,
+    "Área física": 3,
+    Lenguaje: 3,
+    Conducta: 2,
+    "Interacción social": 4,
+    "Expresión y reconocimiento de emociones": 5,
+    "Área académica": 4,
+    Habituación: 3,
+    Esparcimiento: 3,
+    Volición: 3,
+  };
+  for (const [titulo, cuenta] of Object.entries(CUENTA_REGISTRO)) {
+    const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === titulo);
+    assert.ok(lista, `falta la lista ${titulo}`);
+    assert.equal(lista.items.length, cuenta, `lista ${titulo}`);
+  }
+});
+
+test("las preguntas sin respuesta del registro se declaran, no se omiten", () => {
+  const bloques = sintetizar({});
+  const registro = (titulo) => bloques.find((b) => b.tipo === "lista" && b.titulo === titulo).items;
+  assert.ok(registro("Historial médico").every((item) => item.endsWith(": —")));
+  assert.ok(registro("Interacción social").every((item) => item.endsWith(": —")));
+  const mascotas = registro("Antecedentes familiares").find((item) => item.startsWith("Ubicación de las mascotas"));
+  assert.equal(mascotas, "Ubicación de las mascotas: Sin respuesta");
+  const retrasoLista = registro("Área académica");
+  assert.ok(retrasoLista.includes("Rendimiento: —"));
+});
+
+test("la tabla de independencia lista las 11 escalas con nivel y observación", () => {
+  const bloques = sintetizar({
+    comer: "independiente",
+    comerObs: "Usa cubiertos con la mano dominante.",
+  });
+  const tabla = bloques.find((b) => b.tipo === "tabla" && b.titulo === "Independencia funcional");
+  assert.deepEqual(tabla.columnas.map((c) => c.titulo), ["Ámbito", "Nivel", "Observación"]);
   assert.equal(tabla.filas.length, 11);
-  assert.deepEqual(tabla.filas[0], ["Comer", "Independiente"]);
-  assert.deepEqual(tabla.filas[1], ["Aseo personal", "—"]);
+  assert.deepEqual(tabla.filas[0], ["Comer", "Independiente", "Usa cubiertos con la mano dominante."]);
+  assert.deepEqual(tabla.filas[1], ["Aseo personal", "Sin respuesta", "—"]);
+  assert.deepEqual(tabla.filas[10], ["Descanso y sueño", "Sin respuesta", "—"]);
 });
 
 test("todas las escalas en «Dependiente» generan alerta por conteo", () => {
@@ -317,9 +376,24 @@ test("las 6 funciones cognitivas en «No» quedan en la lista, sin alerta", () =
   for (const f of FUNCIONES_COGNITIVAS) valores[f.id] = "no";
   const bloques = sintetizar(valores);
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
+  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Área cognitiva");
   assert.equal(lista.items.length, 6);
   assert.ok(lista.items.every((item) => item.endsWith(": No")));
+});
+
+test("las funciones cognitivas sin respuesta se declaran, no se omiten", () => {
+  const lista = sintetizar({ atencionSelectiva: "si" }).find(
+    (b) => b.tipo === "lista" && b.titulo === "Área cognitiva"
+  );
+  assert.equal(lista.items.length, 6);
+  assert.deepEqual(lista.items, [
+    "Atención selectiva: Sí",
+    "Atención sostenida: Sin respuesta",
+    "Atención dividida: Sin respuesta",
+    "Memoria corto plazo: Sin respuesta",
+    "Memoria largo plazo: Sin respuesta",
+    "Memoria de trabajo: Sin respuesta",
+  ]);
 });
 
 test("el texto de «¿En qué?» acompaña a la función respondida «No»", () => {
@@ -327,8 +401,8 @@ test("el texto de «¿En qué?» acompaña a la función respondida «No»", () 
     atencionSelectiva: "no",
     atencionSelectivaEnQue: "No logra sostener la lectura",
   };
-  const lista = sintetizar(valores).find((b) => b.tipo === "lista");
-  assert.deepEqual(lista.items, ["Atención selectiva: No — No logra sostener la lectura"]);
+  const lista = sintetizar(valores).find((b) => b.tipo === "lista" && b.titulo === "Área cognitiva");
+  assert.deepEqual(lista.items[0], "Atención selectiva: No — No logra sostener la lectura");
 });
 
 test("las 6 funciones cognitivas en «Sí» no generan banderas", () => {
@@ -336,7 +410,7 @@ test("las 6 funciones cognitivas en «Sí» no generan banderas", () => {
   for (const f of FUNCIONES_COGNITIVAS) valores[f.id] = "si";
   const bloques = sintetizar(valores);
   assert.equal(bloques.filter((b) => b.tipo === "bandera").length, 0);
-  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Funciones cognitivas consultadas");
+  const lista = bloques.find((b) => b.tipo === "lista" && b.titulo === "Área cognitiva");
   assert.deepEqual(lista.items, [
     "Atención selectiva: Sí",
     "Atención sostenida: Sí",
@@ -347,18 +421,24 @@ test("las 6 funciones cognitivas en «Sí» no generan banderas", () => {
   ]);
 });
 
-test("el área académica y el plan de intervención se resumen cuando hay contenido", () => {
+test("el área académica se reproduce ítem por ítem y el plan en el orden del impreso", () => {
   const bloques = sintetizar({
     rendimiento: "Aprobado en todas las asignaturas",
+    habilidadesEspecificas: "Dificultad en comprensión lectora",
+    observacionAcademica: "Inicia las tareas con apoyo",
     apoyosAprendizaje: "Programa de integración escolar (PIE)",
     problemaOcupacional: "Dificultad de autorregulación en la rutina escolar",
     cortoObjetivo: "Favorecer la autorregulación",
     cortoEspecificos: "Trabajar pausas activas",
   });
-  const academico = bloques.find((b) => b.tipo === "parrafo" && b.titulo === "Área académica");
-  assert.ok(academico, "falta el párrafo del área académica");
-  assert.ok(academico.texto.includes("Rendimiento académico: Aprobado en todas las asignaturas."));
-  assert.ok(academico.texto.includes("Apoyos al aprendizaje: Programa de integración escolar (PIE)."));
+  const academica = bloques.find((b) => b.tipo === "lista" && b.titulo === "Área académica");
+  assert.ok(academica, "falta el registro del área académica");
+  assert.deepEqual(academica.items, [
+    "Rendimiento: Aprobado en todas las asignaturas",
+    "Habilidades específicas: Dificultad en comprensión lectora",
+    "Observación: Inicia las tareas con apoyo",
+    "Apoyos al aprendizaje: Programa de integración escolar (PIE)",
+  ]);
   const plan = bloques.find((b) => b.tipo === "plan" && b.titulo === "Plan de intervención");
   assert.deepEqual(plan.filas[0], [
     "Problemática ocupacional",

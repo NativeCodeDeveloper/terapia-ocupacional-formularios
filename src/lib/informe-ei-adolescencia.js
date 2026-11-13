@@ -19,9 +19,13 @@ import {
    social, expresión y reconocimiento de emociones, área
    académica (aquí reemplaza al área de juego del infantil),
    habituación, esparcimiento, volición y plan de intervención.
-   `sintetizar` construye los bloques del resumen automatizado
-   y `descargarInformePDF` genera el PDF con el motor común
-   informe-evaluacion-inicial.js.
+   `sintetizar` reproduce el registro completo del impreso en
+   su orden (igual que Persona Mayor): motivo de consulta como
+   párrafo, secciones narrativas como listas «etiqueta: valor»
+   (los vacíos se declaran sin respuesta, nunca se omiten) y
+   las escalas como tablas con su observación. Las banderas de
+   alerta se consolidan al final. `descargarInformePDF` genera
+   el PDF con el motor común informe-evaluacion-inicial.js.
    ============================================================ */
 
 /* ==== Opciones de las escalas ==== */
@@ -447,6 +451,26 @@ const HITOS = seccionPorId("hitos-desarrollo").campos.filter((c) => c.tipo === "
 /* Funciones cognitivas consultadas (id y etiqueta). */
 export const FUNCIONES_COGNITIVAS = FUNCIONES_COGNITIVAS_BASE.map(({ id, etiqueta }) => ({ id, etiqueta }));
 
+/* Secciones narrativas que el informe reproduce ítem por ítem
+   como registro completo, en el orden del impreso (motivo de
+   consulta, independencia funcional, hitos y funciones
+   cognitivas tienen bloques propios; los datos personales son
+   la identificación que dibuja el motor). */
+const SECCIONES_REGISTRO = [
+  "historial-medico",
+  "antecedentes-familiares",
+  "area-sensorial",
+  "area-fisica",
+  "lenguaje",
+  "conducta",
+  "interaccion-social",
+  "expresion-emociones",
+  "area-academica",
+  "habituacion",
+  "esparcimiento",
+  "volicion",
+].map(seccionPorId);
+
 /* Cuenta cuántos ámbitos de independencia funcional quedaron
    en cada nivel (solo los 10 ámbitos; «Descanso y sueño» no
    participa en esta distribución). */
@@ -457,6 +481,40 @@ export function contarNivelesIndependencia(valores = {}) {
     if (valor in conteo) conteo[valor] += 1;
   }
   return conteo;
+}
+
+/* ==== Registro completo del impreso ==== */
+
+/* «Sí», «No» o «Sin respuesta» para los ítems de respuesta
+   cerrada: las preguntas sin contestar se declaran como sin
+   respuesta, nunca se omiten ni se dan por afirmativas. */
+function respuestaCerrada(valor) {
+  if (valor === "si") return "Sí";
+  if (valor === "no") return "No";
+  return "Sin respuesta";
+}
+
+/* Valor legible de un campo del registro según su tipo. */
+function valorRegistro(campo, valores) {
+  const valor = valores[campo.id];
+  if (campo.tipo === "siNo") return respuestaCerrada(valor);
+  if (campo.tipo === "radio") return etiquetaOpcion(campo, valor) || "Sin respuesta";
+  return textoValor(valor);
+}
+
+/* Lista vertical «Etiqueta: valor» para una sección del
+   impreso, con todos sus campos. */
+function bloquesRegistro(seccion, valores) {
+  return {
+    tipo: "lista",
+    titulo: seccion.titulo,
+    items: seccion.campos.map((campo) => `${campo.etiqueta}: ${valorRegistro(campo, valores)}`),
+  };
+}
+
+/* Observación de una escala (o «—» si quedó vacía). */
+function obsEscala(id, valores) {
+  return (valores[`${id}Obs`] ?? "").trim() || "—";
 }
 
 /* ==== Síntesis automatizada ==== */
@@ -504,8 +562,16 @@ function bloqueTablaIndependencia(valores) {
   return {
     tipo: "tabla",
     titulo: "Independencia funcional",
-    columnas: [{ titulo: "Ámbito" }, { titulo: "Nivel" }],
-    filas: escalas.map((campo) => [campo.etiqueta, etiquetaOpcion(campo, valores[campo.id]) || "—"]),
+    columnas: [
+      { titulo: "Ámbito", fraccion: 0.3 },
+      { titulo: "Nivel", fraccion: 0.3 },
+      { titulo: "Observación", fraccion: 0.4 },
+    ],
+    filas: escalas.map((campo) => [
+      campo.etiqueta,
+      etiquetaOpcion(campo, valores[campo.id]) || "Sin respuesta",
+      obsEscala(campo.id, valores),
+    ]),
   };
 }
 
@@ -566,20 +632,11 @@ function bloqueListaCognitiva(valores) {
     } else if (respuesta === "no") {
       const detalle = limpiar(valores[`${id}EnQue`]);
       items.push(detalle ? `${etiqueta}: No — ${detalle}` : `${etiqueta}: No`);
+    } else {
+      items.push(`${etiqueta}: Sin respuesta`);
     }
   }
-  if (items.length === 0) return null;
-  return { tipo: "lista", titulo: "Funciones cognitivas consultadas", items };
-}
-
-function bloqueAreaAcademica(valores) {
-  const rendimiento = limpiar(valores.rendimiento);
-  const apoyos = limpiar(valores.apoyosAprendizaje);
-  const partes = [];
-  if (rendimiento) partes.push(cerrar(`Rendimiento académico: ${rendimiento}`));
-  if (apoyos) partes.push(cerrar(`Apoyos al aprendizaje: ${apoyos}`));
-  if (partes.length === 0) return null;
-  return { tipo: "parrafo", titulo: "Área académica", texto: partes.join(" ") };
+  return { tipo: "lista", titulo: "Área cognitiva", items };
 }
 
 /* Plan de intervención en el orden del impreso: filas
@@ -600,19 +657,44 @@ function bloquePlanIntervencion(valores) {
 
 export function sintetizar(valores = {}) {
   const bloques = [];
+
+  /* Motivo de consulta (párrafo con origen, motivo y observación). */
   bloques.push(bloqueMotivoConsulta(valores));
+
+  /* Historial médico y antecedentes familiares (registro completo). */
+  for (const seccion of SECCIONES_REGISTRO.slice(0, 2)) {
+    bloques.push(bloquesRegistro(seccion, valores));
+  }
+
+  /* Independencia funcional: tabla por ámbito con la observación
+     registrada, más las banderas de apoyo y de descanso alterado. */
   bloques.push(bloqueTablaIndependencia(valores));
   const banderaIndependencia = bloqueBanderaIndependencia(valores);
   if (banderaIndependencia) bloques.push(banderaIndependencia);
   const banderaDescanso = bloqueBanderaDescanso(valores);
   if (banderaDescanso) bloques.push(banderaDescanso);
+
+  /* Hitos del desarrollo con edad registrada y bandera de retraso. */
   bloques.push(bloqueTablaHitos(valores));
   const banderaHitos = bloqueBanderaHitos(valores);
   if (banderaHitos) bloques.push(banderaHitos);
-  const listaCognitiva = bloqueListaCognitiva(valores);
-  if (listaCognitiva) bloques.push(listaCognitiva);
-  const bloqueAcademico = bloqueAreaAcademica(valores);
-  if (bloqueAcademico) bloques.push(bloqueAcademico);
+
+  /* Área sensorial y área física (registro completo). */
+  for (const seccion of SECCIONES_REGISTRO.slice(2, 4)) {
+    bloques.push(bloquesRegistro(seccion, valores));
+  }
+
+  /* Área cognitiva: las 6 funciones con su respuesta y «¿en qué?». */
+  bloques.push(bloqueListaCognitiva(valores));
+
+  /* Lenguaje, conducta, interacción social, emociones, área
+     académica, habituación, esparcimiento y volición (registro
+     completo, en el orden del impreso). */
+  for (const seccion of SECCIONES_REGISTRO.slice(4)) {
+    bloques.push(bloquesRegistro(seccion, valores));
+  }
+
+  /* Plan de intervención (en el orden del impreso). */
   bloques.push(bloquePlanIntervencion(valores));
   return bloques;
 }
