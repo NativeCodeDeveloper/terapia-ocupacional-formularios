@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import { TABLAS_NORMAS, rangoDeT } from "./normas-spm2.js";
-import { dibujarSeccionGenogramaPDF, seccionGenogramaHTML } from "./informe-genograma.js";
 
 /* ============================================================
    PUNTUACIÓN OFICIAL SPM-2
@@ -464,19 +463,6 @@ export function descargarInformePDF(config) {
   }
   y += 26;
 
-  // ---- Genograma familiar (opcional) ----
-  // Solo se imprime cuando el profesional creó o vinculó un
-  // genograma a esta evaluación; sin él la sección no existe.
-  if (config.genograma) {
-    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
-      y,
-      margen,
-      anchoUtil,
-      altoPagina,
-      margenInferior: margen,
-    });
-  }
-
   // ---- Firma y nota ----
   if (y > altoPagina - 130) {
     doc.addPage();
@@ -593,8 +579,6 @@ export function descargarInformeWord(config) {
 
   <h2 style="font-size:13pt;color:#312e81;margin:18px 0 6px;">Gráfico de resultados sección sensorial</h2>
   ${graficoHTML}
-
-  ${config.genograma ? seccionGenogramaHTML(config.genograma) : ""}
 
   <p style="margin:30px 0 0;text-align:center;">____________________________<br/>Firma Profesional</p>
 

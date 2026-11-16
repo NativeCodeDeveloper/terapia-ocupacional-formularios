@@ -21,8 +21,8 @@ import DiagramaGenograma, { puntoSvg } from "./DiagramaGenograma";
 
 /* ============================================================
    GENOGRAMA · EDITOR INTERACTIVO (SVG)
-   Editor único para todos los formularios: figuras de género
-   con arrastre, vínculos de pareja y de descendencia,
+   Editor único de las fichas de Evaluación Inicial: figuras de
+   género con arrastre, vínculos de pareja y de descendencia,
    relaciones de calidad y nota general. Se invoca desde
    GenogramaSeccion en modo edición; entrega el resultado con
    alGuardar(borrador) —usarlo en la evaluación— y solo escribe

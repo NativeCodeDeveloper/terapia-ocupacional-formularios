@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { descargarInformeWord } from "@/lib/informe";
-import GenogramaSeccion from "@/components/genograma/GenogramaSeccion";
 
 /* ============================================================
    CUESTIONARIO SPM-2 · COMPONENTE COMPARTIDO
@@ -82,9 +81,6 @@ export default function CuestionarioSPM2({
   const [errores, setErrores] = useState(new Set());
   const [resultado, setResultado] = useState(null);
   const [verResumen, setVerResumen] = useState(false);
-  // Genograma familiar (opcional): vive fuera de la validación
-  // y solo se incorpora al informe cuando el profesional lo crea.
-  const [genograma, setGenograma] = useState(null);
 
   const totalPreguntas = secciones.reduce((n, s) => n + s.preguntas.length, 0);
   const inicios = iniciosDeSeccion(secciones);
@@ -158,7 +154,6 @@ export default function CuestionarioSPM2({
     setErrores(new Set());
     setResultado(null);
     setVerResumen(false);
-    setGenograma(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -171,7 +166,6 @@ export default function CuestionarioSPM2({
       secciones,
       respuestas,
       opciones: OPCIONES,
-      genograma,
     };
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
@@ -471,14 +465,6 @@ export default function CuestionarioSPM2({
           </div>
         </section>
       </form>
-
-      {/* Genograma familiar (opcional) — fuera del formulario:
-          nunca interviene en la validación ni en el envío. */}
-      <GenogramaSeccion
-        valor={genograma}
-        alCambiar={setGenograma}
-        contexto={instrumento}
-      />
     </main>
   );
 }

@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import { dibujarSeccionGenogramaPDF } from "./informe-genograma.js";
 
 /* ============================================================
    PERFIL SENSORIAL ADOLESCENTES Y ADULTOS
@@ -828,19 +827,6 @@ export function descargarInformePDFAdultos(config) {
     "Adolescent/Adult Sensory Profile, Copyright © 2002 NCS Pearson, Inc. Traducción al español realizada por Lic. TO Mariel Pellegrini (Alpha Ocupacional, junio 2017), con fines didácticos y autorizada por Catana Brown, Ph.D., OTR, FAOTA.",
     { tamano: 8, gris: true, espacio: 0 }
   );
-
-  /* ---- Genograma familiar (opcional) ----
-     Solo se imprime cuando el profesional creó o vinculó un
-     genograma a esta evaluación; sin él la sección no existe. */
-  if (config.genograma) {
-    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
-      y,
-      margen,
-      anchoUtil,
-      altoPagina,
-      margenInferior,
-    });
-  }
 
   asegurar(90);
   y += 26;

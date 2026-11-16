@@ -12,15 +12,17 @@ import DiagramaGenograma from "./DiagramaGenograma";
 import EditorGenograma from "./EditorGenograma";
 
 /* ============================================================
-   GENOGRAMA FAMILIAR · SECCIÓN OPCIONAL DE LOS FORMULARIOS
-   Componente único compartido por los 19 formularios (a través
-   de los tres cuestionarios). Estados que gestiona:
-   sin genograma, en edición, guardado en la biblioteca del
-   navegador, vinculado a esta evaluación y modo lectura.
-   Es 100 % opcional: nunca valida, nunca bloquea el envío y no
-   altera cálculos ni puntuaciones; solo entrega los datos al
-   cuestionario con alCambiar(genograma | null) para que el
-   informe los incorpore cuando existan.
+   GENOGRAMA FAMILIAR · SECCIÓN OPCIONAL DE LAS EVALUACIONES
+   INICIALES
+   Componente único compartido por las cuatro fichas de
+   Evaluación Inicial (Infantil, Adolescencia, Adulto y Persona
+   Mayor). Estados que gestiona: sin genograma, en edición,
+   guardado en la biblioteca del navegador, vinculado a esta
+   evaluación y modo lectura. Es 100 % opcional: nunca valida,
+   nunca bloquea el envío y no altera cálculos ni puntuaciones;
+   solo entrega los datos al cuestionario con
+   alCambiar(genograma | null) para que el informe los
+   incorpore cuando existan.
    ============================================================ */
 
 const TARJETA = "rounded-2xl border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)]";

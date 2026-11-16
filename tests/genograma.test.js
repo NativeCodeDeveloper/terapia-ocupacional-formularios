@@ -30,14 +30,16 @@ import { descargarInformePDF as descargarInformePDFInfantilEI } from "../src/lib
 import { construirInformeWordHTML } from "../src/lib/informe-evaluacion-inicial.js";
 
 /* ============================================================
-   GENOGRAMA FAMILIAR (OPCIONAL) EN LOS 19 FORMULARIOS
+   GENOGRAMA FAMILIAR (OPCIONAL) · EVALUACIONES INICIALES
    - Modelo: estado vacío válido, personas, vínculos de pareja
      y descendencia, relaciones de calidad, normalización y
      biblioteca (sin navegador no hace nada y no falla).
-   - Informes PDF: con genograma la sección aparece en los tres
-     motores (SPM-2 / Perfil Sensorial 2 / Evaluación Inicial);
-     sin genograma la sección no existe y el informe es igual
-     al de siempre.
+   - Informes PDF: la sección del genograma es propia de las
+     fichas de Evaluación Inicial (motor común informe-ei-*).
+     Con genograma el informe lo incorpora; sin genograma la
+     sección no existe y el informe es igual al de siempre.
+     Los informes de SPM-2 y Perfil Sensorial 2 no incorporan
+     genograma (el componente no se ofrece en esos formularios).
    - Informe Word: sección de integrantes solo cuando hay
      genograma.
    ============================================================ */
@@ -304,16 +306,13 @@ const CONFIG_HOGAR = {
   opciones: OPCIONES_SPM2,
 };
 
-test("SPM-2: el informe incluye el genograma cuando existe y no lo menciona cuando no", () => {
+test("SPM-2: el informe nunca incluye genograma, aunque el config lo traiga", () => {
   const conGenograma = generarEnTemporal("Informe-SPM-2-Genograma-Test.pdf", () =>
     descargarInformePDFHogarPreescolar({ ...CONFIG_HOGAR, genograma: genogramaFamiliar() })
   );
-  assert.match(conGenograma, /Genograma familiar/);
-  assert.match(conGenograma, /VÍNCULOS Y RELACIONES/);
-  assert.match(conGenograma, /Pedro Rojas/);
-  assert.match(conGenograma, /Hijo\/a de Pedro Rojas y María Vargas/);
-  assert.match(conGenograma, /abuela paterna cuida a los niños/);
-  assert.match(conGenograma, /Cuadrado: hombre/);
+  assert.doesNotMatch(conGenograma, /Genograma familiar/);
+  assert.doesNotMatch(conGenograma, /Pedro Rojas/);
+  assert.match(conGenograma, /Firma del\/la profesional/);
 
   const sinGenograma = generarEnTemporal("Informe-SPM-2-Genograma-Test.pdf", () =>
     descargarInformePDFHogarPreescolar(CONFIG_HOGAR)
@@ -375,13 +374,13 @@ const CONFIG_TODDLER = {
   opciones: OPCIONES_TODDLER,
 };
 
-test("Perfil Sensorial 2: el informe incluye el genograma cuando existe y no lo menciona cuando no", () => {
+test("Perfil Sensorial 2: el informe nunca incluye genograma, aunque el config lo traiga", () => {
   const conGenograma = generarEnTemporal("Informe-Toddler-Genograma-Test.pdf", () =>
     descargarInformePDFToddler({ ...CONFIG_TODDLER, genograma: genogramaFamiliar() })
   );
-  assert.match(conGenograma, /Genograma familiar/);
-  assert.match(conGenograma, /María Vargas/);
-  assert.match(conGenograma, /usuario\/a/);
+  assert.doesNotMatch(conGenograma, /Genograma familiar/);
+  assert.doesNotMatch(conGenograma, /María Vargas/);
+  assert.match(conGenograma, /Firma del\/la examinador/);
 
   const sinGenograma = generarEnTemporal("Informe-Toddler-Genograma-Test.pdf", () =>
     descargarInformePDFToddler(CONFIG_TODDLER)
