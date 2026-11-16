@@ -135,22 +135,32 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   /* ---------- Panel de persona ---------- */
 
-  const actualizarPersona = (cambios) => setBorrador((prev) => personaActualizada(prev, persona.id, cambios));
+  /* Los handlers trabajan sobre los ids seleccionados y buscan
+     el objeto dentro del estado al momento del clic: así el
+     compilador de React memoiza sobre valores primitivos y no
+     lee propiedades de persona/conexion cuando son null. */
+  const actualizarPersona = (cambios) => setBorrador((prev) => personaActualizada(prev, personaId, cambios));
 
   function eliminarPersona() {
-    if (!window.confirm(`¿Quitar a ${persona.nombre?.trim() || "esta persona"} del genograma?`)) return;
-    setBorrador((prev) => personaEliminada(prev, persona.id));
+    const objetivo = borrador.personas.find((p) => p.id === personaId);
+    if (!objetivo) return;
+    if (!window.confirm(`¿Quitar a ${objetivo.nombre?.trim() || "esta persona"} del genograma?`)) return;
+    setBorrador((prev) => personaEliminada(prev, objetivo.id));
     setPersonaId(null);
   }
 
   /* ---------- Panel de conexión ---------- */
 
   function eliminarConexion() {
-    const etiqueta = conexion.tipo === "hijo"
-      ? `la descendencia hacia ${nombreDe(conexion.a)}`
-      : `el registro entre ${nombreDe(conexion.de)} y ${nombreDe(conexion.a)}`;
+    const objetivo =
+      borrador.vinculos.find((c) => c.id === conexionId) ??
+      borrador.relaciones.find((c) => c.id === conexionId);
+    if (!objetivo) return;
+    const etiqueta = objetivo.tipo === "hijo"
+      ? `la descendencia hacia ${nombreDe(objetivo.a)}`
+      : `el registro entre ${nombreDe(objetivo.de)} y ${nombreDe(objetivo.a)}`;
     if (!window.confirm(`¿Eliminar ${etiqueta}?`)) return;
-    setBorrador((prev) => conexionEliminada(prev, conexion.id));
+    setBorrador((prev) => conexionEliminada(prev, objetivo.id));
     setConexionId(null);
   }
 
@@ -464,7 +474,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                 <select
                   id="genograma-tipo-conexion"
                   value={conexion.tipo}
-                  onChange={(e) => setBorrador((prev) => cambiarTipoConexion(prev, conexion.id, e.target.value))}
+                  onChange={(e) => setBorrador((prev) => cambiarTipoConexion(prev, conexionId, e.target.value))}
                   className={CONTROL}
                 >
                   {(ES_RELACION(conexion.tipo) ? TIPOS_RELACION : OPCIONES_PAREJA).map((t) => (
