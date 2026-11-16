@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { calcularEdad, fechaLarga } from "@/lib/informe-evaluacion-inicial";
+import GenogramaSeccion from "@/components/genograma/GenogramaSeccion";
 
 /* ============================================================
    EVALUACIÓN INICIAL DE TERAPIA OCUPACIONAL · COMPONENTE COMÚN
@@ -138,6 +139,9 @@ export default function CuestionarioEvaluacionInicial({
   const [valores, setValores] = useState({});
   const [errores, setErrores] = useState(new Set());
   const [verResumen, setVerResumen] = useState(false);
+  // Genograma familiar (opcional): vive fuera de la validación
+  // y solo se incorpora al informe cuando el profesional lo crea.
+  const [genograma, setGenograma] = useState(null);
 
   const todosLosCampos = secciones.flatMap((s) => s.campos);
   const camposRequeridos = todosLosCampos.filter(esRequerido);
@@ -188,6 +192,7 @@ export default function CuestionarioEvaluacionInicial({
     setValores({});
     setErrores(new Set());
     setVerResumen(false);
+    setGenograma(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -213,14 +218,14 @@ export default function CuestionarioEvaluacionInicial({
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => descargarInformePDF(valores)}
+              onClick={() => descargarInformePDF(valores, genograma)}
               className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
             >
               Descargar informe PDF
             </button>
             <button
               type="button"
-              onClick={() => descargarInformeWord(valores)}
+              onClick={() => descargarInformeWord(valores, genograma)}
               className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
             >
               Descargar informe Word
@@ -429,6 +434,14 @@ export default function CuestionarioEvaluacionInicial({
           </div>
         </section>
       </form>
+
+      {/* Genograma familiar (opcional) — fuera del formulario:
+          nunca interviene en la validación ni en el envío. */}
+      <GenogramaSeccion
+        valor={genograma}
+        alCambiar={setGenograma}
+        contexto={instrumento}
+      />
     </main>
   );
 }

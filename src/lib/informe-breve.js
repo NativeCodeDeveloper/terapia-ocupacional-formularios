@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { dibujarSeccionGenogramaPDF } from "./informe-genograma.js";
 
 /* ============================================================
    PERFIL SENSORIAL 2 · BREVE (ADAPTACIÓN ESPAÑOLA)
@@ -756,6 +757,19 @@ export function descargarInformePDFBreve(config) {
     "Sensory Profile 2, Copyright © 2014 NCS Pearson, Inc. Adaptación española copyright © 2016 NCS Pearson, Inc. Todos los derechos reservados. Cuestionario Breve para los padres o el cuidador, 3:0 a 14:11 años (ISBN 978-84-9035-544-2).",
     { tamano: 8, gris: true, espacio: 0 }
   );
+
+  /* ---- Genograma familiar (opcional) ----
+     Solo se imprime cuando el profesional creó o vinculó un
+     genograma a esta evaluación; sin él la sección no existe. */
+  if (config.genograma) {
+    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
+      y,
+      margen,
+      anchoUtil,
+      altoPagina,
+      margenInferior,
+    });
+  }
 
   asegurar(90);
   y += 26;

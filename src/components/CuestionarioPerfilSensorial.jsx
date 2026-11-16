@@ -5,6 +5,7 @@ import {
   calcularPuntuacionInfante,
   CUADRANTES,
 } from "@/lib/informe-infantil";
+import GenogramaSeccion from "@/components/genograma/GenogramaSeccion";
 
 /* ============================================================
    CUESTIONARIO PERFIL SENSORIAL 2 · COMPONENTE
@@ -186,6 +187,9 @@ export default function CuestionarioPerfilSensorial({
   const [respuestas, setRespuestas] = useState({});
   const [errores, setErrores] = useState(new Set());
   const [verResumen, setVerResumen] = useState(false);
+  // Genograma familiar (opcional): vive fuera de la validación
+  // y solo se incorpora al informe cuando el profesional lo crea.
+  const [genograma, setGenograma] = useState(null);
 
   const totalPreguntas = secciones.reduce((n, s) => n + s.preguntas.length, 0);
   const inicios = iniciosDeSeccion(secciones);
@@ -248,6 +252,7 @@ export default function CuestionarioPerfilSensorial({
     setRespuestas({});
     setErrores(new Set());
     setVerResumen(false);
+    setGenograma(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -261,6 +266,7 @@ export default function CuestionarioPerfilSensorial({
       secciones,
       respuestas,
       opciones,
+      genograma,
     };
     const tinteClasificacion = resultado.clasificacion
       ? TINTE_CLASIFICACION[resultado.clasificacion.nombre]
@@ -637,6 +643,14 @@ export default function CuestionarioPerfilSensorial({
           </div>
         </section>
       </form>
+
+      {/* Genograma familiar (opcional) — fuera del formulario:
+          nunca interviene en la validación ni en el envío. */}
+      <GenogramaSeccion
+        valor={genograma}
+        alCambiar={setGenograma}
+        contexto={instrumento}
+      />
     </main>
   );
 }

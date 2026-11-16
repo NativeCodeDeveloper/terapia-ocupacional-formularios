@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { dibujarSeccionGenogramaPDF, seccionGenogramaHTML } from "./informe-genograma.js";
 
 /* ============================================================
    EVALUACIÓN INICIAL DE TERAPIA OCUPACIONAL · MOTOR COMÚN
@@ -91,6 +92,9 @@ export function descargarInformePDFEvaluacionInicial(config) {
        evaluación» y «Alertas en información recabada»). */
     tituloSintesis = "Síntesis automatizada de la evaluación",
     seccionHallazgos = false,
+    /* Genograma familiar (opcional): el motor solo lo imprime
+       cuando el profesional lo creó o vinculó a la evaluación. */
+    genograma = null,
   } = config;
   const oscuro = colorOscuro ?? color;
 
@@ -369,6 +373,19 @@ export function descargarInformePDFEvaluacionInicial(config) {
     for (const alerta of alertasRecabadas) dibujarBandera(alerta);
   }
 
+  /* ---- Genograma familiar (opcional) ----
+     Solo se imprime cuando el profesional creó o vinculó un
+     genograma a esta evaluación; sin él la sección no existe. */
+  if (genograma) {
+    y = dibujarSeccionGenogramaPDF(doc, genograma, {
+      y,
+      margen,
+      anchoUtil,
+      altoPagina,
+      margenInferior,
+    });
+  }
+
   if (notaPie) {
     asegurar(40);
     escribir(notaPie, { tamano: 8, gris: true });
@@ -460,6 +477,7 @@ export function construirInformeWordHTML(config) {
     introduccion = "",
     tituloSintesis = "Síntesis automatizada de la evaluación",
     seccionHallazgos = false,
+    genograma = null,
   } = config;
   const oscuro = colorOscuro ?? color;
 
@@ -517,6 +535,7 @@ ${bloquesWordHTML(alertasRecabadas, oscuro)}`
   ${fechaHTML}
   ${sintesisHTML}
   ${alertasHTML}
+  ${genograma ? seccionGenogramaHTML(genograma) : ""}
   ${notaPie ? `<p style="margin:18px 0 0;font-size:9pt;color:#666;">${escaparHTML(notaPie)}</p>` : ""}
   <p style="margin:30px 0 0;text-align:center;">____________________________<br/>Firma Profesional</p>
 </body>

@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { dibujarSeccionGenogramaPDF } from "./informe-genograma.js";
 
 /* ============================================================
    INFANT SENSORY PROFILE 2 · NACIMIENTO A 6 MESES (0158700082)
@@ -575,6 +576,19 @@ export function descargarInformePDFInfante(config) {
     "Infant Sensory Profile 2 · Copyright © 2014 NCS Pearson, Inc. Todos los derechos reservados. Formulario Nacimiento a 6 meses, cuestionario para padres o tutores (producto 0158700082).",
     { tamano: 8, gris: true, espacio: 0 }
   );
+
+  /* ---- Genograma familiar (opcional) ----
+     Solo se imprime cuando el profesional creó o vinculó un
+     genograma a esta evaluación; sin él la sección no existe. */
+  if (config.genograma) {
+    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
+      y,
+      margen,
+      anchoUtil,
+      altoPagina,
+      margenInferior,
+    });
+  }
 
   asegurar(90);
   y += 26;

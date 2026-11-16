@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { dibujarSeccionGenogramaPDF } from "./informe-genograma.js";
 
 /* ============================================================
    TODDLER SENSORY PROFILE 2 · 7 A 35 MESES
@@ -853,6 +854,19 @@ export function descargarInformePDFToddler(config) {
     "Toddler Sensory Profile 2 · Copyright © 2014 NCS Pearson, Inc. Todos los derechos reservados. Cuestionario para padres o tutores, 7 a 35 meses.",
     { tamano: 8, gris: true, espacio: 0 }
   );
+
+  /* ---- Genograma familiar (opcional) ----
+     Solo se imprime cuando el profesional creó o vinculó un
+     genograma a esta evaluación; sin él la sección no existe. */
+  if (config.genograma) {
+    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
+      y,
+      margen,
+      anchoUtil,
+      altoPagina,
+      margenInferior,
+    });
+  }
 
   asegurar(90);
   y += 26;

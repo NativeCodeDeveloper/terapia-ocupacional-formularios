@@ -643,10 +643,12 @@ function configInforme(valores) {
   };
 }
 
-export function descargarInformePDF(valores) {
-  descargarInformePDFEvaluacionInicial(configInforme(valores));
+/* El genograma (opcional) llega desde el cuestionario y viaja
+   en la configuración; sin él el informe no cambia. */
+export function descargarInformePDF(valores, genograma = null) {
+  descargarInformePDFEvaluacionInicial({ ...configInforme(valores), genograma });
 }
 
-export function descargarInformeWord(valores) {
-  descargarInformeWordEvaluacionInicial(configInforme(valores));
+export function descargarInformeWord(valores, genograma = null) {
+  descargarInformeWordEvaluacionInicial({ ...configInforme(valores), genograma });
 }

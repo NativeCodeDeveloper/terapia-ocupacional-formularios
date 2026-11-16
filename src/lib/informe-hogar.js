@@ -6,6 +6,7 @@ import {
   textoInterpretacion,
   sumaDeSeccion,
 } from "./informe.js";
+import { dibujarSeccionGenogramaPDF } from "./informe-genograma.js";
 
 /* ============================================================
    BASE COMÚN DE LOS INFORMES SPM-2 · FORMULARIO HOGAR (PDF)
@@ -484,6 +485,19 @@ export function construirInformeHogar(config, version) {
     doc.text(`${suma} de ${seccion.preguntas.length * 4}`, xDetalle[2] + 6, y + 13);
     y += altoSubtotal + 16;
   });
+
+  /* ---- 5b. Genograma familiar (opcional) ----
+     Solo se imprime cuando el profesional creó o vinculó un
+     genograma a esta evaluación; sin él la sección no existe. */
+  if (config.genograma) {
+    y = dibujarSeccionGenogramaPDF(doc, config.genograma, {
+      y,
+      margen,
+      anchoUtil,
+      altoPagina,
+      margenInferior,
+    });
+  }
 
   /* ---- 6. Escala de respuesta, nota y firma ---- */
 
