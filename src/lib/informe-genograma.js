@@ -1,12 +1,14 @@
 import {
   LEYENDA_GENOGRAMA,
   NODO,
+  envolverTexto,
   filasDeIntegrantes,
-  geometriaDeHijo,
+  geometriaDeGrupo,
   geometriaDePareja,
   geometriaDeRelacion,
   limitesDiagrama,
   puntosDeZigzag,
+  rutasDeDescendencia,
 } from "./genograma.js";
 
 /* ============================================================
@@ -72,20 +74,30 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     doc.line(cx - d, cy + d, cx + d, cy - d);
   } else if (persona.edad?.toString().trim()) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5 * Math.max(escala, 0.75));
+    doc.setFontSize(9 * Math.max(escala, 0.75));
     doc.setTextColor(...TRAZO);
-    doc.text(persona.edad.toString(), cx, cy + 3 * Math.max(escala, 0.75), { align: "center" });
+    doc.text(persona.edad.toString(), cx, cy + 3.5 * Math.max(escala, 0.75), { align: "center" });
   }
 
   doc.setFont("helvetica", persona.indicado ? "bold" : "normal");
-  doc.setFontSize(9 * Math.max(escala, 0.75));
+  doc.setFontSize(9.5 * Math.max(escala, 0.75));
   doc.setTextColor(...TRAZO);
   const nombre = doc.splitTextToSize(persona.nombre?.trim() || "Sin nombre", 150 * escala);
   doc.text(nombre[0], cx, cy + r + 12 * escala, { align: "center" });
 
+  if (persona.patologias?.trim()) {
+    const lineas = envolverTexto(persona.patologias, 26, 3);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8 * Math.max(escala, 0.75));
+    doc.setTextColor(GRIS_TEXTO);
+    lineas.forEach((linea, i) => {
+      doc.text(linea, cx, cy + r + (21 + i * 9.5) * escala, { align: "center" });
+    });
+  }
+
   if (persona.indicado) {
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(7.5 * Math.max(escala, 0.75));
+    doc.setFontSize(8 * Math.max(escala, 0.75));
     doc.setTextColor(GRIS_TEXTO);
     doc.text("usuario/a", cx, cy - r - 6 * escala, { align: "center" });
   }
@@ -104,15 +116,9 @@ function dibujarRecorrido(doc, puntos) {
   for (let i = 1; i < puntos.length; i++) dibujarSegmento(doc, puntos[i - 1], puntos[i]);
 }
 
+/* Línea de pareja (la descendencia se dibuja con
+   dibujarRutaDescendencia, compartiendo tallo y guía). */
 function dibujarVinculo(doc, genograma, vinculo, ox, oy, escala) {
-  if (vinculo.tipo === "hijo") {
-    const ruta = geometriaDeHijo(genograma, vinculo);
-    if (ruta) {
-      trazoDeLinea(doc, escala);
-      dibujarRecorrido(doc, ruta.recorrido.map((p) => ({ x: ox + p.x * escala, y: oy + p.y * escala })));
-    }
-    return;
-  }
   const pareja = geometriaDePareja(genograma, vinculo);
   if (!pareja) return;
   const inicio = { x: ox + pareja.inicio.x * escala, y: oy + pareja.inicio.y * escala };
@@ -132,6 +138,11 @@ function dibujarVinculo(doc, genograma, vinculo, ox, oy, escala) {
     }
     trazoDeLinea(doc, escala);
   }
+}
+
+function dibujarRutaDescendencia(doc, ruta, ox, oy, escala) {
+  trazoDeLinea(doc, escala);
+  dibujarRecorrido(doc, ruta.recorrido.map((p) => ({ x: ox + p.x * escala, y: oy + p.y * escala })));
 }
 
 function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
@@ -173,10 +184,26 @@ function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
   }
 }
 
+/* Óvalo punteado de convivencia, detrás de líneas y figuras. */
+function dibujarGrupo(doc, genograma, grupo, ox, oy, escala) {
+  const geo = geometriaDeGrupo(genograma, grupo);
+  if (!geo) return;
+  const cx = ox + geo.cx * escala;
+  const cy = oy + geo.cy * escala;
+  trazoDeLinea(doc, escala);
+  doc.setLineDashPattern([5, 4], 0);
+  doc.ellipse(cx, cy, geo.rx * escala, geo.ry * escala);
+  doc.setLineDashPattern([], 0);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8.5 * Math.max(escala, 0.75));
+  doc.setTextColor(GRIS_TEXTO);
+  doc.text(geo.etiqueta, cx, oy + (geo.cy - geo.ry + 14) * escala, { align: "center" });
+}
+
 function dibujarDiagrama(doc, genograma, { y, margen, anchoUtil, altoPagina, margenInferior }) {
   const limite = () => altoPagina - margenInferior;
   const limites = limitesDiagrama(genograma);
-  const altoDeseado = 400;
+  const altoDeseado = 430;
 
   let altoDisponible = limite() - y - 12;
   if (altoDisponible < 190) {
@@ -185,11 +212,15 @@ function dibujarDiagrama(doc, genograma, { y, margen, anchoUtil, altoPagina, mar
     altoDisponible = limite() - y - 12;
   }
   const altoMaximo = Math.min(altoDeseado, altoDisponible);
-  const escala = Math.min(anchoUtil / limites.ancho, altoMaximo / limites.alto, 1.35);
+  const escala = Math.min(anchoUtil / limites.ancho, altoMaximo / limites.alto, 1.5);
   const ox = margen + (anchoUtil - limites.ancho * escala) / 2 - limites.minX * escala;
   const oy = y - limites.minY * escala;
 
-  for (const v of genograma.vinculos) dibujarVinculo(doc, genograma, v, ox, oy, escala);
+  for (const grupo of genograma.grupos ?? []) dibujarGrupo(doc, genograma, grupo, ox, oy, escala);
+  for (const v of genograma.vinculos) {
+    if (v.tipo !== "hijo") dibujarVinculo(doc, genograma, v, ox, oy, escala);
+  }
+  for (const ruta of rutasDeDescendencia(genograma)) dibujarRutaDescendencia(doc, ruta, ox, oy, escala);
   for (const r of genograma.relaciones) dibujarRelacion(doc, genograma, r, ox, oy, escala);
   for (const p of genograma.personas) dibujarFigura(doc, p, ox, oy, escala);
 

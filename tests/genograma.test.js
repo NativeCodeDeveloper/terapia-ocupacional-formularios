@@ -10,10 +10,11 @@ import {
   conexionEliminada,
   copiarParaEvaluacion,
   eliminarDeBiblioteca,
+  envolverTexto,
   filasDeIntegrantes,
   genogramaVacio,
-  geometriaDeHijo,
   geometriaDePareja,
+  geometriaDeRelacion,
   guardarEnBiblioteca,
   etiquetaConexionesDe,
   leerBiblioteca,
@@ -23,6 +24,7 @@ import {
   personaActualizada,
   personaEliminada,
   personaIndicada,
+  rutasDeDescendencia,
 } from "../src/lib/genograma.js";
 import { descargarInformePDFHogarPreescolar } from "../src/lib/informe-hogar-preescolar.js";
 import { descargarInformePDFToddler } from "../src/lib/informe-toddler.js";
@@ -73,7 +75,7 @@ function genogramaFamiliar() {
 
 test("el genograma vacío es un estado válido y completo", () => {
   const g = genogramaVacio();
-  assert.deepEqual(g, { version: 1, personas: [], vinculos: [], relaciones: [], notas: "" });
+  assert.deepEqual(g, { version: 1, personas: [], vinculos: [], relaciones: [], grupos: [], notas: "" });
   assert.equal(limitesDiagrama(g), null);
   assert.deepEqual(filasDeIntegrantes(g), []);
   assert.deepEqual(etiquetaConexionesDe(g, { id: "x" }), []);
@@ -101,7 +103,7 @@ test("personaEliminada reasigna la descendencia al otro integrante de la pareja"
   assert.equal(g.personas.some((p) => p.id === madre.id), false);
   const despues = g.vinculos.find((v) => v.tipo === "hijo" && v.a === hija.id);
   assert.equal(despues.de, padreId);
-  assert.equal(geometriaDeHijo(g, despues) !== null, true);
+  assert.equal(rutasDeDescendencia(g).some((r) => r.id === despues.id && r.recorrido.length >= 2), true);
 });
 
 test("conexionAgregada evita duplicados y reemplazos según el tipo", () => {
@@ -124,11 +126,14 @@ test("conexionAgregada evita duplicados y reemplazos según el tipo", () => {
   assert.equal(delPar(g), 1);
   assert.equal(g.relaciones.find((r) => (r.de === padre.id && r.a === madre.id) || (r.de === madre.id && r.a === padre.id)).tipo, "distante");
 
-  // Segundo origen de descendencia para el mismo hijo: reemplaza.
+  // Varios orígenes de descendencia para el mismo hijo se
+  // acumulan (hijo del padre —vía la pareja— y de la madre).
   const hijo = g.personas.find((p) => p.nombre === "Tomás Rojas");
   g = conexionAgregada(g, "hijo", madre.id, hijo.id);
-  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 1);
-  assert.equal(g.vinculos.find((v) => v.tipo === "hijo" && v.a === hijo.id).de, madre.id);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
+  // El mismo origen dos veces no se duplica.
+  g = conexionAgregada(g, "hijo", madre.id, hijo.id);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
 });
 
 test("conexionAgregada ignora conexiones imposibles", () => {
@@ -215,18 +220,99 @@ test("la descripción textual de integrantes resume vínculos y relaciones", () 
    GEOMETRÍA COMPARTIDA
    ============================================================ */
 
-test("la línea de descendencia baja en codo desde la pareja al hijo", () => {
+test("la descendencia comparte tallo y guía entre hermanos y llega al techo del hijo", () => {
   const g = genogramaFamiliar();
   const hijo = g.personas.find((p) => p.nombre === "Tomás Rojas");
-  const vinculo = g.vinculos.find((v) => v.tipo === "hijo" && v.a === hijo.id);
-  const ruta = geometriaDeHijo(g, vinculo);
-  assert.ok(ruta.recorrido.length >= 2);
-  const ultimo = ruta.recorrido[ruta.recorrido.length - 1];
-  assert.equal(ultimo.x, hijo.x);
-  assert.equal(ultimo.y, hijo.y - 16); // borde superior de la figura
+  const hija = g.personas.find((p) => p.nombre === "Lucía Rojas");
+  const vinculoHijo = g.vinculos.find((v) => v.tipo === "hijo" && v.a === hijo.id);
+  const vinculoHija = g.vinculos.find((v) => v.tipo === "hijo" && v.a === hija.id);
+  const rutas = rutasDeDescendencia(g);
+
+  // Cada vínculo termina en el borde superior de su figura.
+  const caidaHijo = rutas.find((r) => r.clave === `${vinculoHijo.id}-caida`);
+  const caidaHija = rutas.find((r) => r.clave === `${vinculoHija.id}-caida`);
+  assert.ok(caidaHijo);
+  assert.ok(caidaHija);
+  const llegadaHijo = caidaHijo.recorrido[caidaHijo.recorrido.length - 1];
+  const llegadaHija = caidaHija.recorrido[caidaHija.recorrido.length - 1];
+  assert.deepEqual(llegadaHijo, { x: hijo.x, y: hijo.y - 16 });
+  assert.deepEqual(llegadaHija, { x: hija.x, y: hija.y - 16 });
+
+  // Ambas caídas cuelgan de la misma guía horizontal.
+  assert.equal(caidaHijo.recorrido[0].y, caidaHija.recorrido[0].y);
+
+  // La guía nace del punto medio de la línea de pareja.
   const pareja = geometriaDePareja(g, g.vinculos[0]);
+  const guia = rutas.find((r) => r.clave.endsWith("-guia"));
+  assert.deepEqual(guia.recorrido[0], pareja.medio);
   assert.equal(pareja.discontinua, false);
   assert.equal(pareja.barras, null);
+});
+
+test("un hijo puede descender de dos progenitores y las caídas se separan", () => {
+  let g = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
+    "hombre",
+    { x: 280, y: 340 }
+  );
+  const [jose, maria, hijo] = g.personas;
+  g = personaActualizada(g, jose.id, { nombre: "José" });
+  g = personaActualizada(g, maria.id, { nombre: "María" });
+  g = personaActualizada(g, hijo.id, { nombre: "Hijo común" });
+  g = conexionAgregada(g, "hijo", jose.id, hijo.id);
+  g = conexionAgregada(g, "hijo", maria.id, hijo.id);
+
+  const origenes = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
+  assert.equal(origenes.length, 2);
+
+  // Cada progenitor tiene su propia caída, a un costado del techo.
+  const caidas = rutasDeDescendencia(g).filter((r) => origenes.some((o) => o.id === r.id));
+  assert.equal(caidas.length, 2);
+  const xs = caidas.map((r) => r.recorrido[r.recorrido.length - 1].x).sort((a, b) => a - b);
+  assert.equal(xs[0] < hijo.x && xs[1] > hijo.x, true);
+
+  // La descripción textual nombra a ambos progenitores.
+  const fila = filasDeIntegrantes(g).find((f) => f.nombre === "Hijo común");
+  assert.match(fila.conexiones, /Hijo\/a de José/);
+  assert.match(fila.conexiones, /Hijo\/a de María/);
+});
+
+test("la relación de calidad se dibuja junto a la línea de pareja, no encima", () => {
+  let g = nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 400, y: 200 });
+  const [a, b] = g.personas;
+  g = conexionAgregada(g, "union", a.id, b.id);
+  g = conexionAgregada(g, "conflicto", a.id, b.id);
+
+  const pareja = geometriaDePareja(g, g.vinculos[0]);
+  const relacion = geometriaDeRelacion(g, g.relaciones[0]);
+  const distancia = Math.hypot(
+    relacion.inicio.x - pareja.inicio.x,
+    relacion.inicio.y - pareja.inicio.y
+  );
+  assert.equal(distancia > 5, true);
+
+  // Sin vínculo de pareja la relación va borde a borde.
+  let solos = nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 400, y: 200 });
+  const [c, d] = solos.personas;
+  solos = conexionAgregada(solos, "conflicto", c.id, d.id);
+  const directa = geometriaDeRelacion(solos, solos.relaciones[0]);
+  assert.deepEqual(
+    { x: Math.round(directa.inicio.x), y: Math.round(directa.inicio.y) },
+    { x: 216, y: 200 }
+  );
+});
+
+test("envolverTexto parte las etiquetas largas y recorta con puntos suspensivos", () => {
+  assert.deepEqual(envolverTexto("diabetes", 26, 3), ["diabetes"]);
+  assert.deepEqual(envolverTexto("diabetes e hipertensión arterial", 12, 3), [
+    "diabetes e",
+    "hipertensión",
+    "arterial",
+  ]);
+  const lineas = envolverTexto("una dos tres cuatro cinco seis siete ocho", 10, 2);
+  assert.equal(lineas.length, 2);
+  assert.equal(lineas[1].endsWith("…"), true);
+  assert.deepEqual(envolverTexto("   ", 26, 3), []);
 });
 
 /* ============================================================

@@ -14,6 +14,8 @@
                divorcio — línea entre las dos personas.
        hijo:   `de` es el padre, la madre o el ID del vínculo de
                pareja (línea de descendencia) y `a` es el hijo.
+               Un hijo admite varios orígenes (p. ej., hijo del
+               padre y de la madre por separado).
    - relación: { id, tipo, de, a } calidad de la relación entre
                dos personas: cercana · fusion · distante ·
                conflicto · corte.
@@ -56,7 +58,7 @@ export const NODO = { lado: 32, radio: 16 };
 
 /* Leyenda impresa bajo el diagrama del informe. */
 export const LEYENDA_GENOGRAMA =
-  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a";
+  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Óvalo punteado: convivencia (quiénes viven juntos)";
 
 /* ============================================================
    IDENTIFICADORES Y CREACIÓN
@@ -71,7 +73,7 @@ export function nuevoId(prefijo = "g") {
 }
 
 export function genogramaVacio() {
-  return { version: 1, personas: [], vinculos: [], relaciones: [], notas: "" };
+  return { version: 1, personas: [], vinculos: [], relaciones: [], grupos: [], notas: "" };
 }
 
 /* Posición de cuadrícula por defecto: filas de cinco figuras,
@@ -88,6 +90,7 @@ export function nuevaPersona(genograma, sexo = "hombre", posicion = null) {
     edad: "",
     fallecido: false,
     causaMuerte: "",
+    patologias: "",
     ocupacion: "",
     nota: "",
     indicado: false,
@@ -106,7 +109,8 @@ export function personaActualizada(genograma, id, cambios) {
 /* Al eliminar una persona se limpian también los vínculos y
    relaciones que la referenciaban. Los hijos que descendían de
    una línea de pareja de la persona eliminada quedan unidos al
-   otro integrante de la pareja. */
+   otro integrante de la pareja, y los círculos de convivencia
+   que quedan con menos de dos integrantes se disuelven. */
 export function personaEliminada(genograma, id) {
   const otroDe = new Map(); // vínculo de pareja → integrante que queda
   for (const v of genograma.vinculos) {
@@ -122,7 +126,38 @@ export function personaEliminada(genograma, id) {
       .filter((v) => v.de !== id && v.a !== id)
       .map((v) => (v.tipo === "hijo" && otroDe.has(v.de) ? { ...v, de: otroDe.get(v.de) } : v)),
     relaciones: genograma.relaciones.filter((r) => r.de !== id && r.a !== id),
+    grupos: (genograma.grupos ?? [])
+      .map((g) => ({ ...g, integrantes: g.integrantes.filter((i) => i !== id) }))
+      .filter((g) => g.integrantes.length >= 2),
   };
+}
+
+/* ============================================================
+   CÍRCULOS DE CONVIVENCIA (quiénes viven juntos)
+   Cada grupo se dibuja como un óvalo punteado que rodea a sus
+   integrantes en el diagrama. Exige al menos dos personas.
+   ============================================================ */
+
+export const ETIQUETA_CONVIVENCIA = "Convivencia";
+
+export function grupoAgregado(genograma, integrantes) {
+  const ids = [...new Set(integrantes.filter((i) => genograma.personas.some((p) => p.id === i)))];
+  if (ids.length < 2) return genograma;
+  return {
+    ...genograma,
+    grupos: [...(genograma.grupos ?? []), { id: nuevoId("c"), nombre: "", integrantes: ids }],
+  };
+}
+
+export function grupoActualizado(genograma, id, cambios) {
+  return {
+    ...genograma,
+    grupos: (genograma.grupos ?? []).map((g) => (g.id === id ? { ...g, ...cambios } : g)),
+  };
+}
+
+export function grupoEliminado(genograma, id) {
+  return { ...genograma, grupos: (genograma.grupos ?? []).filter((g) => g.id !== id) };
 }
 
 /* ============================================================
@@ -137,8 +172,8 @@ function parDe(conexion) {
    mantener el diagrama legible:
    - exige que ambas personas existan («hijo» admite que `de`
      sea el ID del vínculo de pareja);
-   - una persona queda con un solo origen de descendencia (el
-     nuevo reemplaza al anterior);
+   - un hijo admite varios orígenes (p. ej., hijo del padre y
+     de la madre); solo se evita duplicar el mismo origen;
    - una relación nueva reemplaza la anterior del mismo par;
    - no duplica el mismo par en un vínculo de pareja. */
 export function conexionAgregada(genograma, tipo, de, a) {
@@ -152,11 +187,11 @@ export function conexionAgregada(genograma, tipo, de, a) {
   if (!origenValido) return genograma;
 
   if (esHijo) {
+    /* Varios progenitores para un mismo hijo (hijo de José y
+       de María): solo se evita el duplicado exacto. */
+    if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
     const nueva = { id: nuevoId("v"), tipo, de, a };
-    return {
-      ...genograma,
-      vinculos: [...genograma.vinculos.filter((v) => !(v.tipo === "hijo" && v.a === a)), nueva],
-    };
+    return { ...genograma, vinculos: [...genograma.vinculos, nueva] };
   }
   if (esRelacion) {
     const nueva = { id: nuevoId("r"), tipo, de, a };
@@ -219,6 +254,7 @@ function personaNormalizada(p, indice) {
     edad: texto(p.edad),
     fallecido: Boolean(p.fallecido),
     causaMuerte: texto(p.causaMuerte),
+    patologias: texto(p.patologias),
     ocupacion: texto(p.ocupacion),
     nota: texto(p.nota),
     indicado: Boolean(p.indicado),
@@ -263,6 +299,14 @@ export function normalizarGenograma(datos) {
     personas,
     vinculos,
     relaciones,
+    grupos: (Array.isArray(base.grupos) ? base.grupos : [])
+      .filter((g) => g && typeof g === "object")
+      .map((g) => ({
+        id: texto(g.id) || nuevoId("c"),
+        nombre: texto(g.nombre),
+        integrantes: [...new Set((Array.isArray(g.integrantes) ? g.integrantes : []).filter((i) => typeof i === "string" && ids.has(i)))],
+      }))
+      .filter((g) => g.integrantes.length >= 2),
     notas: texto(base.notas),
   };
 }
@@ -367,6 +411,16 @@ export function etiquetaConexionesDe(genograma, persona) {
       partes.push(`${ETIQUETA_RELACION[r.tipo] ?? r.tipo} con ${nombreDe(genograma, otro)}`);
     }
   }
+  for (const grupo of genograma.grupos ?? []) {
+    if (!grupo.integrantes.includes(persona.id)) continue;
+    const otros = grupo.integrantes.filter((i) => i !== persona.id);
+    if (otros.length === 0) continue;
+    const lista =
+      otros.length === 1
+        ? nombreDe(genograma, otros[0])
+        : `${otros.slice(0, -1).map((i) => nombreDe(genograma, i)).join(", ")} y ${nombreDe(genograma, otros[otros.length - 1])}`;
+    partes.push(`Convive en «${grupo.nombre?.trim() || ETIQUETA_CONVIVENCIA}» con ${lista}`);
+  }
   return partes;
 }
 
@@ -393,7 +447,7 @@ export function filasDeIntegrantes(genograma) {
       .filter(Boolean)
       .join(" · ");
     const conexiones = etiquetaConexionesDe(genograma, p).join(" · ");
-    const observacion = [estado, p.ocupacion?.trim(), p.nota?.trim()].filter(Boolean).join(" · ");
+    const observacion = [p.patologias?.trim(), estado, p.ocupacion?.trim(), p.nota?.trim()].filter(Boolean).join(" · ");
     return { nombre, edad, conexiones: conexiones || "—", observacion: observacion || "—" };
   });
 }
@@ -401,6 +455,33 @@ export function filasDeIntegrantes(genograma) {
 /* ============================================================
    GEOMETRÍA COMPARTIDA (SVG DEL EDITOR Y DIAGRAMA DEL PDF)
    ============================================================ */
+
+/* Divide un texto en líneas de hasta `maxCaracteres` (máximo
+   `maxLineas`; la última lleva «…» si se recorta). Compartido
+   por las etiquetas del SVG y del PDF. */
+export function envolverTexto(texto, maxCaracteres = 26, maxLineas = 3) {
+  const limpio = String(texto ?? "").trim();
+  if (!limpio) return [];
+  const palabras = limpio.split(/\s+/);
+  const lineas = [];
+  let actual = "";
+  for (const palabra of palabras) {
+    const candidata = actual ? `${actual} ${palabra}` : palabra;
+    if (candidata.length > maxCaracteres && actual) {
+      lineas.push(actual);
+      actual = palabra;
+    } else {
+      actual = candidata;
+    }
+  }
+  if (actual) lineas.push(actual);
+  if (lineas.length > maxLineas) {
+    const recortadas = lineas.slice(0, maxLineas);
+    recortadas[maxLineas - 1] = `${recortadas[maxLineas - 1].replace(/…$/, "")}…`;
+    return recortadas;
+  }
+  return lineas;
+}
 
 export function personaDe(genograma, id) {
   return genograma.personas.find((p) => p.id === id) ?? null;
@@ -411,17 +492,43 @@ export function vinculoDe(genograma, id) {
 }
 
 /* Límite del lienzo: { minX, minY, ancho, alto } incluyendo el
-   espacio de las etiquetas (nombre debajo, marca de usuario
-   encima). Devuelve null sin personas. */
+   espacio de las etiquetas (nombre y hasta tres líneas de
+   patologías debajo, marca de usuario encima), su ancho
+   horizontal y los óvalos de convivencia. Devuelve null sin
+   personas. */
 export function limitesDiagrama(genograma) {
   if (!genograma?.personas?.length) return null;
   const xs = genograma.personas.map((p) => p.x);
   const ys = genograma.personas.map((p) => p.y);
-  const minX = Math.min(...xs) - NODO.radio - 16;
-  const minY = Math.min(...ys) - NODO.radio - 26;
-  const maxX = Math.max(...xs) + NODO.radio + 16;
-  const maxY = Math.max(...ys) + NODO.radio + 32;
+  let minX = Math.min(...xs) - 72;
+  let minY = Math.min(...ys) - 42;
+  let maxX = Math.max(...xs) + 72;
+  let maxY = Math.max(...ys) + 68;
+  for (const grupo of genograma.grupos ?? []) {
+    const geo = geometriaDeGrupo(genograma, grupo);
+    if (!geo) continue;
+    minX = Math.min(minX, geo.cx - geo.rx - 8);
+    minY = Math.min(minY, geo.cy - geo.ry - 8);
+    maxX = Math.max(maxX, geo.cx + geo.rx + 8);
+    maxY = Math.max(maxY, geo.cy + geo.ry + 8);
+  }
   return { minX, minY, ancho: maxX - minX, alto: maxY - minY };
+}
+
+/* Óvalo punteado que rodea a los integrantes de un círculo de
+   convivencia. Devuelve null con menos de dos miembros. */
+export function geometriaDeGrupo(genograma, grupo) {
+  const miembros = (grupo.integrantes ?? [])
+    .map((id) => personaDe(genograma, id))
+    .filter(Boolean);
+  if (miembros.length < 2) return null;
+  const xs = miembros.map((p) => p.x);
+  const ys = miembros.map((p) => p.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const rx = Math.max((Math.max(...xs) - Math.min(...xs)) / 2 + NODO.radio + 36, 100);
+  const ry = Math.max((Math.max(...ys) - Math.min(...ys)) / 2 + NODO.radio + 42, 80);
+  return { cx, cy, rx, ry, etiqueta: grupo.nombre?.trim() || ETIQUETA_CONVIVENCIA };
 }
 
 /* Punto del borde de la figura en la dirección del vector
@@ -470,36 +577,143 @@ export function geometriaDePareja(genograma, vinculo) {
   return { inicio, fin, medio, discontinua: vinculo.tipo === "convivencia", barras };
 }
 
-/* Geometría de la línea de descendencia: recorrido en codo
-   desde el punto medio del vínculo de pareja (o del borde
-   inferior del progenitor) hasta el borde superior del hijo. */
-export function geometriaDeHijo(genograma, vinculo) {
-  const hijo = personaDe(genograma, vinculo.a);
-  if (!hijo) return null;
-  let origen = null;
-  if (vinculo.de == null) return null;
-  const vinculoPareja = genograma.vinculos.find((v) => v.id === vinculo.de && v.tipo !== "hijo");
-  if (vinculoPareja) {
-    const pareja = geometriaDePareja(genograma, vinculoPareja);
-    if (!pareja) return null;
-    origen = pareja.medio;
-  } else {
-    const progenitor = personaDe(genograma, vinculo.de);
-    if (!progenitor) return null;
-    origen = { x: progenitor.x, y: progenitor.y + NODO.radio };
+/* Recorridos dibujables de toda la descendencia. Los hijos
+   que comparten origen (una pareja o un progenitor) cuelgan de
+   una misma guía: un solo tallo baja del origen hasta una
+   línea horizontal y de ahí cae una línea por hijo, de modo
+   que las líneas de hermanos no se superpongan. Un hijo con
+   varios progenitores recibe una caída por progenitor, con
+   puntos de llegada repartidos sobre su borde superior.
+   Devuelve { id, clave, recorrido } — `id` es el vínculo al
+   que pertenece la ruta (para selección) y `clave` identifica
+   cada tramo dibujado. */
+export function rutasDeDescendencia(genograma) {
+  const rutas = [];
+  const hijos = genograma.vinculos.filter((v) => v.tipo === "hijo");
+  if (hijos.length === 0) return rutas;
+
+  /* Punto de origen de cada vínculo: punto medio de la línea
+     de pareja o borde inferior del progenitor. */
+  const origenDe = new Map();
+  for (const v of hijos) {
+    let origen = null;
+    const vinculoPareja = genograma.vinculos.find((w) => w.id === v.de && w.tipo !== "hijo");
+    if (vinculoPareja) {
+      const pareja = geometriaDePareja(genograma, vinculoPareja);
+      origen = pareja ? pareja.medio : null;
+    } else {
+      const progenitor = personaDe(genograma, v.de);
+      origen = progenitor ? { x: progenitor.x, y: progenitor.y + NODO.radio } : null;
+    }
+    origenDe.set(v.id, origen);
   }
-  const techo = hijo.y - NODO.radio;
-  if (techo <= origen.y + 6) {
-    const destino = puntoBorde(hijo, origen.x - hijo.x, origen.y - hijo.y);
-    return { recorrido: [origen, destino] };
+
+  /* Un hijo con varios progenitores reparte los puntos de
+     llegada sobre su techo, de izquierda a derecha según el
+     lado de cada origen. */
+  const origenesPorHijo = new Map();
+  for (const v of hijos) {
+    if (!origenDe.get(v.id)) continue;
+    const lista = origenesPorHijo.get(v.a) ?? [];
+    lista.push(v);
+    origenesPorHijo.set(v.a, lista);
   }
-  const yBus = (origen.y + techo) / 2;
-  return { recorrido: [origen, { x: origen.x, y: yBus }, { x: hijo.x, y: yBus }, { x: hijo.x, y: techo }] };
+  const desvioDe = new Map();
+  for (const lista of origenesPorHijo.values()) {
+    lista
+      .slice()
+      .sort((a, b) => origenDe.get(a.id).x - origenDe.get(b.id).x)
+      .forEach((v, i, orden) => desvioDe.set(v.id, (i - (orden.length - 1) / 2) * 12));
+  }
+
+  /* Agrupa los hijos por origen para compartir tallo y guía. */
+  const porOrigen = new Map();
+  for (const v of hijos) {
+    if (!origenDe.get(v.id)) continue;
+    const lista = porOrigen.get(v.de) ?? [];
+    lista.push(v);
+    porOrigen.set(v.de, lista);
+  }
+
+  for (const lista of porOrigen.values()) {
+    const origen = origenDe.get(lista[0].id);
+    const conTecho = [];
+    for (const v of lista) {
+      const hijo = personaDe(genograma, v.a);
+      if (!hijo) continue;
+      const llegada = { x: hijo.x + (desvioDe.get(v.id) ?? 0), y: hijo.y - NODO.radio };
+      if (llegada.y <= origen.y + 6) {
+        /* Hijo al nivel del origen o encima: línea directa
+           borde a borde, sin tallo ni guía. */
+        rutas.push({
+          id: v.id,
+          clave: v.id,
+          recorrido: [origen, puntoBorde(hijo, origen.x - hijo.x, origen.y - hijo.y)],
+        });
+      } else {
+        conTecho.push({ v, llegada });
+      }
+    }
+    if (conTecho.length === 0) continue;
+
+    if (conTecho.length === 1) {
+      const { v, llegada } = conTecho[0];
+      const yCodo = (origen.y + llegada.y) / 2;
+      rutas.push({
+        id: v.id,
+        clave: v.id,
+        recorrido: [origen, { x: origen.x, y: yCodo }, { x: llegada.x, y: yCodo }, llegada],
+      });
+      continue;
+    }
+
+    const yBus = Math.min(...conTecho.map(({ llegada }) => llegada.y)) - 16;
+    if (yBus <= origen.y + 12) {
+      // Sin espacio para la guía compartida: codos individuales.
+      for (const { v, llegada } of conTecho) {
+        const yCodo = (origen.y + llegada.y) / 2;
+        rutas.push({
+          id: v.id,
+          clave: v.id,
+          recorrido: [origen, { x: origen.x, y: yCodo }, { x: llegada.x, y: yCodo }, llegada],
+        });
+      }
+      continue;
+    }
+
+    /* Guía compartida: el tallo baja del origen y la línea
+       horizontal corre hacia los hijos de cada lado. */
+    const claveGuia = `${lista[0].id}-guia`;
+    const izquierda = conTecho.filter(({ llegada }) => llegada.x < origen.x - 0.5);
+    const derecha = conTecho.filter(({ llegada }) => llegada.x > origen.x + 0.5);
+    if (izquierda.length > 0 || derecha.length > 0) {
+      if (izquierda.length > 0) {
+        const xLejano = Math.min(...izquierda.map(({ llegada }) => llegada.x));
+        rutas.push({ id: lista[0].id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }, { x: xLejano, y: yBus }] });
+      }
+      if (derecha.length > 0) {
+        const xLejano = Math.max(...derecha.map(({ llegada }) => llegada.x));
+        rutas.push({
+          id: lista[0].id,
+          clave: izquierda.length > 0 ? `${claveGuia}-d` : claveGuia,
+          recorrido: [origen, { x: origen.x, y: yBus }, { x: xLejano, y: yBus }],
+        });
+      }
+    } else {
+      rutas.push({ id: lista[0].id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }] });
+    }
+    for (const { v, llegada } of conTecho) {
+      rutas.push({ id: v.id, clave: `${v.id}-caida`, recorrido: [{ x: llegada.x, y: yBus }, llegada] });
+    }
+  }
+  return rutas;
 }
 
 /* Geometría de una relación de calidad: segmento y estilo.
    `normal` es la perpendicular unitaria para las líneas
-   paralelas (cercana/fusión). */
+   paralelas (cercana/fusión). Si el par ya tiene un vínculo
+   de pareja, la relación se desplaza a una línea paralela
+   junto a ella para no dibujarse encima. */
 export function geometriaDeRelacion(genograma, relacion) {
   const p1 = personaDe(genograma, relacion.de);
   const p2 = personaDe(genograma, relacion.a);
@@ -508,7 +722,18 @@ export function geometriaDeRelacion(genograma, relacion) {
   const dx = fin.x - inicio.x;
   const dy = fin.y - inicio.y;
   const len = Math.hypot(dx, dy) || 1;
-  return { inicio, fin, normal: { x: -dy / len, y: dx / len } };
+  const normal = { x: -dy / len, y: dx / len };
+  const hayPareja = genograma.vinculos.some(
+    (v) =>
+      v.tipo !== "hijo" &&
+      ((v.de === relacion.de && v.a === relacion.a) || (v.de === relacion.a && v.a === relacion.de))
+  );
+  if (!hayPareja) return { inicio, fin, normal };
+  return {
+    inicio: { x: inicio.x + normal.x * 11, y: inicio.y + normal.y * 11 },
+    fin: { x: fin.x + normal.x * 11, y: fin.y + normal.y * 11 },
+    normal,
+  };
 }
 
 /* Puntos del zigzag de una relación de conflicto. */

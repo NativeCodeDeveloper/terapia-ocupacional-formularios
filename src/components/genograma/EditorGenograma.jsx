@@ -6,10 +6,13 @@ import {
   SEXOS,
   TIPOS_RELACION,
   TIPOS_VINCULO,
+  cambiarTipoConexion,
   conexionAgregada,
   conexionEliminada,
-  cambiarTipoConexion,
   genogramaVacio,
+  grupoActualizado,
+  grupoAgregado,
+  grupoEliminado,
   guardarEnBiblioteca,
   normalizarGenograma,
   nuevaPersona,
@@ -43,12 +46,35 @@ const LIENZO_ALTO = 620;
 const OPCIONES_PAREJA = TIPOS_VINCULO.filter((t) => t.grupo === "pareja");
 const ES_RELACION = (tipo) => TIPOS_RELACION.some((t) => t.valor === tipo);
 
+/* La guía de uso se muestra abierta la primera vez que se
+   edita un genograma vacío. */
+function borradorInicialVacio(valor) {
+  return normalizarGenograma(valor).personas.length === 0;
+}
+
+/* Pasos de la guía de uso del editor. */
+const PASOS_GUIA = [
+  ["Agrega a cada integrante", "usa los botones «+ Hombre», «+ Mujer» o «+ Otro»; cada figura aparece en el lienzo."],
+  ["Ubica a las personas", "arrastra cada figura: deja arriba a los padres y abajo a los hijos."],
+  [
+    "Conecta con vínculos",
+    "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo descienda de dos personas —p. ej., de José y de María— conecta con cada progenitor.",
+  ],
+  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un óvalo punteado que los rodea."],
+  ["Edita o corrige", "haz clic en cualquier figura o línea para cambiar su nombre, edad, tipo o eliminarla."],
+  ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
+];
+
 export default function EditorGenograma({ valor, contexto = "", alGuardar, alCancelar }) {
   const [borrador, setBorrador] = useState(() => normalizarGenograma(valor));
+  const [ayudaAbierta, setAyudaAbierta] = useState(() => borradorInicialVacio(valor));
   const [personaId, setPersonaId] = useState(null);
   const [conexionId, setConexionId] = useState(null);
+  const [grupoId, setGrupoId] = useState(null);
   const [conectando, setConectando] = useState(false);
   const [desde, setDesde] = useState(null);
+  const [modoCirculo, setModoCirculo] = useState(false);
+  const [seleccionCirculo, setSeleccionCirculo] = useState([]);
   const [menu, setMenu] = useState(null); // { de, a } a la espera del tipo de conexión
   const [nombreBiblioteca, setNombreBiblioteca] = useState("");
   const [guardandoEnBiblioteca, setGuardandoEnBiblioteca] = useState(false);
@@ -61,6 +87,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     borrador.vinculos.find((v) => v.id === conexionId) ??
     borrador.relaciones.find((r) => r.id === conexionId) ??
     null;
+  const grupo = (borrador.grupos ?? []).find((g) => g.id === grupoId) ?? null;
   const inicial = useMemo(() => JSON.stringify(normalizarGenograma(valor)), [valor]);
   const sucio = JSON.stringify(borrador) !== inicial;
   const nombreDe = (id) => borrador.personas.find((p) => p.id === id)?.nombre?.trim() || "sin nombre";
@@ -74,12 +101,13 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   function deseleccionar() {
     setPersonaId(null);
     setConexionId(null);
+    setGrupoId(null);
   }
 
   /* ---------- Interacción con el lienzo ---------- */
 
   function alAbajoPersona(personaClic, evento) {
-    if (conectando) return; // en modo conectar solo importa el clic
+    if (conectando || modoCirculo) return; // en conectar y círculo solo importa el clic
     evento.currentTarget.setPointerCapture(evento.pointerId);
     arrastre.current = {
       id: personaClic.id,
@@ -96,8 +124,8 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     estado.movio = true;
     setBorrador((prev) =>
       personaActualizada(prev, personaClic.id, {
-        x: Math.min(Math.max(punto.x, 28), LIENZO_ANCHO - 28),
-        y: Math.min(Math.max(punto.y, 28), LIENZO_ALTO - 28),
+        x: Math.min(Math.max(punto.x, 72), LIENZO_ANCHO - 72),
+        y: Math.min(Math.max(punto.y, 42), LIENZO_ALTO - 64),
       })
     );
   }
@@ -106,6 +134,14 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     const estado = arrastre.current;
     arrastre.current = null;
     if (estado?.movio) return;
+    if (modoCirculo) {
+      setSeleccionCirculo((prev) =>
+        prev.includes(personaClic.id)
+          ? prev.filter((id) => id !== personaClic.id)
+          : [...prev, personaClic.id]
+      );
+      return;
+    }
     if (conectando) {
       if (!desde) {
         setDesde(personaClic.id);
@@ -119,11 +155,41 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     }
     setPersonaId(personaClic.id);
     setConexionId(null);
+    setGrupoId(null);
   }
 
   function alClicConexion(conexionClic) {
     setConexionId(conexionClic.id);
     setPersonaId(null);
+    setGrupoId(null);
+  }
+
+  function alClicGrupo(grupoClic) {
+    if (modoCirculo) return; // en modo círculo solo se marcan personas
+    setGrupoId(grupoClic.id);
+    setPersonaId(null);
+    setConexionId(null);
+  }
+
+  /* ---------- Círculo de convivencia ---------- */
+
+  function crearCirculo() {
+    if (seleccionCirculo.length < 2) return;
+    const siguiente = grupoAgregado(borrador, seleccionCirculo);
+    if (siguiente === borrador) return;
+    setBorrador(siguiente);
+    setGrupoId(siguiente.grupos[siguiente.grupos.length - 1].id);
+    setSeleccionCirculo([]);
+    setModoCirculo(false);
+    setAviso("");
+  }
+
+  function disolverCirculo() {
+    const objetivo = (borrador.grupos ?? []).find((g) => g.id === grupoId);
+    if (!objetivo) return;
+    if (!window.confirm(`¿Disolver el círculo «${objetivo.nombre?.trim() || "Convivencia"}»?`)) return;
+    setBorrador((prev) => grupoEliminado(prev, grupoId));
+    setGrupoId(null);
   }
 
   function elegirTipo(tipo) {
@@ -181,6 +247,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     if (!window.confirm("¿Borrar todas las figuras y vínculos del genograma?")) return;
     setBorrador(genogramaVacio());
     deseleccionar();
+    setAyudaAbierta(true);
     setAviso("");
   }
 
@@ -192,8 +259,8 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     const angulo = (n % 6) * (Math.PI / 3) + anillo * 0.5;
     const radio = 110 + anillo * 95;
     const posicion = {
-      x: Math.min(Math.max(LIENZO_ANCHO / 2 + Math.cos(angulo) * radio, 60), LIENZO_ANCHO - 60),
-      y: Math.min(Math.max(LIENZO_ALTO / 2 + Math.sin(angulo) * radio, 60), LIENZO_ALTO - 60),
+      x: Math.min(Math.max(LIENZO_ANCHO / 2 + Math.cos(angulo) * radio, 80), LIENZO_ANCHO - 80),
+      y: Math.min(Math.max(LIENZO_ALTO / 2 + Math.sin(angulo) * radio, 70), LIENZO_ALTO - 80),
     };
     const siguiente = nuevaPersona(borrador, sexo, posicion);
     setBorrador(siguiente);
@@ -204,6 +271,34 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4 sm:p-5">
+      {/* Guía de uso */}
+      <div className="rounded-xl border border-indigo-100 bg-indigo-50/60">
+        <button
+          type="button"
+          onClick={() => setAyudaAbierta((prev) => !prev)}
+          aria-expanded={ayudaAbierta}
+          className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left"
+        >
+          <span className="text-[13px] font-semibold text-indigo-900">¿Cómo hacer el genograma?</span>
+          <span
+            aria-hidden="true"
+            className={`text-xs text-indigo-500 transition-transform ${ayudaAbierta ? "rotate-180" : ""}`}
+          >
+            ▾
+          </span>
+        </button>
+        {ayudaAbierta && (
+          <ol className="list-decimal space-y-1.5 px-4 pb-3.5 pl-9 text-[13px] leading-relaxed text-neutral-700">
+            {PASOS_GUIA.map(([titulo, detalle]) => (
+              <li key={titulo}>
+                <span className="font-semibold text-neutral-900">{titulo}: </span>
+                {detalle}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => agregarPersona("hombre")} className={BOTON_NEUTRO}>
@@ -222,12 +317,30 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
             setConectando((prev) => !prev);
             setDesde(null);
             setMenu(null);
+            setModoCirculo(false);
+            setSeleccionCirculo([]);
             deseleccionar();
           }}
           className={conectando ? BOTON_PRIMARIO : BOTON_NEUTRO}
           aria-pressed={conectando}
         >
           {conectando ? "● Conectando…" : "Conectar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setModoCirculo((prev) => !prev);
+            setSeleccionCirculo([]);
+            setConectando(false);
+            setDesde(null);
+            setMenu(null);
+            deseleccionar();
+          }}
+          className={modoCirculo ? BOTON_PRIMARIO : BOTON_NEUTRO}
+          aria-pressed={modoCirculo}
+          title="Marca un círculo punteado alrededor de quienes viven juntos"
+        >
+          {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">{borrador.personas.length} integrantes</span>
         <button
@@ -247,14 +360,17 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           conRejilla={true}
           ancho={LIENZO_ANCHO}
           alto={LIENZO_ALTO}
-          personaSeleccionada={conectando || menu ? null : personaId}
+          personaSeleccionada={conectando || menu || modoCirculo ? null : personaId}
           personaActiva={conectando ? desde : null}
+          idsActivos={modoCirculo ? seleccionCirculo : []}
           conexionSeleccionada={conexionId}
+          grupoSeleccionado={grupoId}
           referenciaSvg={referenciaSvg}
           alPointerAbajoPersona={alAbajoPersona}
           alPointerMoverPersona={alMoverPersona}
           alPointerSoltarPersona={alSoltarPersona}
           alClicConexion={alClicConexion}
+          alClicGrupo={alClicGrupo}
         />
       </div>
 
@@ -301,6 +417,32 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                 Cancelar
               </button>
             </div>
+          </div>
+        ) : modoCirculo ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p>
+              {seleccionCirculo.length < 2
+                ? "Marca con clic a quienes viven juntos (dos o más personas)…"
+                : `${seleccionCirculo.length} personas marcadas para el círculo.`}
+            </p>
+            <button
+              type="button"
+              onClick={crearCirculo}
+              disabled={seleccionCirculo.length < 2}
+              className={BOTON_PRIMARIO}
+            >
+              Crear círculo
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setModoCirculo(false);
+                setSeleccionCirculo([]);
+              }}
+              className={BOTON_NEUTRO}
+            >
+              Cancelar
+            </button>
           </div>
         ) : conectando ? (
           desde ? (
@@ -489,6 +631,42 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
               className="mt-3 text-[13px] font-medium text-red-600 underline-offset-2 hover:underline"
             >
               Eliminar {conexion.tipo === "hijo" ? "descendencia" : ES_RELACION(conexion.tipo) ? "relación" : "vínculo"}
+            </button>
+          </div>
+        )}
+
+        {grupo && !menu && !modoCirculo && (
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] font-semibold text-neutral-900">Círculo de convivencia</p>
+              <button
+                type="button"
+                onClick={() => setGrupoId(null)}
+                className="text-xs text-neutral-400 hover:text-neutral-600"
+              >
+                Cerrar
+              </button>
+            </div>
+            <div className="mt-3">
+              <label htmlFor="genograma-nombre-grupo" className={ETIQUETA_CAMPO}>Nombre (opcional)</label>
+              <input
+                id="genograma-nombre-grupo"
+                type="text"
+                value={grupo.nombre}
+                onChange={(e) => setBorrador((prev) => grupoActualizado(prev, grupoId, { nombre: e.target.value }))}
+                placeholder="p. ej., Casa de la abuela"
+                className={CONTROL}
+              />
+            </div>
+            <p className="mt-2 text-[13px] text-neutral-500">
+              Viven juntos: {grupo.integrantes.map((id) => nombreDe(id)).join(", ")}.
+            </p>
+            <button
+              type="button"
+              onClick={disolverCirculo}
+              className="mt-3 text-[13px] font-medium text-red-600 underline-offset-2 hover:underline"
+            >
+              Disolver círculo
             </button>
           </div>
         )}

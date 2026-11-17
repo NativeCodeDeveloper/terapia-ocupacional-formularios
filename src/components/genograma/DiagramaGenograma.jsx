@@ -2,11 +2,13 @@
 
 import {
   NODO,
-  geometriaDeHijo,
+  envolverTexto,
+  geometriaDeGrupo,
   geometriaDePareja,
   geometriaDeRelacion,
   limitesDiagrama,
   puntosDeZigzag,
+  rutasDeDescendencia,
 } from "@/lib/genograma";
 
 /* ============================================================
@@ -49,6 +51,7 @@ export function puntoSvg(svg, clienteX, clienteY) {
 
 function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) {
   const { x, y } = persona;
+  const lineasPatologias = persona.patologias?.trim() ? envolverTexto(persona.patologias, 26, 3) : [];
   const lado = NODO.lado;
   const r = NODO.radio;
   const borde = seleccionada || activa ? TINTES.seleccion : TINTES.trazo;
@@ -117,9 +120,9 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
       {!persona.fallecido && persona.edad?.toString().trim() && (
         <text
           x={x}
-          y={y + 4}
+          y={y + 4.5}
           textAnchor="middle"
-          fontSize="11"
+          fontSize="12"
           fill={TINTES.etiqueta}
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
@@ -130,19 +133,33 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
         x={x}
         y={y + r + 13}
         textAnchor="middle"
-        fontSize="11.5"
+        fontSize="12.5"
         fontWeight={persona.indicado ? 700 : 500}
         fill={TINTES.etiqueta}
         style={{ pointerEvents: "none", userSelect: "none" }}
       >
         {persona.nombre?.trim() || "Sin nombre"}
       </text>
+      {lineasPatologias.map((linea, i) => (
+        <text
+          key={i}
+          x={x}
+          y={y + r + 25 + i * 11}
+          textAnchor="middle"
+          fontSize="10.5"
+          fontStyle="italic"
+          fill={TINTES.secundario}
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          {linea}
+        </text>
+      ))}
       {persona.indicado && (
         <text
           x={x}
           y={y - r - 7}
           textAnchor="middle"
-          fontSize="9.5"
+          fontSize="10"
           fontStyle="italic"
           fill={TINTES.secundario}
           style={{ pointerEvents: "none", userSelect: "none" }}
@@ -226,15 +243,27 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
           {geometria.punto && <circle cx={geometria.punto.x} cy={geometria.punto.y} r={3.4} fill={color} />}
         </>
       )}
-      <line
-        x1={extremos.inicio?.x}
-        y1={extremos.inicio?.y}
-        x2={extremos.fin?.x}
-        y2={extremos.fin?.y}
-        stroke="transparent"
-        strokeWidth={14}
-        style={{ pointerEvents: alClic ? "stroke" : "none" }}
-      />
+      {/* Zona de clic: sigue todo el recorrido (codos y guías),
+          no solo la línea recta entre los extremos. */}
+      {geometria.recorrido ? (
+        <polyline
+          points={geometria.recorrido.map((p) => `${p.x},${p.y}`).join(" ")}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={14}
+          style={{ pointerEvents: alClic ? "stroke" : "none" }}
+        />
+      ) : (
+        <line
+          x1={extremos.inicio?.x}
+          y1={extremos.inicio?.y}
+          x2={extremos.fin?.x}
+          y2={extremos.fin?.y}
+          stroke="transparent"
+          strokeWidth={14}
+          style={{ pointerEvents: alClic ? "stroke" : "none" }}
+        />
+      )}
     </g>
   );
 }
@@ -244,11 +273,14 @@ export default function DiagramaGenograma({
   interactivo = false,
   personaSeleccionada = null,
   conexionSeleccionada = null,
+  grupoSeleccionado = null,
+  idsActivos = [],
   personaActiva = null,
   ancho = null,
   alto = null,
   conRejilla = false,
   alClicConexion = null,
+  alClicGrupo = null,
   alPointerAbajoPersona = null,
   alPointerMoverPersona = null,
   alPointerSoltarPersona = null,
@@ -294,33 +326,90 @@ export default function DiagramaGenograma({
       )}
       {conRejilla && <rect width="100%" height="100%" fill="url(#genograma-rejilla)" />}
 
+      {/* Círculos de convivencia, detrás de líneas y figuras */}
+      <g>
+        {(genograma.grupos ?? []).map((grupo) => {
+          const geo = geometriaDeGrupo(genograma, grupo);
+          if (!geo) return null;
+          const seleccionado = grupoSeleccionado === grupo.id;
+          const color = seleccionado ? TINTES.seleccion : TINTES.secundario;
+          return (
+            <g
+              key={grupo.id}
+              onClick={interactivo && alClicGrupo ? () => alClicGrupo(grupo) : null}
+              style={interactivo && alClicGrupo ? { cursor: "pointer" } : undefined}
+            >
+              <ellipse
+                cx={geo.cx}
+                cy={geo.cy}
+                rx={geo.rx}
+                ry={geo.ry}
+                fill="none"
+                stroke={color}
+                strokeWidth={seleccionado ? 2.4 : 1.8}
+                strokeDasharray="7 6"
+              />
+              <text
+                x={geo.cx}
+                y={geo.cy - geo.ry + 15}
+                textAnchor="middle"
+                fontSize="11"
+                fontStyle="italic"
+                fill={color}
+                style={{ pointerEvents: "none", userSelect: "none" }}
+              >
+                {geo.etiqueta}
+              </text>
+              {interactivo && alClicGrupo && (
+                <ellipse
+                  cx={geo.cx}
+                  cy={geo.cy}
+                  rx={geo.rx}
+                  ry={geo.ry}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={16}
+                  style={{ pointerEvents: "stroke" }}
+                />
+              )}
+            </g>
+          );
+        })}
+      </g>
+
       {/* Vínculos y relaciones por debajo de las figuras */}
       <g>
-        {genograma.vinculos.map((v) => {
-          let g = null;
-          if (v.tipo === "hijo") {
-            const ruta = geometriaDeHijo(genograma, v);
-            g = ruta ? { recorrido: ruta.recorrido } : null;
-          } else {
+        {genograma.vinculos
+          .filter((v) => v.tipo !== "hijo")
+          .map((v) => {
             const pareja = geometriaDePareja(genograma, v);
             if (!pareja) return null;
-            g = {
+            const g = {
               inicio: pareja.inicio,
               fin: pareja.fin,
               discontinua: pareja.discontinua,
               barras: pareja.barras?.posiciones.map((p) => ({ ...p, largo: pareja.barras.largo })),
               barrasDireccion: pareja.barras?.direccion,
             };
-          }
-          return (
-            <LineaConexion
-              key={v.id}
-              geometria={g}
-              seleccionada={conexionSeleccionada === v.id}
-              alClic={interactivo && alClicConexion ? () => alClicConexion(v) : null}
-            />
-          );
-        })}
+            return (
+              <LineaConexion
+                key={v.id}
+                geometria={g}
+                seleccionada={conexionSeleccionada === v.id}
+                alClic={interactivo && alClicConexion ? () => alClicConexion(v) : null}
+              />
+            );
+          })}
+        {/* Descendencia: tallo y guía compartidos por origen,
+            una caída por hijo (o por progenitor). */}
+        {rutasDeDescendencia(genograma).map((ruta) => (
+          <LineaConexion
+            key={ruta.clave}
+            geometria={{ recorrido: ruta.recorrido }}
+            seleccionada={conexionSeleccionada === ruta.id}
+            alClic={interactivo && alClicConexion ? () => alClicConexion({ id: ruta.id }) : null}
+          />
+        ))}
         {genograma.relaciones.map((r) => {
           const base = geometriaDeRelacion(genograma, r);
           if (!base) return null;
@@ -354,7 +443,7 @@ export default function DiagramaGenograma({
             key={p.id}
             persona={p}
             seleccionada={personaSeleccionada === p.id}
-            activa={personaActiva === p.id}
+            activa={personaActiva === p.id || idsActivos.includes(p.id)}
             interactivo={interactivo}
             eventos={eventosDe(p)}
           />
