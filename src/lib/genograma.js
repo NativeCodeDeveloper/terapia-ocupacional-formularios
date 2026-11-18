@@ -832,21 +832,30 @@ export function rutasDeDescendencia(genograma) {
     }
     const progenitor = personaDe(genograma, v.de);
     if (!progenitor) continue;
-    /* Si los dos progenitores del mismo hijo forman pareja
-       entre sí (vínculos persona a persona de datos antiguos),
-       ambos comparten el punto medio de la línea de pareja. */
-    const conOtroProgenitor = hijos.find((w) => w !== v && w.a === v.a && w.de !== v.de);
-    const parejaProgenitores = conOtroProgenitor
-      ? genograma.vinculos.find(
-          (c) =>
-            !esDescendencia(c.tipo) &&
-            ((c.de === v.de && c.a === conOtroProgenitor.de) || (c.de === conOtroProgenitor.de && c.a === v.de))
-        )
-      : null;
-    if (parejaProgenitores) {
-      const pareja = geometriaDePareja(genograma, parejaProgenitores);
+    /* Si el progenitor forma pareja, la descendencia sale del
+       punto medio de la línea de pareja (pauta estándar), aunque
+       solo se haya conectado con uno de los dos. Con varias
+       parejas (segundas nupcias) se prefiere aquella cuyo otro
+       miembro también está conectado al hijo; si no hay certeza,
+       la línea sale del progenitor. */
+    const parejasDelProgenitor = genograma.vinculos.filter(
+      (c) => !esDescendencia(c.tipo) && (c.de === v.de || c.a === v.de)
+    );
+    let parejaElegida = null;
+    if (parejasDelProgenitor.length === 1) {
+      parejaElegida = parejasDelProgenitor[0];
+    } else if (parejasDelProgenitor.length > 1) {
+      const conOtroProgenitor = hijos.find((w) => w !== v && w.a === v.a && w.de !== v.de);
+      parejaElegida = conOtroProgenitor
+        ? parejasDelProgenitor.find(
+            (c) => c.de === conOtroProgenitor.de || c.a === conOtroProgenitor.de
+          ) ?? null
+        : null;
+    }
+    if (parejaElegida) {
+      const pareja = geometriaDePareja(genograma, parejaElegida);
       if (pareja) {
-        infoDe.set(v.id, { origen: pareja.medio, clave: `v:${parejaProgenitores.id}` });
+        infoDe.set(v.id, { origen: pareja.medio, clave: `v:${parejaElegida.id}` });
         continue;
       }
     }
@@ -1082,28 +1091,20 @@ export function organizarGenograma(genograma) {
       centrarHijos([v.de, v.a], hijos, nivel + 1);
     }
     // …y bajo personas de este nivel con descendencia directa.
-    // Si los dos progenitores forman pareja y ambos están
-    // conectados al hijo, el origen efectivo es la pareja.
+    // Si el progenitor forma pareja (una sola), los hijos se
+    // centran entre ambos, como marca la pauta.
     const gruposOrigen = new Map();
     for (const w of genograma.vinculos) {
       if (!esDescendencia(w.tipo) || w.de == null) continue;
       if (niveles.get(w.a) !== nivel + 1 || niveles.get(w.de) !== nivel) continue;
       let clave = `p:${w.de}`;
       let miembros = [w.de];
-      const parejaV = genograma.vinculos.find(
-        (c) =>
-          !esDescendencia(c.tipo) &&
-          ((c.de === w.de && niveles.get(c.a) === nivel) || (c.a === w.de && niveles.get(c.de) === nivel))
+      const parejas = genograma.vinculos.filter(
+        (c) => !esDescendencia(c.tipo) && (c.de === w.de || c.a === w.de)
       );
-      if (parejaV) {
-        const otro = parejaV.de === w.de ? parejaV.a : parejaV.de;
-        const otroEsProgenitor = genograma.vinculos.some(
-          (x) => esDescendencia(x.tipo) && x.a === w.a && x.de === otro
-        );
-        if (otroEsProgenitor) {
-          clave = `v:${parejaV.id}`;
-          miembros = [parejaV.de, parejaV.a];
-        }
+      if (parejas.length === 1) {
+        clave = `v:${parejas[0].id}`;
+        miembros = [parejas[0].de, parejas[0].a];
       }
       const grupo = gruposOrigen.get(clave) ?? { miembros, hijos: [] };
       grupo.hijos.push(w.a);

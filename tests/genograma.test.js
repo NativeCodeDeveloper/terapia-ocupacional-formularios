@@ -404,6 +404,45 @@ test("las abreviaturas se separan por coma y se listan una por línea", () => {
   assert.deepEqual(listaDeAbreviaturas(null), []);
 });
 
+test("la descendencia de un progenitor con pareja sale del punto medio de la pareja", () => {
+  // Felipe y Marcelo conectados solo con Samuel, que forma
+  // pareja con Cristina: las líneas salen del medio de la pareja.
+  let g = nuevaPersona(
+    nuevaPersona(
+      nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 140 }), "mujer", { x: 480, y: 140 }),
+      "hombre",
+      { x: 300, y: 340 }
+    ),
+    "hombre",
+    { x: 420, y: 340 }
+  );
+  const [samuel, cristina, felipe, marcelo] = g.personas;
+  g = personaActualizada(g, samuel.id, { nombre: "Samuel" });
+  g = personaActualizada(g, cristina.id, { nombre: "Cristina" });
+  g = personaActualizada(g, felipe.id, { nombre: "Felipe" });
+  g = personaActualizada(g, marcelo.id, { nombre: "Marcelo" });
+  g = conexionAgregada(g, "union", samuel.id, cristina.id);
+  g = conexionAgregada(g, "hijo", samuel.id, felipe.id);
+  g = conexionAgregada(g, "hijo", samuel.id, marcelo.id);
+
+  // El tallo y la guía nacen del punto medio de la línea de
+  // pareja, y cada hijo tiene su caída.
+  const pareja = geometriaDePareja(g, g.vinculos.find((v) => !esDescendencia(v.tipo)));
+  const rutas = rutasDeDescendencia(g);
+  const guias = rutas.filter((r) => r.clave.includes("-guia"));
+  const caidas = rutas.filter((r) => r.clave.endsWith("-caida"));
+  assert.equal(caidas.length, 2);
+  assert.ok(guias.length >= 1);
+  for (const ruta of guias) assert.deepEqual(ruta.recorrido[0], pareja.medio);
+
+  // Al ordenar, los hijos quedan centrados entre la pareja.
+  const ordenado = organizarGenograma(g);
+  const de = (nombre) => ordenado.personas.find((p) => p.nombre === nombre);
+  const centroPareja = (de("Samuel").x + de("Cristina").x) / 2;
+  const centroHijos = (de("Felipe").x + de("Marcelo").x) / 2;
+  assert.equal(Math.round(centroHijos), Math.round(centroPareja));
+});
+
 test("gemelos, adoptado y alineado: parto múltiple, etiquetas y filas parejas", () => {
   // Descendencia adoptada: se describe con su etiqueta propia.
   let g = nuevaPersona(
