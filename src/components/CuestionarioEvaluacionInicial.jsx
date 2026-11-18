@@ -245,7 +245,7 @@ export default function CuestionarioEvaluacionInicial({
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-20">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20">
       {/* Barra de progreso fija */}
       <div className="sticky top-0 z-20 -mx-4 mb-8 border-b border-neutral-200/80 bg-white/90 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
@@ -265,7 +265,10 @@ export default function CuestionarioEvaluacionInicial({
         </div>
       </div>
 
-      <header className="mb-8">
+      {/* El formulario conserva su columna estrecha; el ancho
+          extra de la página lo aprovecha el genograma. */}
+      <div className="mx-auto w-full max-w-3xl">
+        <header className="mb-8">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-600">
           {instrumento}
         </p>
@@ -434,6 +437,7 @@ export default function CuestionarioEvaluacionInicial({
           </div>
         </section>
       </form>
+      </div>
 
       {/* Genograma familiar (opcional) — fuera del formulario:
           nunca interviene en la validación ni en el envío. */}

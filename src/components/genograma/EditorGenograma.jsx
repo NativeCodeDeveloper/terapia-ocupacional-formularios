@@ -357,30 +357,33 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         </button>
       </div>
 
-      {/* Lienzo */}
-      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        <DiagramaGenograma
-          genograma={borrador}
-          interactivo={true}
-          conRejilla={true}
-          ancho={LIENZO_ANCHO}
-          alto={LIENZO_ALTO}
-          personaSeleccionada={conectando || menu || modoCirculo ? null : personaId}
-          personaActiva={conectando ? desde : null}
-          idsActivos={modoCirculo ? seleccionCirculo : []}
-          conexionSeleccionada={conexionId}
-          grupoSeleccionado={grupoId}
-          referenciaSvg={referenciaSvg}
-          alPointerAbajoPersona={alAbajoPersona}
-          alPointerMoverPersona={alMoverPersona}
-          alPointerSoltarPersona={alSoltarPersona}
-          alClicConexion={alClicConexion}
-          alClicGrupo={alClicGrupo}
-        />
-      </div>
+      {/* Lienzo a la izquierda y paneles de edición a la derecha
+          (en pantallas anchas) para no subir y bajar al editar. */}
+      <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0">
+          <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+            <DiagramaGenograma
+              genograma={borrador}
+              interactivo={true}
+              conRejilla={true}
+              ancho={LIENZO_ANCHO}
+              alto={LIENZO_ALTO}
+              personaSeleccionada={conectando || menu || modoCirculo ? null : personaId}
+              personaActiva={conectando ? desde : null}
+              idsActivos={modoCirculo ? seleccionCirculo : []}
+              conexionSeleccionada={conexionId}
+              grupoSeleccionado={grupoId}
+              referenciaSvg={referenciaSvg}
+              alPointerAbajoPersona={alAbajoPersona}
+              alPointerMoverPersona={alMoverPersona}
+              alPointerSoltarPersona={alSoltarPersona}
+              alClicConexion={alClicConexion}
+              alClicGrupo={alClicGrupo}
+            />
+          </div>
 
-      {/* Ayuda contextual y menú de conexión */}
-      <div className="mt-2 min-h-8 text-[13px] text-neutral-500">
+          {/* Ayuda contextual y menú de conexión */}
+          <div className="mt-2 min-h-8 text-[13px] text-neutral-500">
         {menu ? (
           <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
             <p className="text-[13px] font-medium text-indigo-900">
@@ -472,10 +475,11 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         ) : (
           <p>Arrastra las figuras para acomodarlas. Haz clic en una figura o en una línea para editarla.</p>
         )}
-      </div>
+          </div>
+        </div>
 
-      {/* Paneles de edición */}
-      <div className="mt-1 grid gap-3 lg:grid-cols-2">
+        {/* Paneles de edición */}
+        <div className="grid min-w-0 items-start gap-3">
         {persona && !menu && (
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
@@ -702,6 +706,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Nota general */}
