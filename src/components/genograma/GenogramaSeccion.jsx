@@ -128,7 +128,7 @@ export default function GenogramaSeccion({ valor, alCambiar, contexto = "" }) {
                   Cerrar vista
                 </button>
               </div>
-              <div className="mx-auto mt-3 max-w-2xl overflow-hidden rounded-xl border border-neutral-200 bg-white p-2">
+              <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-white p-2">
                 <DiagramaGenograma genograma={genograma} />
               </div>
               <TablaIntegrantes genograma={genograma} />
@@ -194,7 +194,7 @@ export default function GenogramaSeccion({ valor, alCambiar, contexto = "" }) {
               {tieneIntegrantes ? (
                 <>
                   {/* Vista previa del genograma vinculado */}
-                  <div className="mx-auto max-w-2xl overflow-hidden rounded-xl border border-neutral-200 bg-white p-2">
+                  <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-2">
                     <DiagramaGenograma genograma={genograma} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">

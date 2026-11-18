@@ -126,14 +126,14 @@ test("conexionAgregada evita duplicados y reemplazos según el tipo", () => {
   assert.equal(delPar(g), 1);
   assert.equal(g.relaciones.find((r) => (r.de === padre.id && r.a === madre.id) || (r.de === madre.id && r.a === padre.id)).tipo, "distante");
 
-  // Varios orígenes de descendencia para el mismo hijo se
-  // acumulan (hijo del padre —vía la pareja— y de la madre).
+  // El hijo ya desciende de la línea de pareja: vincularlo a un
+  // miembro de esa pareja es redundante y no agrega vínculos.
   const hijo = g.personas.find((p) => p.nombre === "Tomás Rojas");
+  const descendenciasAntes = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length;
   g = conexionAgregada(g, "hijo", madre.id, hijo.id);
-  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
-  // El mismo origen dos veces no se duplica.
-  g = conexionAgregada(g, "hijo", madre.id, hijo.id);
-  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes);
+  g = conexionAgregada(g, "hijo", padre.id, hijo.id);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes);
 });
 
 test("conexionAgregada ignora conexiones imposibles", () => {
@@ -235,8 +235,8 @@ test("la descendencia comparte tallo y guía entre hermanos y llega al techo del
   assert.ok(caidaHija);
   const llegadaHijo = caidaHijo.recorrido[caidaHijo.recorrido.length - 1];
   const llegadaHija = caidaHija.recorrido[caidaHija.recorrido.length - 1];
-  assert.deepEqual(llegadaHijo, { x: hijo.x, y: hijo.y - 16 });
-  assert.deepEqual(llegadaHija, { x: hija.x, y: hija.y - 16 });
+  assert.deepEqual(llegadaHijo, { x: hijo.x, y: hijo.y - 20 });
+  assert.deepEqual(llegadaHija, { x: hija.x, y: hija.y - 20 });
 
   // Ambas caídas cuelgan de la misma guía horizontal.
   assert.equal(caidaHijo.recorrido[0].y, caidaHija.recorrido[0].y);
@@ -298,7 +298,7 @@ test("la relación de calidad se dibuja junto a la línea de pareja, no encima",
   const directa = geometriaDeRelacion(solos, solos.relaciones[0]);
   assert.deepEqual(
     { x: Math.round(directa.inicio.x), y: Math.round(directa.inicio.y) },
-    { x: 216, y: 200 }
+    { x: 220, y: 200 }
   );
 });
 
@@ -313,6 +313,83 @@ test("envolverTexto parte las etiquetas largas y recorta con puntos suspensivos"
   assert.equal(lineas.length, 2);
   assert.equal(lineas[1].endsWith("…"), true);
   assert.deepEqual(envolverTexto("   ", 26, 3), []);
+});
+
+test("los hijos de una pareja cuelgan de una sola línea continua", () => {
+  let g = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
+    "hombre",
+    { x: 280, y: 340 }
+  );
+  const [jose, maria, hijo] = g.personas;
+  g = personaActualizada(g, jose.id, { nombre: "José" });
+  g = personaActualizada(g, maria.id, { nombre: "María" });
+  g = personaActualizada(g, hijo.id, { nombre: "Hijo común" });
+  g = conexionAgregada(g, "union", jose.id, maria.id);
+  const parejaId = g.vinculos[0].id;
+  g = conexionAgregada(g, "hijo", jose.id, hijo.id);
+  g = conexionAgregada(g, "hijo", maria.id, hijo.id);
+
+  // La descendencia se canonicaliza a la línea de pareja.
+  const descendencias = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
+  assert.equal(descendencias.length, 1);
+  assert.equal(descendencias[0].de, parejaId);
+
+  // Una sola ruta, desde el punto medio de la pareja hasta el hijo.
+  const rutas = rutasDeDescendencia(g);
+  assert.equal(rutas.length, 1);
+  const pareja = geometriaDePareja(g, g.vinculos[0]);
+  assert.deepEqual(rutas[0].recorrido[0], pareja.medio);
+  assert.deepEqual(rutas[0].recorrido[rutas[0].recorrido.length - 1], { x: hijo.x, y: hijo.y - 20 });
+});
+
+test("datos guardados con vínculos directos a ambos progenitores se dibujan como una línea", () => {
+  let g = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
+    "hombre",
+    { x: 280, y: 340 }
+  );
+  const [jose, maria, hijo] = g.personas;
+  g = conexionAgregada(g, "union", jose.id, maria.id);
+  const parejaId = g.vinculos[0].id;
+  // Datos legados: dos vínculos persona a persona sin canonicalizar.
+  g = {
+    ...g,
+    vinculos: [
+      ...g.vinculos,
+      { id: "v-jose", tipo: "hijo", de: jose.id, a: hijo.id },
+      { id: "v-maria", tipo: "hijo", de: maria.id, a: hijo.id },
+    ],
+  };
+
+  // Al normalizar se canonicaliza a la línea de pareja.
+  const reparado = normalizarGenograma(g);
+  const descendencias = reparado.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
+  assert.equal(descendencias.length, 1);
+  assert.equal(descendencias[0].de, parejaId);
+
+  // Y aunque no se normalice, el dibujo es una sola línea.
+  const rutas = rutasDeDescendencia(g);
+  assert.equal(rutas.length, 1);
+  assert.deepEqual(rutas[0].recorrido[rutas[0].recorrido.length - 1], { x: hijo.x, y: hijo.y - 20 });
+});
+
+test("las patologías principales se guardan y aparecen en la tabla", () => {
+  let g = nuevaPersona(genogramaVacio(), "mujer", { x: 120, y: 120 });
+  assert.equal(g.personas[0].patologiasAbrev, "");
+  g = personaActualizada(g, g.personas[0].id, {
+    patologiasAbrev: "DM, HTA",
+    patologias: "Diabetes tipo 2 e hipertensión",
+  });
+  const fila = filasDeIntegrantes(g)[0];
+  assert.match(fila.observacion, /DM, HTA/);
+  assert.match(fila.observacion, /Diabetes tipo 2/);
+  const reparado = normalizarGenograma({
+    personas: [{ id: "p1", sexo: "mujer", patologiasAbrev: "TDAH" }],
+    vinculos: [],
+    relaciones: [],
+  });
+  assert.equal(reparado.personas[0].patologiasAbrev, "TDAH");
 });
 
 /* ============================================================

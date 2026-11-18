@@ -40,8 +40,8 @@ const ETIQUETA_CAMPO = "mb-1 block text-xs font-medium text-neutral-600";
 const CONTROL =
   "w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
 
-const LIENZO_ANCHO = 960;
-const LIENZO_ALTO = 620;
+const LIENZO_ANCHO = 680;
+const LIENZO_ALTO = 540;
 
 const OPCIONES_PAREJA = TIPOS_VINCULO.filter((t) => t.grupo === "pareja");
 const ES_RELACION = (tipo) => TIPOS_RELACION.some((t) => t.valor === tipo);
@@ -58,10 +58,10 @@ const PASOS_GUIA = [
   ["Ubica a las personas", "arrastra cada figura: deja arriba a los padres y abajo a los hijos."],
   [
     "Conecta con vínculos",
-    "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo descienda de dos personas —p. ej., de José y de María— conecta con cada progenitor.",
+    "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo descienda de dos personas —p. ej., de José y de María— conecta con cada progenitor; si forman pareja entre sí, la descendencia se dibuja como una sola línea desde la pareja.",
   ],
   ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un óvalo punteado que los rodea."],
-  ["Edita o corrige", "haz clic en cualquier figura o línea para cambiar su nombre, edad, tipo o eliminarla."],
+  ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla."],
   ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
 ];
 
@@ -91,6 +91,11 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   const inicial = useMemo(() => JSON.stringify(normalizarGenograma(valor)), [valor]);
   const sucio = JSON.stringify(borrador) !== inicial;
   const nombreDe = (id) => borrador.personas.find((p) => p.id === id)?.nombre?.trim() || "sin nombre";
+  /* Origen de una descendencia: «Ana y Luis» si sale de la línea de pareja. */
+  const origenDe = (id) => {
+    const pareja = borrador.vinculos.find((v) => v.id === id && v.tipo !== "hijo");
+    return pareja ? `${nombreDe(pareja.de)} y ${nombreDe(pareja.a)}` : nombreDe(id);
+  };
   const usuario = borrador.personas.find((p) => p.indicado) ?? null;
 
   function cancelarMenu() {
@@ -404,7 +409,12 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   key={t.valor}
                   type="button"
                   onClick={() => elegirTipo(t.valor)}
-                  className={`${BOTON} border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50`}
+                  title="El color coincide con la línea que se dibuja"
+                  className={`${BOTON} ${
+                    t.valor === "cercana" || t.valor === "fusion"
+                      ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+                      : "border-red-200 bg-white text-red-700 hover:bg-red-50"
+                  }`}
                 >
                   {t.etiqueta}
                 </button>
@@ -533,6 +543,28 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   className={CONTROL}
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="genograma-patologias-abrev" className={ETIQUETA_CAMPO}>Patologías principales (abreviaturas)</label>
+                <input
+                  id="genograma-patologias-abrev"
+                  type="text"
+                  value={persona.patologiasAbrev}
+                  onChange={(e) => actualizarPersona({ patologiasAbrev: e.target.value })}
+                  placeholder="Se ven sobre el nombre, p. ej., DM, HTA, TDAH"
+                  className={CONTROL}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="genograma-patologias" className={ETIQUETA_CAMPO}>Patologías o antecedentes (detalle, opcional)</label>
+                <input
+                  id="genograma-patologias"
+                  type="text"
+                  value={persona.patologias}
+                  onChange={(e) => actualizarPersona({ patologias: e.target.value })}
+                  placeholder="p. ej., diabetes tipo 2 diagnosticada en 2015"
+                  className={CONTROL}
+                />
+              </div>
               <div className="sm:col-span-2 flex flex-wrap items-center gap-4">
                 <label className="flex cursor-pointer items-center gap-2 text-[13px] text-neutral-700">
                   <input
@@ -607,7 +639,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
             </div>
             <p className="mt-1 text-[13px] text-neutral-500">
               {conexion.tipo === "hijo"
-                ? `${nombreDe(conexion.a)} es hijo/a de ${nombreDe(conexion.de)}.`
+                ? `${nombreDe(conexion.a)} es hijo/a de ${origenDe(conexion.de)}.`
                 : `${nombreDe(conexion.de)} — ${nombreDe(conexion.a)}.`}
             </p>
             {conexion.tipo !== "hijo" && (

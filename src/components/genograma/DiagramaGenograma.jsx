@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  COLOR_RELACION,
   NODO,
   envolverTexto,
   geometriaDeGrupo,
@@ -23,10 +24,11 @@ import {
    X = fallecido; doble borde = usuario/a evaluado/a.
    Vínculos: línea continua (matrimonio), discontinua
    (convivencia), una barra (separación), dos barras (divorcio).
-   Descendencia: codo desde la línea de pareja o el progenitor
-   hasta el hijo. Relaciones: doble línea (cercana), triple
-   (fusión), punteada (distante), zigzag (conflicto), línea con
-   punto (corte).
+   Descendencia: una sola línea desde la pareja (o codo desde el
+   progenitor) hasta el hijo; los hermanos comparten tallo y
+   guía. Relaciones (en color): doble línea verde (cercana),
+   triple verde (fusión), punteada roja (distante), zigzag rojo
+   (conflicto), línea roja con dos barras (corte).
    ============================================================ */
 
 const TINTES = {
@@ -51,6 +53,10 @@ export function puntoSvg(svg, clienteX, clienteY) {
 
 function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) {
   const { x, y } = persona;
+  /* Abreviaturas de las patologías principales, sobre el nombre. */
+  const abreviaturas = persona.patologiasAbrev?.trim()
+    ? envolverTexto(persona.patologiasAbrev, 24, 1)[0]
+    : null;
   const lineasPatologias = persona.patologias?.trim() ? envolverTexto(persona.patologias, 26, 3) : [];
   const lado = NODO.lado;
   const r = NODO.radio;
@@ -129,9 +135,22 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           {persona.edad}
         </text>
       )}
+      {abreviaturas && (
+        <text
+          x={x}
+          y={y + r + 12}
+          textAnchor="middle"
+          fontSize="10.5"
+          fontWeight={600}
+          fill={TINTES.etiqueta}
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          {abreviaturas}
+        </text>
+      )}
       <text
         x={x}
-        y={y + r + 13}
+        y={y + r + (abreviaturas ? 25 : 13)}
         textAnchor="middle"
         fontSize="12.5"
         fontWeight={persona.indicado ? 700 : 500}
@@ -144,7 +163,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
         <text
           key={i}
           x={x}
-          y={y + r + 25 + i * 11}
+          y={y + r + (abreviaturas ? 36 : 25) + i * 11}
           textAnchor="middle"
           fontSize="10.5"
           fontStyle="italic"
@@ -171,9 +190,9 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
   );
 }
 
-function LineaConexion({ geometria, seleccionada, alClic }) {
+function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
   if (!geometria) return null;
-  const color = seleccionada ? TINTES.seleccion : TINTES.trazo;
+  const colorLinea = seleccionada ? TINTES.seleccion : color ?? TINTES.trazo;
   const grosor = seleccionada ? 2.6 : GROSOR;
   /* El recorrido (descendencia) define sus propios extremos
      para la zona de clic. */
@@ -191,7 +210,7 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
         <polyline
           points={geometria.zigzag.map((p) => p.join(",")).join(" ")}
           fill="none"
-          stroke={color}
+          stroke={colorLinea}
           strokeWidth={grosor}
           strokeLinejoin="round"
         />
@@ -205,7 +224,7 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
                   y1={geometria.inicio.y + geometria.normal.y * desvio}
                   x2={geometria.fin.x + geometria.normal.x * desvio}
                   y2={geometria.fin.y + geometria.normal.y * desvio}
-                  stroke={color}
+                  stroke={colorLinea}
                   strokeWidth={grosor}
                 />
               ))
@@ -215,7 +234,7 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
                   y1={extremos.inicio.y}
                   x2={extremos.fin.x}
                   y2={extremos.fin.y}
-                  stroke={color}
+                  stroke={colorLinea}
                   strokeWidth={grosor}
                   strokeDasharray={geometria.discontinua ? "6 5" : undefined}
                 />
@@ -224,7 +243,7 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
             <polyline
               points={geometria.recorrido.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none"
-              stroke={color}
+              stroke={colorLinea}
               strokeWidth={grosor}
               strokeLinejoin="round"
             />
@@ -236,11 +255,11 @@ function LineaConexion({ geometria, seleccionada, alClic }) {
               y1={barra.y - geometria.barrasDireccion.y * barra.largo}
               x2={barra.x + geometria.barrasDireccion.x * barra.largo}
               y2={barra.y + geometria.barrasDireccion.y * barra.largo}
-              stroke={color}
+              stroke={colorLinea}
               strokeWidth={grosor + 0.4}
             />
           ))}
-          {geometria.punto && <circle cx={geometria.punto.x} cy={geometria.punto.y} r={3.4} fill={color} />}
+          {geometria.punto && <circle cx={geometria.punto.x} cy={geometria.punto.y} r={3.4} fill={colorLinea} />}
         </>
       )}
       {/* Zona de clic: sigue todo el recorrido (codos y guías),
@@ -296,7 +315,7 @@ export default function DiagramaGenograma({
   }
 
   const viewBox = interactivo
-    ? `0 0 ${ancho ?? 960} ${alto ?? 620}`
+    ? `0 0 ${ancho ?? 680} ${alto ?? 540}`
     : `${limites.minX} ${limites.minY} ${limites.ancho} ${limites.alto}`;
 
   const eventosDe = (persona) => ({
@@ -424,12 +443,28 @@ export default function DiagramaGenograma({
           } else if (r.tipo === "distante") {
             g = { inicio, fin, discontinua: true };
           } else {
-            g = { inicio, fin, punto: { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 } };
+            // corte: línea con dos barras al medio (vínculo roto)
+            const medio = { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 };
+            const dx = fin.x - inicio.x;
+            const dy = fin.y - inicio.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len;
+            const uy = dy / len;
+            g = {
+              inicio,
+              fin,
+              barras: [
+                { x: medio.x - ux * 5, y: medio.y - uy * 5, largo: 7 },
+                { x: medio.x + ux * 5, y: medio.y + uy * 5, largo: 7 },
+              ],
+              barrasDireccion: { x: -uy, y: ux },
+            };
           }
           return (
             <LineaConexion
               key={r.id}
               geometria={g}
+              color={COLOR_RELACION[r.tipo] ?? null}
               seleccionada={conexionSeleccionada === r.id}
               alClic={interactivo && alClicConexion ? () => alClicConexion(r) : null}
             />

@@ -54,11 +54,22 @@ export const ETIQUETA_RELACION = Object.fromEntries(TIPOS_RELACION.map((t) => [t
 /* Tamaño de las figuras (semieje en unidades del lienzo SVG y
    del diagrama del informe). Compartido por editor, vista
    previa y PDF. */
-export const NODO = { lado: 32, radio: 16 };
+export const NODO = { lado: 40, radio: 20 };
+
+/* Colores de las relaciones de calidad, compartidos por el
+   diagrama SVG, el PDF y los botones del editor: verdes las
+   cercanas, rojas las distantes o rotas. */
+export const COLOR_RELACION = {
+  cercana: "#15803d",
+  fusion: "#15803d",
+  distante: "#dc2626",
+  conflicto: "#dc2626",
+  corte: "#dc2626",
+};
 
 /* Leyenda impresa bajo el diagrama del informe. */
 export const LEYENDA_GENOGRAMA =
-  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Óvalo punteado: convivencia (quiénes viven juntos)";
+  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Óvalo punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Abreviaturas sobre el nombre: patologías principales";
 
 /* ============================================================
    IDENTIFICADORES Y CREACIÓN
@@ -76,10 +87,10 @@ export function genogramaVacio() {
   return { version: 1, personas: [], vinculos: [], relaciones: [], grupos: [], notas: "" };
 }
 
-/* Posición de cuadrícula por defecto: filas de cinco figuras,
+/* Posición de cuadrícula por defecto: filas de cuatro figuras,
    con espacio para las etiquetas. */
 function posicionDeCuadricula(indice) {
-  return { x: 96 + (indice % 5) * 150, y: 96 + Math.floor(indice / 5) * 130 };
+  return { x: 88 + (indice % 4) * 160, y: 88 + Math.floor(indice / 4) * 120 };
 }
 
 export function nuevaPersona(genograma, sexo = "hombre", posicion = null) {
@@ -90,6 +101,7 @@ export function nuevaPersona(genograma, sexo = "hombre", posicion = null) {
     edad: "",
     fallecido: false,
     causaMuerte: "",
+    patologiasAbrev: "",
     patologias: "",
     ocupacion: "",
     nota: "",
@@ -188,10 +200,47 @@ export function conexionAgregada(genograma, tipo, de, a) {
 
   if (esHijo) {
     /* Varios progenitores para un mismo hijo (hijo de José y
-       de María): solo se evita el duplicado exacto. */
+       de María): solo se evita el duplicado exacto. Cuando los
+       dos progenitores forman pareja, la descendencia se
+       canonicaliza a una sola línea desde la línea de pareja. */
+    const parejaOrigen = genograma.vinculos.find((v) => v.id === de && v.tipo !== "hijo");
+    if (parejaOrigen) {
+      if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
+      // Los vínculos directos a los miembros de esta pareja que
+      // existieran antes quedan absorbidos por la línea común.
+      const miembros = [parejaOrigen.de, parejaOrigen.a];
+      const restantes = genograma.vinculos.filter(
+        (v) => !(v.tipo === "hijo" && v.a === a && miembros.includes(v.de))
+      );
+      return { ...genograma, vinculos: [...restantes, { id: nuevoId("v"), tipo, de, a }] };
+    }
     if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
-    const nueva = { id: nuevoId("v"), tipo, de, a };
-    return { ...genograma, vinculos: [...genograma.vinculos, nueva] };
+    // Redundante: el hijo ya desciende de una pareja que incluye a este progenitor.
+    const yaPorPareja = genograma.vinculos.some((w) => {
+      if (w.tipo !== "hijo" || w.a !== a) return false;
+      const c = genograma.vinculos.find((x) => x.id === w.de && x.tipo !== "hijo");
+      return Boolean(c && (c.de === de || c.a === de));
+    });
+    if (yaPorPareja) return genograma;
+    const agregada = { ...genograma, vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a }] };
+    const parejaDe = (idA, idB) =>
+      agregada.vinculos.find(
+        (c) => c.tipo !== "hijo" && ((c.de === idA && c.a === idB) || (c.de === idB && c.a === idA))
+      );
+    const otroProgenitor = agregada.vinculos.find(
+      (w) => w.tipo === "hijo" && w.a === a && w.de !== de && parejaDe(de, w.de)
+    );
+    if (!otroProgenitor) return agregada;
+    const pareja = parejaDe(de, otroProgenitor.de);
+    return {
+      ...genograma,
+      vinculos: [
+        ...agregada.vinculos.filter(
+          (w) => !(w.tipo === "hijo" && w.a === a && (w.de === de || w.de === otroProgenitor.de))
+        ),
+        { id: nuevoId("v"), tipo: "hijo", de: pareja.id, a },
+      ],
+    };
   }
   if (esRelacion) {
     const nueva = { id: nuevoId("r"), tipo, de, a };
@@ -254,6 +303,7 @@ function personaNormalizada(p, indice) {
     edad: texto(p.edad),
     fallecido: Boolean(p.fallecido),
     causaMuerte: texto(p.causaMuerte),
+    patologiasAbrev: texto(p.patologiasAbrev),
     patologias: texto(p.patologias),
     ocupacion: texto(p.ocupacion),
     nota: texto(p.nota),
@@ -294,10 +344,37 @@ export function normalizarGenograma(datos) {
         ids.has(r.a)
     )
     .map((r) => ({ id: texto(r.id) || nuevoId("r"), tipo: r.tipo, de: r.de, a: r.a }));
+  /* Canonicaliza la descendencia: si un hijo queda con vínculos
+     directos a los dos miembros de una pareja, se reemplazan
+     por una sola línea desde la pareja. */
+  const canonicalizados = [];
+  const usados = new Set();
+  for (const v of vinculos) {
+    if (usados.has(v.id)) continue;
+    if (v.tipo === "hijo") {
+      const otro = vinculos.find(
+        (w) => w.tipo === "hijo" && w.a === v.a && w.de !== v.de && !usados.has(w.id)
+      );
+      const pareja = otro
+        ? vinculos.find(
+            (c) =>
+              c.tipo !== "hijo" &&
+              ((c.de === v.de && c.a === otro.de) || (c.de === otro.de && c.a === v.de))
+          )
+        : null;
+      if (pareja) {
+        usados.add(v.id);
+        usados.add(otro.id);
+        canonicalizados.push({ id: v.id, tipo: "hijo", de: pareja.id, a: v.a });
+        continue;
+      }
+    }
+    canonicalizados.push(v);
+  }
   return {
     version: 1,
     personas,
-    vinculos,
+    vinculos: canonicalizados,
     relaciones,
     grupos: (Array.isArray(base.grupos) ? base.grupos : [])
       .filter((g) => g && typeof g === "object")
@@ -447,7 +524,9 @@ export function filasDeIntegrantes(genograma) {
       .filter(Boolean)
       .join(" · ");
     const conexiones = etiquetaConexionesDe(genograma, p).join(" · ");
-    const observacion = [p.patologias?.trim(), estado, p.ocupacion?.trim(), p.nota?.trim()].filter(Boolean).join(" · ");
+    const observacion = [p.patologiasAbrev?.trim(), p.patologias?.trim(), estado, p.ocupacion?.trim(), p.nota?.trim()]
+      .filter(Boolean)
+      .join(" · ");
     return { nombre, edad, conexiones: conexiones || "—", observacion: observacion || "—" };
   });
 }
@@ -503,7 +582,7 @@ export function limitesDiagrama(genograma) {
   let minX = Math.min(...xs) - 72;
   let minY = Math.min(...ys) - 42;
   let maxX = Math.max(...xs) + 72;
-  let maxY = Math.max(...ys) + 68;
+  let maxY = Math.max(...ys) + 82;
   for (const grupo of genograma.grupos ?? []) {
     const geo = geometriaDeGrupo(genograma, grupo);
     if (!geo) continue;
@@ -580,68 +659,88 @@ export function geometriaDePareja(genograma, vinculo) {
 /* Recorridos dibujables de toda la descendencia. Los hijos
    que comparten origen (una pareja o un progenitor) cuelgan de
    una misma guía: un solo tallo baja del origen hasta una
-   línea horizontal y de ahí cae una línea por hijo, de modo
-   que las líneas de hermanos no se superpongan. Un hijo con
-   varios progenitores recibe una caída por progenitor, con
-   puntos de llegada repartidos sobre su borde superior.
-   Devuelve { id, clave, recorrido } — `id` es el vínculo al
-   que pertenece la ruta (para selección) y `clave` identifica
-   cada tramo dibujado. */
+   línea horizontal y de ahí cae una línea por hijo. Si los dos
+   progenitores de un hijo forman pareja entre sí —aunque el
+   vínculo se haya registrado persona a persona— la
+   descendencia se dibuja como una sola línea que sale del
+   punto medio de la pareja. Un hijo con varios orígenes
+   independientes recibe una caída por origen, con puntos de
+   llegada repartidos sobre su borde superior y codos a alturas
+   distintas. Devuelve { id, clave, recorrido } — `id` es el
+   vínculo al que pertenece la ruta (para selección) y `clave`
+   identifica cada tramo dibujado. */
 export function rutasDeDescendencia(genograma) {
   const rutas = [];
   const hijos = genograma.vinculos.filter((v) => v.tipo === "hijo");
   if (hijos.length === 0) return rutas;
 
-  /* Punto de origen de cada vínculo: punto medio de la línea
-     de pareja o borde inferior del progenitor. */
-  const origenDe = new Map();
+  /* Origen efectivo de cada vínculo y clave de agrupación: los
+     vínculos dirigidos a los dos miembros de una pareja
+     comparten clave y se dibujan como una sola línea. */
+  const infoDe = new Map();
   for (const v of hijos) {
-    let origen = null;
-    const vinculoPareja = genograma.vinculos.find((w) => w.id === v.de && w.tipo !== "hijo");
-    if (vinculoPareja) {
-      const pareja = geometriaDePareja(genograma, vinculoPareja);
-      origen = pareja ? pareja.medio : null;
-    } else {
-      const progenitor = personaDe(genograma, v.de);
-      origen = progenitor ? { x: progenitor.x, y: progenitor.y + NODO.radio } : null;
+    const vinculoParejaDirecto = genograma.vinculos.find((w) => w.id === v.de && w.tipo !== "hijo");
+    if (vinculoParejaDirecto) {
+      const pareja = geometriaDePareja(genograma, vinculoParejaDirecto);
+      if (pareja) infoDe.set(v.id, { origen: pareja.medio, clave: `v:${vinculoParejaDirecto.id}` });
+      continue;
     }
-    origenDe.set(v.id, origen);
+    const progenitor = personaDe(genograma, v.de);
+    if (!progenitor) continue;
+    const conOtroProgenitor = hijos.find((w) => w !== v && w.a === v.a && w.de !== v.de);
+    const parejaProgenitores = conOtroProgenitor
+      ? genograma.vinculos.find(
+          (c) =>
+            c.tipo !== "hijo" &&
+            ((c.de === v.de && c.a === conOtroProgenitor.de) || (c.de === conOtroProgenitor.de && c.a === v.de))
+        )
+      : null;
+    if (parejaProgenitores) {
+      const pareja = geometriaDePareja(genograma, parejaProgenitores);
+      if (pareja) infoDe.set(v.id, { origen: pareja.medio, clave: `v:${parejaProgenitores.id}` });
+      continue;
+    }
+    infoDe.set(v.id, { origen: { x: progenitor.x, y: progenitor.y + NODO.radio }, clave: `p:${v.de}` });
   }
 
-  /* Un hijo con varios progenitores reparte los puntos de
-     llegada sobre su techo, de izquierda a derecha según el
-     lado de cada origen. */
-  const origenesPorHijo = new Map();
+  /* Reparto de llegadas por hijo: los orígenes distintos se
+     ordenan por su x; cada uno recibe un desplazamiento lateral
+     y una altura de codo propia. */
+  const desvioDeClave = new Map();
+  const codoDeClave = new Map();
+  const clavesPorHijo = new Map();
   for (const v of hijos) {
-    if (!origenDe.get(v.id)) continue;
-    const lista = origenesPorHijo.get(v.a) ?? [];
-    lista.push(v);
-    origenesPorHijo.set(v.a, lista);
+    const info = infoDe.get(v.id);
+    if (!info) continue;
+    const lista = clavesPorHijo.get(v.a) ?? [];
+    if (!lista.some((e) => e.clave === info.clave)) lista.push(info);
+    clavesPorHijo.set(v.a, lista);
   }
-  const desvioDe = new Map();
-  for (const lista of origenesPorHijo.values()) {
-    lista
-      .slice()
-      .sort((a, b) => origenDe.get(a.id).x - origenDe.get(b.id).x)
-      .forEach((v, i, orden) => desvioDe.set(v.id, (i - (orden.length - 1) / 2) * 12));
+  for (const [hijoId, lista] of clavesPorHijo) {
+    const orden = lista.slice().sort((a, b) => a.origen.x - b.origen.x);
+    orden.forEach((e, i) => {
+      desvioDeClave.set(`${hijoId}|${e.clave}`, (i - (orden.length - 1) / 2) * 12);
+      codoDeClave.set(`${hijoId}|${e.clave}`, (i - (orden.length - 1) / 2) * 14);
+    });
   }
 
-  /* Agrupa los hijos por origen para compartir tallo y guía. */
+  /* Agrupa los vínculos por origen efectivo. */
   const porOrigen = new Map();
   for (const v of hijos) {
-    if (!origenDe.get(v.id)) continue;
-    const lista = porOrigen.get(v.de) ?? [];
-    lista.push(v);
-    porOrigen.set(v.de, lista);
+    const info = infoDe.get(v.id);
+    if (!info) continue;
+    const lista = porOrigen.get(info.clave) ?? [];
+    lista.push({ v, clave: info.clave, origen: info.origen });
+    porOrigen.set(info.clave, lista);
   }
 
   for (const lista of porOrigen.values()) {
-    const origen = origenDe.get(lista[0].id);
+    const origen = lista[0].origen;
     const conTecho = [];
-    for (const v of lista) {
+    for (const { v, clave } of lista) {
       const hijo = personaDe(genograma, v.a);
       if (!hijo) continue;
-      const llegada = { x: hijo.x + (desvioDe.get(v.id) ?? 0), y: hijo.y - NODO.radio };
+      const llegada = { x: hijo.x + (desvioDeClave.get(`${v.a}|${clave}`) ?? 0), y: hijo.y - NODO.radio };
       if (llegada.y <= origen.y + 6) {
         /* Hijo al nivel del origen o encima: línea directa
            borde a borde, sin tallo ni guía. */
@@ -651,14 +750,25 @@ export function rutasDeDescendencia(genograma) {
           recorrido: [origen, puntoBorde(hijo, origen.x - hijo.x, origen.y - hijo.y)],
         });
       } else {
-        conTecho.push({ v, llegada });
+        conTecho.push({ v, clave, llegada });
       }
     }
     if (conTecho.length === 0) continue;
 
-    if (conTecho.length === 1) {
-      const { v, llegada } = conTecho[0];
-      const yCodo = (origen.y + llegada.y) / 2;
+    /* Vínculos distintos que llegan al mismo punto (los dos
+       progenitores de una misma pareja): una sola línea. */
+    const vistos = new Set();
+    const unicos = [];
+    for (const e of conTecho) {
+      const marca = `${e.v.a}|${e.llegada.x}`;
+      if (vistos.has(marca)) continue;
+      vistos.add(marca);
+      unicos.push(e);
+    }
+
+    if (unicos.length === 1) {
+      const { v, clave, llegada } = unicos[0];
+      const yCodo = (origen.y + llegada.y) / 2 + (codoDeClave.get(`${v.a}|${clave}`) ?? 0);
       rutas.push({
         id: v.id,
         clave: v.id,
@@ -667,11 +777,11 @@ export function rutasDeDescendencia(genograma) {
       continue;
     }
 
-    const yBus = Math.min(...conTecho.map(({ llegada }) => llegada.y)) - 16;
+    const yBus = Math.min(...unicos.map(({ llegada }) => llegada.y)) - 16;
     if (yBus <= origen.y + 12) {
       // Sin espacio para la guía compartida: codos individuales.
-      for (const { v, llegada } of conTecho) {
-        const yCodo = (origen.y + llegada.y) / 2;
+      for (const { v, clave, llegada } of unicos) {
+        const yCodo = (origen.y + llegada.y) / 2 + (codoDeClave.get(`${v.a}|${clave}`) ?? 0);
         rutas.push({
           id: v.id,
           clave: v.id,
@@ -683,26 +793,26 @@ export function rutasDeDescendencia(genograma) {
 
     /* Guía compartida: el tallo baja del origen y la línea
        horizontal corre hacia los hijos de cada lado. */
-    const claveGuia = `${lista[0].id}-guia`;
-    const izquierda = conTecho.filter(({ llegada }) => llegada.x < origen.x - 0.5);
-    const derecha = conTecho.filter(({ llegada }) => llegada.x > origen.x + 0.5);
+    const claveGuia = `${lista[0].v.id}-guia`;
+    const izquierda = unicos.filter(({ llegada }) => llegada.x < origen.x - 0.5);
+    const derecha = unicos.filter(({ llegada }) => llegada.x > origen.x + 0.5);
     if (izquierda.length > 0 || derecha.length > 0) {
       if (izquierda.length > 0) {
         const xLejano = Math.min(...izquierda.map(({ llegada }) => llegada.x));
-        rutas.push({ id: lista[0].id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }, { x: xLejano, y: yBus }] });
+        rutas.push({ id: lista[0].v.id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }, { x: xLejano, y: yBus }] });
       }
       if (derecha.length > 0) {
         const xLejano = Math.max(...derecha.map(({ llegada }) => llegada.x));
         rutas.push({
-          id: lista[0].id,
+          id: lista[0].v.id,
           clave: izquierda.length > 0 ? `${claveGuia}-d` : claveGuia,
           recorrido: [origen, { x: origen.x, y: yBus }, { x: xLejano, y: yBus }],
         });
       }
     } else {
-      rutas.push({ id: lista[0].id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }] });
+      rutas.push({ id: lista[0].v.id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }] });
     }
-    for (const { v, llegada } of conTecho) {
+    for (const { v, llegada } of unicos) {
       rutas.push({ id: v.id, clave: `${v.id}-caida`, recorrido: [{ x: llegada.x, y: yBus }, llegada] });
     }
   }
