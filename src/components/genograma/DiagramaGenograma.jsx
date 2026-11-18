@@ -123,13 +123,19 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           <line x1={x - r * 0.72} y1={y + r * 0.72} x2={x + r * 0.72} y2={y - r * 0.72} />
         </g>
       )}
-      {!persona.fallecido && persona.edad?.toString().trim() && (
+      {/* Edad: dentro de la figura, también en los fallecidos
+          (con halo blanco para leerla sobre la X). */}
+      {persona.edad?.toString().trim() && (
         <text
           x={x}
           y={y + 4.5}
           textAnchor="middle"
           fontSize="12"
           fill={TINTES.etiqueta}
+          stroke={persona.fallecido ? "#ffffff" : undefined}
+          strokeWidth={persona.fallecido ? 3.5 : undefined}
+          paintOrder={persona.fallecido ? "stroke" : undefined}
+          strokeLinejoin="round"
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
           {persona.edad}

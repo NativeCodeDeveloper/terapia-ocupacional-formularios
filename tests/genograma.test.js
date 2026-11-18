@@ -129,14 +129,15 @@ test("conexionAgregada evita duplicados y reemplazos según el tipo", () => {
   assert.equal(delPar(g), 1);
   assert.equal(g.relaciones.find((r) => (r.de === padre.id && r.a === madre.id) || (r.de === madre.id && r.a === padre.id)).tipo, "distante");
 
-  // El hijo ya desciende de la línea de pareja: vincularlo a un
-  // miembro de esa pareja es redundante y no agrega vínculos.
+  // Descender de la pareja y de un miembro por separado son
+  // conexiones independientes: se acumulan.
   const hijo = g.personas.find((p) => p.nombre === "Tomás Rojas");
   const descendenciasAntes = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length;
   g = conexionAgregada(g, "hijo", madre.id, hijo.id);
-  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes);
-  g = conexionAgregada(g, "hijo", padre.id, hijo.id);
-  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes + 1);
+  // El mismo origen dos veces no se duplica.
+  g = conexionAgregada(g, "hijo", madre.id, hijo.id);
+  assert.equal(g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, descendenciasAntes + 1);
 });
 
 test("conexionAgregada ignora conexiones imposibles", () => {
@@ -318,7 +319,7 @@ test("envolverTexto parte las etiquetas largas y recorta con puntos suspensivos"
   assert.deepEqual(envolverTexto("   ", 26, 3), []);
 });
 
-test("los hijos de una pareja cuelgan de una sola línea continua", () => {
+test("un hijo puede quedar conectado a los dos progenitores a la vez", () => {
   let g = nuevaPersona(
     nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
     "hombre",
@@ -329,24 +330,23 @@ test("los hijos de una pareja cuelgan de una sola línea continua", () => {
   g = personaActualizada(g, maria.id, { nombre: "María" });
   g = personaActualizada(g, hijo.id, { nombre: "Hijo común" });
   g = conexionAgregada(g, "union", jose.id, maria.id);
-  const parejaId = g.vinculos[0].id;
   g = conexionAgregada(g, "hijo", jose.id, hijo.id);
   g = conexionAgregada(g, "hijo", maria.id, hijo.id);
 
-  // La descendencia se canonicaliza a la línea de pareja.
+  // Ambas conexiones se guardan.
   const descendencias = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
-  assert.equal(descendencias.length, 1);
-  assert.equal(descendencias[0].de, parejaId);
+  assert.equal(descendencias.length, 2);
 
-  // Una sola ruta, desde el punto medio de la pareja hasta el hijo.
+  // Y se dibujan las dos, sin pisarse: puntos de llegada
+  // distintos sobre el techo y codos a alturas distintas.
   const rutas = rutasDeDescendencia(g);
-  assert.equal(rutas.length, 1);
-  const pareja = geometriaDePareja(g, g.vinculos[0]);
-  assert.deepEqual(rutas[0].recorrido[0], pareja.medio);
-  assert.deepEqual(rutas[0].recorrido[rutas[0].recorrido.length - 1], { x: hijo.x, y: hijo.y - 20 });
+  assert.equal(rutas.length, 2);
+  const xs = rutas.map((r) => r.recorrido[r.recorrido.length - 1].x).sort((a, b) => a - b);
+  assert.equal(xs[0] < hijo.x && xs[1] > hijo.x, true);
+  assert.notEqual(rutas[0].recorrido[1].y, rutas[1].recorrido[1].y);
 });
 
-test("datos guardados con vínculos directos a ambos progenitores se dibujan como una línea", () => {
+test("los datos con vínculos a ambos progenitores se conservan y dibujan separados", () => {
   let g = nuevaPersona(
     nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
     "hombre",
@@ -354,8 +354,7 @@ test("datos guardados con vínculos directos a ambos progenitores se dibujan com
   );
   const [jose, maria, hijo] = g.personas;
   g = conexionAgregada(g, "union", jose.id, maria.id);
-  const parejaId = g.vinculos[0].id;
-  // Datos legados: dos vínculos persona a persona sin canonicalizar.
+  // Datos guardados con dos vínculos persona a persona.
   g = {
     ...g,
     vinculos: [
@@ -365,16 +364,15 @@ test("datos guardados con vínculos directos a ambos progenitores se dibujan com
     ],
   };
 
-  // Al normalizar se canonicaliza a la línea de pareja.
+  // La normalización los conserva tal cual.
   const reparado = normalizarGenograma(g);
-  const descendencias = reparado.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
-  assert.equal(descendencias.length, 1);
-  assert.equal(descendencias[0].de, parejaId);
+  assert.equal(reparado.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
 
-  // Y aunque no se normalice, el dibujo es una sola línea.
+  // Y el dibujo produce una línea por progenitor.
   const rutas = rutasDeDescendencia(g);
-  assert.equal(rutas.length, 1);
-  assert.deepEqual(rutas[0].recorrido[rutas[0].recorrido.length - 1], { x: hijo.x, y: hijo.y - 20 });
+  assert.equal(rutas.length, 2);
+  const xs = rutas.map((r) => r.recorrido[r.recorrido.length - 1].x).sort((a, b) => a - b);
+  assert.equal(xs[0] < hijo.x && xs[1] > hijo.x, true);
 });
 
 test("las patologías principales se guardan y aparecen en la tabla", () => {

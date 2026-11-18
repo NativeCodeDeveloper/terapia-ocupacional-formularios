@@ -199,48 +199,12 @@ export function conexionAgregada(genograma, tipo, de, a) {
   if (!origenValido) return genograma;
 
   if (esHijo) {
-    /* Varios progenitores para un mismo hijo (hijo de José y
-       de María): solo se evita el duplicado exacto. Cuando los
-       dos progenitores forman pareja, la descendencia se
-       canonicaliza a una sola línea desde la línea de pareja. */
-    const parejaOrigen = genograma.vinculos.find((v) => v.id === de && v.tipo !== "hijo");
-    if (parejaOrigen) {
-      if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
-      // Los vínculos directos a los miembros de esta pareja que
-      // existieran antes quedan absorbidos por la línea común.
-      const miembros = [parejaOrigen.de, parejaOrigen.a];
-      const restantes = genograma.vinculos.filter(
-        (v) => !(v.tipo === "hijo" && v.a === a && miembros.includes(v.de))
-      );
-      return { ...genograma, vinculos: [...restantes, { id: nuevoId("v"), tipo, de, a }] };
-    }
+    /* Un hijo puede quedar conectado a varias personas a la vez
+       (hijo del padre y de la madre, aunque formen pareja):
+       cada conexión es una línea propia; solo se evita duplicar
+       exactamente el mismo origen. */
     if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
-    // Redundante: el hijo ya desciende de una pareja que incluye a este progenitor.
-    const yaPorPareja = genograma.vinculos.some((w) => {
-      if (w.tipo !== "hijo" || w.a !== a) return false;
-      const c = genograma.vinculos.find((x) => x.id === w.de && x.tipo !== "hijo");
-      return Boolean(c && (c.de === de || c.a === de));
-    });
-    if (yaPorPareja) return genograma;
-    const agregada = { ...genograma, vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a }] };
-    const parejaDe = (idA, idB) =>
-      agregada.vinculos.find(
-        (c) => c.tipo !== "hijo" && ((c.de === idA && c.a === idB) || (c.de === idB && c.a === idA))
-      );
-    const otroProgenitor = agregada.vinculos.find(
-      (w) => w.tipo === "hijo" && w.a === a && w.de !== de && parejaDe(de, w.de)
-    );
-    if (!otroProgenitor) return agregada;
-    const pareja = parejaDe(de, otroProgenitor.de);
-    return {
-      ...genograma,
-      vinculos: [
-        ...agregada.vinculos.filter(
-          (w) => !(w.tipo === "hijo" && w.a === a && (w.de === de || w.de === otroProgenitor.de))
-        ),
-        { id: nuevoId("v"), tipo: "hijo", de: pareja.id, a },
-      ],
-    };
+    return { ...genograma, vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a }] };
   }
   if (esRelacion) {
     const nueva = { id: nuevoId("r"), tipo, de, a };
@@ -344,37 +308,10 @@ export function normalizarGenograma(datos) {
         ids.has(r.a)
     )
     .map((r) => ({ id: texto(r.id) || nuevoId("r"), tipo: r.tipo, de: r.de, a: r.a }));
-  /* Canonicaliza la descendencia: si un hijo queda con vínculos
-     directos a los dos miembros de una pareja, se reemplazan
-     por una sola línea desde la pareja. */
-  const canonicalizados = [];
-  const usados = new Set();
-  for (const v of vinculos) {
-    if (usados.has(v.id)) continue;
-    if (v.tipo === "hijo") {
-      const otro = vinculos.find(
-        (w) => w.tipo === "hijo" && w.a === v.a && w.de !== v.de && !usados.has(w.id)
-      );
-      const pareja = otro
-        ? vinculos.find(
-            (c) =>
-              c.tipo !== "hijo" &&
-              ((c.de === v.de && c.a === otro.de) || (c.de === otro.de && c.a === v.de))
-          )
-        : null;
-      if (pareja) {
-        usados.add(v.id);
-        usados.add(otro.id);
-        canonicalizados.push({ id: v.id, tipo: "hijo", de: pareja.id, a: v.a });
-        continue;
-      }
-    }
-    canonicalizados.push(v);
-  }
   return {
     version: 1,
     personas,
-    vinculos: canonicalizados,
+    vinculos,
     relaciones,
     grupos: (Array.isArray(base.grupos) ? base.grupos : [])
       .filter((g) => g && typeof g === "object")
@@ -789,16 +726,13 @@ export function geometriaDePareja(genograma, vinculo) {
 /* Recorridos dibujables de toda la descendencia. Los hijos
    que comparten origen (una pareja o un progenitor) cuelgan de
    una misma guía: un solo tallo baja del origen hasta una
-   línea horizontal y de ahí cae una línea por hijo. Si los dos
-   progenitores de un hijo forman pareja entre sí —aunque el
-   vínculo se haya registrado persona a persona— la
-   descendencia se dibuja como una sola línea que sale del
-   punto medio de la pareja. Un hijo con varios orígenes
-   independientes recibe una caída por origen, con puntos de
-   llegada repartidos sobre su borde superior y codos a alturas
-   distintas. Devuelve { id, clave, recorrido } — `id` es el
-   vínculo al que pertenece la ruta (para selección) y `clave`
-   identifica cada tramo dibujado. */
+   línea horizontal y de ahí cae una línea por hijo. Un hijo
+   conectado a varios progenitores recibe una caída por
+   progenitor, con puntos de llegada repartidos sobre su borde
+   superior y codos y guías a alturas distintas, para que las
+   líneas no se pisen. Devuelve { id, clave, recorrido } —
+   `id` es el vínculo al que pertenece la ruta (para selección)
+   y `clave` identifica cada tramo dibujado. */
 export function rutasDeDescendencia(genograma) {
   const rutas = [];
   const hijos = genograma.vinculos.filter((v) => v.tipo === "hijo");
@@ -817,19 +751,8 @@ export function rutasDeDescendencia(genograma) {
     }
     const progenitor = personaDe(genograma, v.de);
     if (!progenitor) continue;
-    const conOtroProgenitor = hijos.find((w) => w !== v && w.a === v.a && w.de !== v.de);
-    const parejaProgenitores = conOtroProgenitor
-      ? genograma.vinculos.find(
-          (c) =>
-            c.tipo !== "hijo" &&
-            ((c.de === v.de && c.a === conOtroProgenitor.de) || (c.de === conOtroProgenitor.de && c.a === v.de))
-        )
-      : null;
-    if (parejaProgenitores) {
-      const pareja = geometriaDePareja(genograma, parejaProgenitores);
-      if (pareja) infoDe.set(v.id, { origen: pareja.medio, clave: `v:${parejaProgenitores.id}` });
-      continue;
-    }
+    /* Cada progenitor tiene su propia línea, aunque formen
+       pareja entre sí: las caídas se separan al dibujar. */
     infoDe.set(v.id, { origen: { x: progenitor.x, y: progenitor.y + NODO.radio }, clave: `p:${v.de}` });
   }
 
@@ -907,7 +830,12 @@ export function rutasDeDescendencia(genograma) {
       continue;
     }
 
-    const yBus = Math.min(...unicos.map(({ llegada }) => llegada.y)) - 16;
+    /* La guía de cada origen se separa verticalmente de la de
+       otros orígenes que comparten los mismos hijos. */
+    const yBus =
+      Math.min(...unicos.map(({ llegada }) => llegada.y)) -
+      16 +
+      (codoDeClave.get(`${unicos[0].v.a}|${unicos[0].clave}`) ?? 0);
     if (yBus <= origen.y + 12) {
       // Sin espacio para la guía compartida: codos individuales.
       for (const { v, clave, llegada } of unicos) {

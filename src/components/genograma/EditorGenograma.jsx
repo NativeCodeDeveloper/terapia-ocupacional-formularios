@@ -58,7 +58,7 @@ const PASOS_GUIA = [
   ["Ubica a las personas", "arrastra cada figura: deja arriba a los padres y abajo a los hijos."],
   [
     "Conecta con vínculos",
-    "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo descienda de dos personas —p. ej., de José y de María— conecta con cada progenitor; si forman pareja entre sí, la descendencia se dibuja como una sola línea desde la pareja.",
+    "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
   ],
   ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno punteado que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
   ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla."],
@@ -382,55 +382,19 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
             />
           </div>
 
-          {/* Ayuda contextual y menú de conexión */}
+          {/* Ayuda contextual bajo el lienzo */}
           <div className="mt-2 min-h-8 text-[13px] text-neutral-500">
         {menu ? (
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
-            <p className="text-[13px] font-medium text-indigo-900">
-              {nombreDe(menu.de)} <span aria-hidden="true">→</span> {nombreDe(menu.a)} — ¿qué vínculo quieres crear?
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {OPCIONES_PAREJA.map((t) => (
-                <button key={t.valor} type="button" onClick={() => elegirTipo(t.valor)} className={BOTON_NEUTRO}>
-                  {t.etiqueta}
-                </button>
-              ))}
-              <button type="button" onClick={() => elegirTipo("hijo")} className={BOTON_NEUTRO}>
-                «{nombreDe(menu.a)}» es hijo/a de «{nombreDe(menu.de)}»
-              </button>
-              <button
-                type="button"
-                onClick={() => setMenu({ de: menu.a, a: menu.de })}
-                className={`${BOTON} border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50`}
-                title="Invertir el sentido de la conexión"
-              >
-                ⇄ Invertir
-              </button>
-              <span aria-hidden="true" className="mx-1 h-6 w-px bg-indigo-200" />
-              {TIPOS_RELACION.map((t) => (
-                <button
-                  key={t.valor}
-                  type="button"
-                  onClick={() => elegirTipo(t.valor)}
-                  title="El color coincide con la línea que se dibuja"
-                  className={`${BOTON} ${
-                    t.valor === "cercana" || t.valor === "fusion"
-                      ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
-                      : "border-red-200 bg-white text-red-700 hover:bg-red-50"
-                  }`}
-                >
-                  {t.etiqueta}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={cancelarMenu}
-                className={`${BOTON} border-transparent text-neutral-400 hover:text-neutral-600`}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
+          <p>
+            Elige el vínculo en el panel «Vínculo» de la derecha…{" "}
+            <button
+              type="button"
+              onClick={cancelarMenu}
+              className="text-indigo-600 underline-offset-2 hover:underline"
+            >
+              cancelar
+            </button>
+          </p>
         ) : modoCirculo ? (
           <div className="flex flex-wrap items-center gap-2">
             <p>
@@ -480,6 +444,55 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
         {/* Paneles de edición */}
         <div className="grid min-w-0 items-start gap-3">
+        {/* Menú de conexión, junto al lienzo */}
+        {menu && (
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
+            <p className="text-[13px] font-medium text-indigo-900">
+              {nombreDe(menu.de)} <span aria-hidden="true">→</span> {nombreDe(menu.a)} — ¿qué vínculo quieres crear?
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {OPCIONES_PAREJA.map((t) => (
+                <button key={t.valor} type="button" onClick={() => elegirTipo(t.valor)} className={BOTON_NEUTRO}>
+                  {t.etiqueta}
+                </button>
+              ))}
+              <button type="button" onClick={() => elegirTipo("hijo")} className={BOTON_NEUTRO}>
+                «{nombreDe(menu.a)}» es hijo/a de «{nombreDe(menu.de)}»
+              </button>
+              <button
+                type="button"
+                onClick={() => setMenu({ de: menu.a, a: menu.de })}
+                className={`${BOTON} border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50`}
+                title="Invertir el sentido de la conexión"
+              >
+                ⇄ Invertir
+              </button>
+              <span aria-hidden="true" className="mx-1 h-6 w-px bg-indigo-200" />
+              {TIPOS_RELACION.map((t) => (
+                <button
+                  key={t.valor}
+                  type="button"
+                  onClick={() => elegirTipo(t.valor)}
+                  title="El color coincide con la línea que se dibuja"
+                  className={`${BOTON} ${
+                    t.valor === "cercana" || t.valor === "fusion"
+                      ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+                      : "border-red-200 bg-white text-red-700 hover:bg-red-50"
+                  }`}
+                >
+                  {t.etiqueta}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={cancelarMenu}
+                className={`${BOTON} border-transparent text-neutral-400 hover:text-neutral-600`}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
         {persona && !menu && (
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">

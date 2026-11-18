@@ -73,10 +73,18 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     const d = r * 0.72;
     doc.line(cx - d, cy - d, cx + d, cy + d);
     doc.line(cx - d, cy + d, cx + d, cy - d);
-  } else if (persona.edad?.toString().trim()) {
+  }
+  if (persona.edad?.toString().trim()) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9 * Math.max(escala, 0.75));
     doc.setTextColor(...TRAZO);
+    if (persona.fallecido) {
+      // Franja blanca tras la edad para leerla sobre la X.
+      const ancho = doc.getTextWidth(persona.edad.toString()) + 3 * escala;
+      const alto = 8 * escala;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(cx - ancho / 2, cy + 3.5 * escala - 6.5 * escala, ancho, alto, "F");
+    }
     doc.text(persona.edad.toString(), cx, cy + 3.5 * Math.max(escala, 0.75), { align: "center" });
   }
 
