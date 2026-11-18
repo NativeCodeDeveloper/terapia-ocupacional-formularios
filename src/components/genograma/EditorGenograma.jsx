@@ -7,7 +7,6 @@ import {
   SIMBOLOS_PERSONA,
   TIPOS_RELACION,
   TIPOS_VINCULO,
-  alinearGeneraciones,
   cambiarTipoConexion,
   conexionAgregada,
   conexionEliminada,
@@ -19,6 +18,7 @@ import {
   guardarEnBiblioteca,
   nuevoId,
   normalizarGenograma,
+  organizarGenograma,
   nuevaPersona,
   personaActualizada,
   personaEliminada,
@@ -59,7 +59,7 @@ function borradorInicialVacio(valor) {
 /* Pasos de la guía de uso del editor. */
 const PASOS_GUIA = [
   ["Agrega a cada integrante", "usa los botones «+ Hombre», «+ Mujer» o «+ Otro»; cada figura aparece en el lienzo."],
-  ["Ubica a las personas", "arrastra cada figura: deja arriba a los padres y abajo a los hijos."],
+  ["Ubica a las personas", "arrastra cada figura (padres arriba, hijos abajo) o pulsa «Ordenar»: el editor acomoda una fila por generación con los hijos centrados bajo su pareja."],
   [
     "Conecta con vínculos",
     "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
@@ -407,13 +407,13 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         <button
           type="button"
           onClick={() => {
-            setBorrador((prev) => alinearGeneraciones(prev));
-            setAviso("Figuras alineadas: parejas y hermanos comparten altura.");
+            setBorrador((prev) => organizarGenograma(prev));
+            setAviso("Genograma ordenado: una fila por generación y hijos centrados bajo su pareja.");
           }}
           className={BOTON_NEUTRO}
-          title="Pareja y hermanos quedan en filas parejas (no mueve horizontalmente)"
+          title="Ordena por generaciones: parejas comparten altura y los hijos quedan centrados bajo su pareja o progenitor"
         >
-          Alinear
+          Ordenar
         </button>
         <button
           type="button"
@@ -584,7 +584,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   className={CONTROL}
                 />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <p className={ETIQUETA_CAMPO}>Sexo</p>
                 <div className="flex gap-1.5">
                   {SEXOS.map((s) => (
@@ -604,7 +604,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   ))}
                 </div>
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label htmlFor="genograma-edad" className={ETIQUETA_CAMPO}>Edad</label>
                 <input
                   id="genograma-edad"

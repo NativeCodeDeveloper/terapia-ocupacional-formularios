@@ -6,7 +6,6 @@ import path from "node:path";
 import {
   TIPOS_RELACION,
   TIPOS_VINCULO,
-  alinearGeneraciones,
   conexionAgregada,
   conexionEliminada,
   copiarParaEvaluacion,
@@ -26,6 +25,7 @@ import {
   listaDeAbreviaturas,
   normalizarGenograma,
   nuevaPersona,
+  organizarGenograma,
   personaActualizada,
   personaEliminada,
   personaIndicada,
@@ -323,7 +323,7 @@ test("envolverTexto parte las etiquetas largas y recorta con puntos suspensivos"
   assert.deepEqual(envolverTexto("   ", 26, 3), []);
 });
 
-test("un hijo puede quedar conectado a los dos progenitores a la vez", () => {
+test("el hijo de una pareja cuelga de una sola línea desde el punto medio", () => {
   let g = nuevaPersona(
     nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
     "hombre",
@@ -334,23 +334,24 @@ test("un hijo puede quedar conectado a los dos progenitores a la vez", () => {
   g = personaActualizada(g, maria.id, { nombre: "María" });
   g = personaActualizada(g, hijo.id, { nombre: "Hijo común" });
   g = conexionAgregada(g, "union", jose.id, maria.id);
+  const parejaId = g.vinculos[0].id;
   g = conexionAgregada(g, "hijo", jose.id, hijo.id);
   g = conexionAgregada(g, "hijo", maria.id, hijo.id);
 
-  // Ambas conexiones se guardan.
-  const descendencias = g.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id);
-  assert.equal(descendencias.length, 2);
+  // Las dos conexiones se unifican en la línea de pareja.
+  const descendencias = g.vinculos.filter((v) => esDescendencia(v.tipo) && v.a === hijo.id);
+  assert.equal(descendencias.length, 1);
+  assert.equal(descendencias[0].de, parejaId);
 
-  // Y se dibujan las dos, sin pisarse: puntos de llegada
-  // distintos sobre el techo y codos a alturas distintas.
+  // Una sola ruta: del punto medio de la pareja al hijo.
   const rutas = rutasDeDescendencia(g);
-  assert.equal(rutas.length, 2);
-  const xs = rutas.map((r) => r.recorrido[r.recorrido.length - 1].x).sort((a, b) => a - b);
-  assert.equal(xs[0] < hijo.x && xs[1] > hijo.x, true);
-  assert.notEqual(rutas[0].recorrido[1].y, rutas[1].recorrido[1].y);
+  assert.equal(rutas.length, 1);
+  const pareja = geometriaDePareja(g, g.vinculos[0]);
+  assert.deepEqual(rutas[0].recorrido[0], pareja.medio);
+  assert.deepEqual(rutas[0].recorrido[rutas[0].recorrido.length - 1], { x: hijo.x, y: hijo.y - 20 });
 });
 
-test("los datos con vínculos a ambos progenitores se conservan y dibujan separados", () => {
+test("datos antiguos con vínculos a ambos progenitores se dibujan como una línea", () => {
   let g = nuevaPersona(
     nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
     "hombre",
@@ -368,15 +369,11 @@ test("los datos con vínculos a ambos progenitores se conservan y dibujan separa
     ],
   };
 
-  // La normalización los conserva tal cual.
-  const reparado = normalizarGenograma(g);
-  assert.equal(reparado.vinculos.filter((v) => v.tipo === "hijo" && v.a === hijo.id).length, 2);
-
-  // Y el dibujo produce una línea por progenitor.
+  // El dibujo los unifica: una sola descendencia desde la pareja.
   const rutas = rutasDeDescendencia(g);
-  assert.equal(rutas.length, 2);
-  const xs = rutas.map((r) => r.recorrido[r.recorrido.length - 1].x).sort((a, b) => a - b);
-  assert.equal(xs[0] < hijo.x && xs[1] > hijo.x, true);
+  assert.equal(rutas.length, 1);
+  const pareja = geometriaDePareja(g, g.vinculos[0]);
+  assert.deepEqual(rutas[0].recorrido[0], pareja.medio);
 });
 
 test("las patologías principales se guardan y aparecen en la tabla", () => {
@@ -448,20 +445,32 @@ test("gemelos, adoptado y alineado: parto múltiple, etiquetas y filas parejas",
   // Sin caídas individuales para las gemelas.
   assert.equal(rutasDeDescendencia(gemelos).filter((r) => r.clave.endsWith("-caida")).length, 0);
 
-  // Alinear: la pareja comparte altura y también los hermanos.
+  // Ordenar: una fila por generación y hijos centrados bajo la pareja.
   let familia = nuevaPersona(
     nuevaPersona(nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 170 }), "hombre", { x: 240, y: 360 }),
     "mujer",
     { x: 320, y: 320 }
   );
   const [p2, m2, h2a, h2b] = familia.personas;
+  familia = personaActualizada(familia, p2.id, { nombre: "P2" });
+  familia = personaActualizada(familia, m2.id, { nombre: "M2" });
+  familia = personaActualizada(familia, h2a.id, { nombre: "Ha" });
+  familia = personaActualizada(familia, h2b.id, { nombre: "Hb" });
   familia = conexionAgregada(familia, "union", p2.id, m2.id);
-  familia = conexionAgregada(familia, "hijo", p2.id, h2a.id);
-  familia = conexionAgregada(familia, "hijo", p2.id, h2b.id);
-  const alineado = alinearGeneraciones(familia);
-  const yDe = (id) => alineado.personas.find((p) => p.id === id).y;
-  assert.equal(yDe(p2.id), yDe(m2.id));
-  assert.equal(yDe(h2a.id), yDe(h2b.id));
+  const parejaFamiliar = familia.vinculos.find((v) => !esDescendencia(v.tipo)).id;
+  familia = conexionAgregada(familia, "hijo", parejaFamiliar, h2a.id);
+  familia = conexionAgregada(familia, "hijo", parejaFamiliar, h2b.id);
+  const ordenado = organizarGenograma(familia);
+  const de = (nombre) => ordenado.personas.find((p) => p.nombre === nombre);
+  // La pareja comparte altura; los hijos también.
+  assert.equal(de("P2").y, de("M2").y);
+  assert.equal(de("Ha").y, de("Hb").y);
+  // Una fila por generación.
+  assert.notEqual(de("P2").y, de("Ha").y);
+  // Los hijos quedan centrados bajo el punto medio de la pareja.
+  const centroPareja = (de("P2").x + de("M2").x) / 2;
+  const centroHijos = (de("Ha").x + de("Hb").x) / 2;
+  assert.equal(Math.round(centroHijos), Math.round(centroPareja));
 
   // Símbolos especiales se normalizan; los inválidos quedan vacíos.
   const reparado = normalizarGenograma({

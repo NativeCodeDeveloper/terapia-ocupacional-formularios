@@ -217,13 +217,43 @@ export function conexionAgregada(genograma, tipo, de, a) {
 
   if (esHijo) {
     /* Un hijo puede quedar conectado a varias personas a la vez
-       (hijo del padre y de la madre, aunque formen pareja):
-       cada conexión es una línea propia; solo se evita duplicar
-       exactamente el mismo origen. */
+       (padres no emparentados, u otros familiares). Cuando los
+       dos progenitores forman pareja, la descendencia se unifica
+       en una sola línea que sale del punto medio de la pareja,
+       como marca la pauta. */
+    const parejaOrigen = genograma.vinculos.find((v) => v.id === de && !esDescendencia(v.tipo));
+    if (parejaOrigen) {
+      if (genograma.vinculos.some((v) => esDescendencia(v.tipo) && v.de === de && v.a === a)) return genograma;
+      // Vínculos directos a los miembros de esta pareja que
+      // existieran antes quedan absorbidos por la línea común.
+      const miembros = [parejaOrigen.de, parejaOrigen.a];
+      const restantes = genograma.vinculos.filter(
+        (v) => !(esDescendencia(v.tipo) && v.a === a && miembros.includes(v.de))
+      );
+      return { ...genograma, vinculos: [...restantes, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }] };
+    }
     if (genograma.vinculos.some((v) => esDescendencia(v.tipo) && v.de === de && v.a === a)) return genograma;
-    return {
+    const agregada = {
       ...genograma,
       vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
+    };
+    const parejaDe = (idA, idB) =>
+      agregada.vinculos.find(
+        (c) => !esDescendencia(c.tipo) && ((c.de === idA && c.a === idB) || (c.de === idB && c.a === idA))
+      );
+    const otroProgenitor = agregada.vinculos.find(
+      (w) => esDescendencia(w.tipo) && w.a === a && w.de !== de && parejaDe(de, w.de)
+    );
+    if (!otroProgenitor) return agregada;
+    const pareja = parejaDe(de, otroProgenitor.de);
+    return {
+      ...genograma,
+      vinculos: [
+        ...agregada.vinculos.filter(
+          (w) => !(esDescendencia(w.tipo) && w.a === a && (w.de === de || w.de === otroProgenitor.de))
+        ),
+        { id: nuevoId("v"), tipo, de: pareja.id, a, gemelar: "", identicos: false },
+      ],
     };
   }
   if (esRelacion) {
@@ -802,8 +832,24 @@ export function rutasDeDescendencia(genograma) {
     }
     const progenitor = personaDe(genograma, v.de);
     if (!progenitor) continue;
-    /* Cada progenitor tiene su propia línea, aunque formen
-       pareja entre sí: las caídas se separan al dibujar. */
+    /* Si los dos progenitores del mismo hijo forman pareja
+       entre sí (vínculos persona a persona de datos antiguos),
+       ambos comparten el punto medio de la línea de pareja. */
+    const conOtroProgenitor = hijos.find((w) => w !== v && w.a === v.a && w.de !== v.de);
+    const parejaProgenitores = conOtroProgenitor
+      ? genograma.vinculos.find(
+          (c) =>
+            !esDescendencia(c.tipo) &&
+            ((c.de === v.de && c.a === conOtroProgenitor.de) || (c.de === conOtroProgenitor.de && c.a === v.de))
+        )
+      : null;
+    if (parejaProgenitores) {
+      const pareja = geometriaDePareja(genograma, parejaProgenitores);
+      if (pareja) {
+        infoDe.set(v.id, { origen: pareja.medio, clave: `v:${parejaProgenitores.id}` });
+        continue;
+      }
+    }
     infoDe.set(v.id, { origen: { x: progenitor.x, y: progenitor.y + NODO.radio }, clave: `p:${v.de}` });
   }
 
@@ -965,42 +1011,112 @@ export function rutasDeDescendencia(genograma) {
   return rutas;
 }
 
-/* Alinea las figuras por generaciones: las parejas comparten
-   altura, los hermanos del mismo origen también, y todo se
-   redondea a múltiplos de 5 para que las filas queden parejas.
-   Solo ajusta `y`; nunca mueve las figuras horizontalmente. */
-export function alinearGeneraciones(genograma) {
-  const alturas = new Map(genograma.personas.map((p) => [p.id, p.y]));
-  const promedio = (ids) => {
-    const valores = ids.map((id) => alturas.get(id)).filter((y) => y != null);
-    if (valores.length === 0) return null;
-    return Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) / 5) * 5;
+/* Organiza el genograma como en la pauta: una fila por
+   generación (parejas compartiendo altura) y los hijos centrados
+   bajo el punto medio de su pareja o progenitor, de modo que la
+   descendencia quede vertical y los hermanos cuelguen de un
+   mismo bus. Respeta el orden izquierda-derecha que ya tenía el
+   dibujo: nunca cruza a una persona por sobre otra. */
+export function organizarGenograma(genograma) {
+  const personas = genograma.personas;
+  if (personas.length === 0) return genograma;
+  const Y_FILA = 170;
+  const Y_INICIO = 90;
+  const SEP_MINIMA = 130;
+
+  /* Nivel de cada persona: los hijos un nivel bajo su origen;
+     las parejas comparten el nivel más alto de ambas. */
+  const niveles = new Map();
+  const calcularNivel = (id, enCurso) => {
+    if (niveles.has(id)) return niveles.get(id);
+    if (enCurso.has(id)) return 0;
+    enCurso.add(id);
+    let nivel = 0;
+    for (const v of genograma.vinculos) {
+      if (!esDescendencia(v.tipo) || v.a !== id) continue;
+      const parejaV = genograma.vinculos.find((w) => w.id === v.de && !esDescendencia(w.tipo));
+      const miembros = parejaV ? [parejaV.de, parejaV.a] : v.de ? [v.de] : [];
+      for (const miembro of miembros) {
+        nivel = Math.max(nivel, calcularNivel(miembro, enCurso) + 1);
+      }
+    }
+    enCurso.delete(id);
+    niveles.set(id, nivel);
+    return nivel;
   };
-  // Parejas alineadas a la misma altura.
+  personas.forEach((p) => calcularNivel(p.id, new Set()));
   for (const v of genograma.vinculos) {
     if (esDescendencia(v.tipo)) continue;
-    const y = promedio([v.de, v.a]);
-    if (y != null) {
-      alturas.set(v.de, y);
-      alturas.set(v.a, y);
+    const nivel = Math.max(niveles.get(v.de) ?? 0, niveles.get(v.a) ?? 0);
+    niveles.set(v.de, nivel);
+    niveles.set(v.a, nivel);
+  }
+
+  const pos = new Map(personas.map((p) => [p.id, { x: p.x, y: p.y }]));
+  const maxNivel = Math.max(...niveles.values());
+
+  const centrarHijos = (miembrosOrigen, hijosIds, nivelHijos) => {
+    const hijos = [...new Set(hijosIds)].filter((id) => niveles.get(id) === nivelHijos);
+    if (hijos.length === 0) return;
+    const centros = miembrosOrigen.map((id) => pos.get(id)?.x).filter((x) => x != null);
+    if (centros.length === 0) return;
+    const centro = centros.reduce((a, b) => a + b, 0) / centros.length;
+    const orden = [...hijos].sort((a, b) => pos.get(a).x - pos.get(b).x);
+    const inicio = centro - ((orden.length - 1) * SEP_MINIMA) / 2;
+    orden.forEach((id, i) => {
+      const actual = pos.get(id);
+      pos.set(id, { x: Math.round((inicio + i * SEP_MINIMA) / 5) * 5, y: actual.y });
+    });
+  };
+
+  for (let nivel = 0; nivel <= maxNivel; nivel++) {
+    // Altura común de la fila.
+    for (const p of personas) {
+      if (niveles.get(p.id) === nivel) pos.get(p.id).y = Y_INICIO + nivel * Y_FILA;
+    }
+    // Hijos centrados bajo parejas de este nivel (línea canónica)…
+    for (const v of genograma.vinculos) {
+      if (esDescendencia(v.tipo)) continue;
+      if ((niveles.get(v.de) ?? 0) !== nivel || (niveles.get(v.a) ?? 0) !== nivel) continue;
+      const hijos = genograma.vinculos.filter((w) => esDescendencia(w.tipo) && w.de === v.id).map((w) => w.a);
+      centrarHijos([v.de, v.a], hijos, nivel + 1);
+    }
+    // …y bajo personas de este nivel con descendencia directa.
+    // Si los dos progenitores forman pareja y ambos están
+    // conectados al hijo, el origen efectivo es la pareja.
+    const gruposOrigen = new Map();
+    for (const w of genograma.vinculos) {
+      if (!esDescendencia(w.tipo) || w.de == null) continue;
+      if (niveles.get(w.a) !== nivel + 1 || niveles.get(w.de) !== nivel) continue;
+      let clave = `p:${w.de}`;
+      let miembros = [w.de];
+      const parejaV = genograma.vinculos.find(
+        (c) =>
+          !esDescendencia(c.tipo) &&
+          ((c.de === w.de && niveles.get(c.a) === nivel) || (c.a === w.de && niveles.get(c.de) === nivel))
+      );
+      if (parejaV) {
+        const otro = parejaV.de === w.de ? parejaV.a : parejaV.de;
+        const otroEsProgenitor = genograma.vinculos.some(
+          (x) => esDescendencia(x.tipo) && x.a === w.a && x.de === otro
+        );
+        if (otroEsProgenitor) {
+          clave = `v:${parejaV.id}`;
+          miembros = [parejaV.de, parejaV.a];
+        }
+      }
+      const grupo = gruposOrigen.get(clave) ?? { miembros, hijos: [] };
+      grupo.hijos.push(w.a);
+      gruposOrigen.set(clave, grupo);
+    }
+    for (const { miembros, hijos } of gruposOrigen.values()) {
+      centrarHijos(miembros, hijos, nivel + 1);
     }
   }
-  // Hermanos del mismo origen a la misma altura.
-  const porOrigen = new Map();
-  for (const v of genograma.vinculos) {
-    if (!esDescendencia(v.tipo)) continue;
-    const lista = porOrigen.get(v.de) ?? [];
-    lista.push(v.a);
-    porOrigen.set(v.de, lista);
-  }
-  for (const ids of porOrigen.values()) {
-    if (ids.length < 2) continue;
-    const y = promedio(ids);
-    if (y != null) for (const id of ids) alturas.set(id, y);
-  }
+
   return {
     ...genograma,
-    personas: genograma.personas.map((p) => ({ ...p, y: alturas.get(p.id) ?? p.y })),
+    personas: personas.map((p) => ({ ...p, x: pos.get(p.id).x, y: pos.get(p.id).y })),
   };
 }
 
