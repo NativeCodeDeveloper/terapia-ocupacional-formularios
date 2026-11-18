@@ -6,11 +6,13 @@ import path from "node:path";
 import {
   TIPOS_RELACION,
   TIPOS_VINCULO,
+  alinearGeneraciones,
   conexionAgregada,
   conexionEliminada,
   copiarParaEvaluacion,
   eliminarDeBiblioteca,
   envolverTexto,
+  esDescendencia,
   geometriaDeGrupo,
   filasDeIntegrantes,
   genogramaVacio,
@@ -198,6 +200,8 @@ test("los tipos de conexión cubren la pauta del genograma", () => {
     "separacion",
     "divorcio",
     "hijo",
+    "adoptado",
+    "crianza",
   ]);
   assert.deepEqual(TIPOS_RELACION.map((t) => t.valor), [
     "cercana",
@@ -401,6 +405,75 @@ test("las abreviaturas se separan por coma y se listan una por línea", () => {
   assert.deepEqual(listaDeAbreviaturas({ patologiasAbrev: " a , , b , c , d , e " }), ["a", "b", "c", "d…"]);
   assert.deepEqual(listaDeAbreviaturas({}), []);
   assert.deepEqual(listaDeAbreviaturas(null), []);
+});
+
+test("gemelos, adoptado y alineado: parto múltiple, etiquetas y filas parejas", () => {
+  // Descendencia adoptada: se describe con su etiqueta propia.
+  let g = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
+    "hombre",
+    { x: 280, y: 340 }
+  );
+  const [padre, madre, hijo] = g.personas;
+  g = personaActualizada(g, padre.id, { nombre: "Pedro Rojas" });
+  g = personaActualizada(g, madre.id, { nombre: "María Vargas" });
+  g = conexionAgregada(g, "union", padre.id, madre.id);
+  const parejaId = g.vinculos[0].id;
+  g = conexionAgregada(g, "adoptado", parejaId, hijo.id);
+  assert.match(
+    filasDeIntegrantes(g).find((f) => f.nombre === "Sin nombre").conexiones,
+    /Hijo\/a adoptado\/a de Pedro Rojas y María Vargas/
+  );
+
+  // Gemelos: la segunda hija del mismo origen comparte punto de partida.
+  let gemelos = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 140 }),
+    "mujer",
+    { x: 240, y: 340 }
+  );
+  gemelos = nuevaPersona(gemelos, "mujer", { x: 320, y: 340 });
+  const [padreGemelos, , gemela1, gemela2] = gemelos.personas;
+  gemelos = conexionAgregada(gemelos, "hijo", padreGemelos.id, gemela1.id);
+  gemelos = conexionAgregada(gemelos, "hijo", padreGemelos.id, gemela2.id);
+  const v1 = gemelos.vinculos.find((v) => esDescendencia(v.tipo) && v.a === gemela1.id);
+  const v2 = gemelos.vinculos.find((v) => esDescendencia(v.tipo) && v.a === gemela2.id);
+  const grupo = "g-test";
+  gemelos = {
+    ...gemelos,
+    vinculos: gemelos.vinculos.map((v) => (v.id === v1.id || v.id === v2.id ? { ...v, gemelar: grupo } : v)),
+  };
+  const rutasGemelas = rutasDeDescendencia(gemelos).filter((r) => r.clave.endsWith("-gemelo"));
+  assert.equal(rutasGemelas.length, 2);
+  assert.equal(rutasGemelas[0].recorrido[0].x, rutasGemelas[1].recorrido[0].x);
+  // Sin caídas individuales para las gemelas.
+  assert.equal(rutasDeDescendencia(gemelos).filter((r) => r.clave.endsWith("-caida")).length, 0);
+
+  // Alinear: la pareja comparte altura y también los hermanos.
+  let familia = nuevaPersona(
+    nuevaPersona(nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }), "mujer", { x: 380, y: 170 }), "hombre", { x: 240, y: 360 }),
+    "mujer",
+    { x: 320, y: 320 }
+  );
+  const [p2, m2, h2a, h2b] = familia.personas;
+  familia = conexionAgregada(familia, "union", p2.id, m2.id);
+  familia = conexionAgregada(familia, "hijo", p2.id, h2a.id);
+  familia = conexionAgregada(familia, "hijo", p2.id, h2b.id);
+  const alineado = alinearGeneraciones(familia);
+  const yDe = (id) => alineado.personas.find((p) => p.id === id).y;
+  assert.equal(yDe(p2.id), yDe(m2.id));
+  assert.equal(yDe(h2a.id), yDe(h2b.id));
+
+  // Símbolos especiales se normalizan; los inválidos quedan vacíos.
+  const reparado = normalizarGenograma({
+    personas: [
+      { id: "p1", sexo: "mujer", simbolo: "embarazo" },
+      { id: "p2", sexo: "hombre", simbolo: "inventado" },
+    ],
+    vinculos: [],
+    relaciones: [],
+  });
+  assert.equal(reparado.personas[0].simbolo, "embarazo");
+  assert.equal(reparado.personas[1].simbolo, "");
 });
 
 test("el contorno de convivencia rodea a sus integrantes y deja fuera a quien vive aparte", () => {

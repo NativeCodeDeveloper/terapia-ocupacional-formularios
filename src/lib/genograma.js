@@ -36,7 +36,23 @@ export const TIPOS_VINCULO = [
   { valor: "convivencia", etiqueta: "Convivencia o pareja de hecho", grupo: "pareja" },
   { valor: "separacion", etiqueta: "Separación", grupo: "pareja" },
   { valor: "divorcio", etiqueta: "Divorcio", grupo: "pareja" },
-  { valor: "hijo", etiqueta: "Hijo/a de", grupo: "descendencia" },
+  { valor: "hijo", etiqueta: "Hijo/a biológico/a", grupo: "descendencia" },
+  { valor: "adoptado", etiqueta: "Hijo/a adoptado/a", grupo: "descendencia" },
+  { valor: "crianza", etiqueta: "Hijo/a de crianza", grupo: "descendencia" },
+];
+
+/* Tipos de vínculo que son líneas de descendencia. */
+export const esDescendencia = (tipo) => tipo === "hijo" || tipo === "adoptado" || tipo === "crianza";
+
+/* Color de la descendencia especial (pauta: discontinua). */
+export const COLOR_DESCENDENCIA = { adoptado: "#2563eb", crianza: "#15803d" };
+
+/* Símbolos especiales de la persona (embarazo y partos). */
+export const SIMBOLOS_PERSONA = [
+  { valor: "embarazo", etiqueta: "Embarazo" },
+  { valor: "abortoEspontaneo", etiqueta: "Aborto espontáneo" },
+  { valor: "abortoInducido", etiqueta: "Aborto inducido" },
+  { valor: "muerteFetal", etiqueta: "Muerte fetal" },
 ];
 
 export const TIPOS_RELACION = [
@@ -69,7 +85,7 @@ export const COLOR_RELACION = {
 
 /* Leyenda impresa bajo el diagrama del informe. */
 export const LEYENDA_GENOGRAMA =
-  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Contorno punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Lista sobre la figura: patologías principales";
+  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Amarillo con doble borde: usuario/a evaluado/a · Triángulo: embarazo · Triángulo con X: aborto · Símbolo pequeño con X: muerte fetal · Contorno punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Descendencia discontinua azul: hijo/a adoptado/a; verde: hijo/a de crianza · Líneas que nacen del mismo punto: gemelos o trillizos · Al costado de la figura: patologías principales";
 
 /* ============================================================
    IDENTIFICADORES Y CREACIÓN
@@ -93,7 +109,7 @@ function posicionDeCuadricula(indice) {
   return { x: 88 + (indice % 4) * 160, y: 88 + Math.floor(indice / 4) * 120 };
 }
 
-export function nuevaPersona(genograma, sexo = "hombre", posicion = null) {
+export function nuevaPersona(genograma, sexo = "hombre", posicion = null, simbolo = "") {
   const persona = {
     id: nuevoId("p"),
     nombre: "",
@@ -106,6 +122,7 @@ export function nuevaPersona(genograma, sexo = "hombre", posicion = null) {
     ocupacion: "",
     nota: "",
     indicado: false,
+    simbolo: SIMBOLOS_PERSONA.some((s) => s.valor === simbolo) ? simbolo : "",
     ...(posicion ?? posicionDeCuadricula(genograma.personas.length)),
   };
   return { ...genograma, personas: [...genograma.personas, persona] };
@@ -126,7 +143,7 @@ export function personaActualizada(genograma, id, cambios) {
 export function personaEliminada(genograma, id) {
   const otroDe = new Map(); // vínculo de pareja → integrante que queda
   for (const v of genograma.vinculos) {
-    if (v.tipo !== "hijo") {
+    if (!esDescendencia(v.tipo)) {
       if (v.de === id) otroDe.set(v.id, v.a);
       else if (v.a === id) otroDe.set(v.id, v.de);
     }
@@ -136,7 +153,7 @@ export function personaEliminada(genograma, id) {
     personas: genograma.personas.filter((p) => p.id !== id),
     vinculos: genograma.vinculos
       .filter((v) => v.de !== id && v.a !== id)
-      .map((v) => (v.tipo === "hijo" && otroDe.has(v.de) ? { ...v, de: otroDe.get(v.de) } : v)),
+      .map((v) => (esDescendencia(v.tipo) && otroDe.has(v.de) ? { ...v, de: otroDe.get(v.de) } : v)),
     relaciones: genograma.relaciones.filter((r) => r.de !== id && r.a !== id),
     grupos: (genograma.grupos ?? [])
       .map((g) => ({ ...g, integrantes: g.integrantes.filter((i) => i !== id) }))
@@ -191,7 +208,7 @@ function parDe(conexion) {
 export function conexionAgregada(genograma, tipo, de, a) {
   const personaA = genograma.personas.find((p) => p.id === a);
   if (!personaA || de === a) return genograma;
-  const esHijo = tipo === "hijo";
+  const esHijo = esDescendencia(tipo);
   const esRelacion = TIPOS_RELACION.some((t) => t.valor === tipo);
   const origenValido = esHijo
     ? genograma.personas.some((p) => p.id === de) || genograma.vinculos.some((v) => v.id === de)
@@ -203,8 +220,11 @@ export function conexionAgregada(genograma, tipo, de, a) {
        (hijo del padre y de la madre, aunque formen pareja):
        cada conexión es una línea propia; solo se evita duplicar
        exactamente el mismo origen. */
-    if (genograma.vinculos.some((v) => v.tipo === "hijo" && v.de === de && v.a === a)) return genograma;
-    return { ...genograma, vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a }] };
+    if (genograma.vinculos.some((v) => esDescendencia(v.tipo) && v.de === de && v.a === a)) return genograma;
+    return {
+      ...genograma,
+      vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
+    };
   }
   if (esRelacion) {
     const nueva = { id: nuevoId("r"), tipo, de, a };
@@ -214,8 +234,8 @@ export function conexionAgregada(genograma, tipo, de, a) {
     };
   }
   if (!TIPOS_VINCULO.some((t) => t.valor === tipo)) return genograma;
-  const nueva = { id: nuevoId("v"), tipo, de, a };
-  if (genograma.vinculos.some((v) => v.tipo !== "hijo" && parDe(v) === parDe(nueva))) return genograma;
+  const nueva = { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false };
+  if (genograma.vinculos.some((v) => !esDescendencia(v.tipo) && parDe(v) === parDe(nueva))) return genograma;
   return { ...genograma, vinculos: [...genograma.vinculos, nueva] };
 }
 
@@ -229,7 +249,7 @@ export function conexionEliminada(genograma, id) {
   if (eraVinculo) {
     // Los hijos que descendían de esta línea de pareja pasan a
     // quedar sin origen (se dibujan solo si lo recuperan).
-    siguiente.vinculos = siguiente.vinculos.filter((v) => !(v.tipo === "hijo" && v.de === id));
+    siguiente.vinculos = siguiente.vinculos.filter((v) => !(esDescendencia(v.tipo) && v.de === id));
   }
   return siguiente;
 }
@@ -272,6 +292,7 @@ function personaNormalizada(p, indice) {
     ocupacion: texto(p.ocupacion),
     nota: texto(p.nota),
     indicado: Boolean(p.indicado),
+    simbolo: SIMBOLOS_PERSONA.some((s) => s.valor === p.simbolo) ? p.simbolo : "",
     ...lugar,
   };
 }
@@ -292,8 +313,10 @@ export function normalizarGenograma(datos) {
     .map((v) => ({
       id: texto(v.id) || nuevoId("v"),
       tipo: v.tipo,
-      de: typeof v.de === "string" && (ids.has(v.de) || (v.tipo === "hijo" && idsDeVinculo.has(v.de))) ? v.de : null,
+      de: typeof v.de === "string" && (ids.has(v.de) || (esDescendencia(v.tipo) && idsDeVinculo.has(v.de))) ? v.de : null,
       a: typeof v.a === "string" && ids.has(v.a) ? v.a : null,
+      gemelar: texto(v.gemelar),
+      identicos: Boolean(v.identicos),
     }))
     .filter((v) => v.a != null && v.de != null);
   const relaciones = (Array.isArray(base.relaciones) ? base.relaciones : [])
@@ -391,31 +414,35 @@ export function copiarParaEvaluacion(genograma) {
 
 const nombreDe = (genograma, id) => genograma.personas.find((p) => p.id === id)?.nombre?.trim() || "integrante";
 
+/* Etiqueta de descendencia según el tipo de vínculo. */
+const etiquetaHijoDe = (tipo) =>
+  tipo === "adoptado" ? "Hijo/a adoptado/a de" : tipo === "crianza" ? "Hijo/a de crianza de" : "Hijo/a de";
+
 export function etiquetaConexionesDe(genograma, persona) {
   const partes = [];
   for (const v of genograma.vinculos) {
-    if (v.tipo !== "hijo" && (v.de === persona.id || v.a === persona.id)) {
+    if (!esDescendencia(v.tipo) && (v.de === persona.id || v.a === persona.id)) {
       const otro = v.de === persona.id ? v.a : v.de;
       partes.push(`Pareja (${ETIQUETA_VINCULO[v.tipo]?.toLowerCase() ?? v.tipo}) de ${nombreDe(genograma, otro)}`);
       // Hijos que descienden de esta línea de pareja: la persona
       // es padre/madre de cada uno de ellos.
       for (const h of genograma.vinculos) {
-        if (h.tipo === "hijo" && h.de === v.id) {
+        if (esDescendencia(h.tipo) && h.de === v.id) {
           partes.push(`Padre/Madre de ${nombreDe(genograma, h.a)}`);
         }
       }
     }
-    if (v.tipo === "hijo" && v.a === persona.id) {
+    if (esDescendencia(v.tipo) && v.a === persona.id) {
       const origen = genograma.vinculos.find((x) => x.id === v.de);
-      if (origen && origen.tipo !== "hijo") {
-        partes.push(`Hijo/a de ${nombreDe(genograma, origen.de)} y ${nombreDe(genograma, origen.a)}`);
+      if (origen && !esDescendencia(origen.tipo)) {
+        partes.push(`${etiquetaHijoDe(v.tipo)} ${nombreDe(genograma, origen.de)} y ${nombreDe(genograma, origen.a)}`);
       } else if (origen) {
-        partes.push(`Hijo/a de ${nombreDe(genograma, origen.de)}`);
+        partes.push(`${etiquetaHijoDe(v.tipo)} ${nombreDe(genograma, origen.de)}`);
       } else if (v.de) {
-        partes.push(`Hijo/a de ${nombreDe(genograma, v.de)}`);
+        partes.push(`${etiquetaHijoDe(v.tipo)} ${nombreDe(genograma, v.de)}`);
       }
     }
-    if (v.tipo === "hijo" && v.de === persona.id) {
+    if (esDescendencia(v.tipo) && v.de === persona.id) {
       partes.push(`Padre/Madre de ${nombreDe(genograma, v.a)}`);
     }
   }
@@ -525,23 +552,25 @@ export function vinculoDe(genograma, id) {
 }
 
 /* Límite del lienzo: { minX, minY, ancho, alto } incluyendo el
-   espacio de las etiquetas (nombre y hasta tres líneas de
-   patologías debajo, marca de usuario encima), su ancho
-   horizontal y los óvalos de convivencia. Devuelve null sin
-   personas. */
+   espacio de las etiquetas (nombre y detalle debajo, marca de
+   usuario encima, abreviaturas al costado) y los contornos de
+   convivencia. Devuelve null sin personas. */
 export function limitesDiagrama(genograma) {
   if (!genograma?.personas?.length) return null;
   const xs = genograma.personas.map((p) => p.x);
   const ys = genograma.personas.map((p) => p.y);
   let minX = Math.min(...xs) - 72;
-  let minY = Math.min(...ys) - NODO.radio - 17;
+  let minY = Math.min(...ys) - NODO.radio - 26;
   let maxX = Math.max(...xs) + 72;
   let maxY = Math.max(...ys) + 82;
-  /* Las abreviaturas de patologías suben sobre la figura (una
-     línea por patología, más la marca de usuario si aplica). */
+  /* Las abreviaturas van al costado de la figura: ensancha el
+     límite según el lado elegido y el largo del texto. */
   for (const p of genograma.personas) {
-    const alto = listaDeAbreviaturas(p).length * 11 + (p.indicado ? 11 : 0);
-    if (alto > 0) minY = Math.min(minY, p.y - NODO.radio - 7 - alto - 10);
+    const lineas = listaDeAbreviaturas(p);
+    if (lineas.length === 0) continue;
+    const ancho = Math.max(...lineas.map((l) => l.length)) * 5.2 + NODO.radio + 12;
+    if (ladoDeAbreviaturas(genograma, p) === "derecha") maxX = Math.max(maxX, p.x + ancho);
+    else minX = Math.min(minX, p.x - ancho);
   }
   for (const grupo of genograma.grupos ?? []) {
     const geo = geometriaDeGrupo(genograma, grupo);
@@ -677,18 +706,40 @@ export function geometriaDeGrupo(genograma, grupo) {
   };
 }
 
+/* Lado de la figura donde se dibujan las abreviaturas de
+   patologías: hacia afuera del centro del genograma, para que
+   no interfieran con las líneas. */
+export function ladoDeAbreviaturas(genograma, persona) {
+  const xs = genograma?.personas?.map((p) => p.x) ?? [];
+  const centroX = xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+  return persona.x >= centroX ? "derecha" : "izquierda";
+}
+
 /* Punto del borde de la figura en la dirección del vector
-   (dx, dy) desde el centro. */
+   (dx, dy) desde el centro. Los triángulos (embarazo, aborto)
+   se resuelven sobre sus lados; la muerte fetal usa la mitad
+   del tamaño. */
 export function puntoBorde(persona, dx, dy) {
   const len = Math.hypot(dx, dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
-  if (persona.sexo === "mujer") return { x: persona.x + ux * NODO.radio, y: persona.y + uy * NODO.radio };
-  if (persona.sexo === "otro") {
-    const t = NODO.radio / (Math.abs(ux) + Math.abs(uy));
+  if (persona.simbolo === "embarazo" || persona.simbolo === "abortoEspontaneo" || persona.simbolo === "abortoInducido") {
+    // Triángulo: ápice arriba (0, -r), base abajo (±1.1 r, 0.85 r).
+    const r = NODO.radio;
+    const ts = [];
+    if (uy > 1e-9) ts.push((r * 0.85) / uy);
+    if (ux > 0.55 * uy + 1e-9) ts.push((0.55 * r) / (ux - 0.55 * uy));
+    if (-ux > 0.55 * uy + 1e-9) ts.push((0.55 * r) / (-ux - 0.55 * uy));
+    const t = ts.length ? Math.max(Math.min(...ts), 0) : r;
     return { x: persona.x + ux * t, y: persona.y + uy * t };
   }
-  const t = NODO.radio / Math.max(Math.abs(ux), Math.abs(uy), 1e-9);
+  const rr = persona.simbolo === "muerteFetal" ? NODO.radio * 0.55 : NODO.radio;
+  if (persona.sexo === "mujer") return { x: persona.x + ux * rr, y: persona.y + uy * rr };
+  if (persona.sexo === "otro") {
+    const t = rr / (Math.abs(ux) + Math.abs(uy));
+    return { x: persona.x + ux * t, y: persona.y + uy * t };
+  }
+  const t = rr / Math.max(Math.abs(ux), Math.abs(uy), 1e-9);
   return { x: persona.x + ux * t, y: persona.y + uy * t };
 }
 
@@ -735,15 +786,15 @@ export function geometriaDePareja(genograma, vinculo) {
    y `clave` identifica cada tramo dibujado. */
 export function rutasDeDescendencia(genograma) {
   const rutas = [];
-  const hijos = genograma.vinculos.filter((v) => v.tipo === "hijo");
+  const hijos = genograma.vinculos.filter((v) => esDescendencia(v.tipo));
   if (hijos.length === 0) return rutas;
 
-  /* Origen efectivo de cada vínculo y clave de agrupación: los
-     vínculos dirigidos a los dos miembros de una pareja
-     comparten clave y se dibujan como una sola línea. */
+  /* Origen efectivo de cada vínculo: punto medio de la línea
+     de pareja (si el vínculo sale de una pareja) o borde
+     inferior del progenitor. */
   const infoDe = new Map();
   for (const v of hijos) {
-    const vinculoParejaDirecto = genograma.vinculos.find((w) => w.id === v.de && w.tipo !== "hijo");
+    const vinculoParejaDirecto = genograma.vinculos.find((w) => w.id === v.de && !esDescendencia(w.tipo));
     if (vinculoParejaDirecto) {
       const pareja = geometriaDePareja(genograma, vinculoParejaDirecto);
       if (pareja) infoDe.set(v.id, { origen: pareja.medio, clave: `v:${vinculoParejaDirecto.id}` });
@@ -870,11 +921,87 @@ export function rutasDeDescendencia(genograma) {
     } else {
       rutas.push({ id: lista[0].v.id, clave: claveGuia, recorrido: [origen, { x: origen.x, y: yBus }] });
     }
+    /* Partos múltiples (gemelos o trillizos): los hermanos
+       marcados con el mismo grupo gemelar salen del mismo
+       punto con líneas oblicuas; los idénticos llevan además
+       una barra que une sus líneas. */
+    const gruposGemelares = new Map();
+    for (const e of unicos) {
+      if (!e.v.gemelar) continue;
+      const lista = gruposGemelares.get(e.v.gemelar) ?? [];
+      lista.push(e);
+      gruposGemelares.set(e.v.gemelar, lista);
+    }
+    const enGemelar = new Set();
+    for (const lista of gruposGemelares.values()) {
+      for (const { v } of lista) enGemelar.add(v.id);
+    }
     for (const { v, llegada } of unicos) {
+      if (enGemelar.has(v.id)) continue;
       rutas.push({ id: v.id, clave: `${v.id}-caida`, recorrido: [{ x: llegada.x, y: yBus }, llegada] });
+    }
+    for (const lista of gruposGemelares.values()) {
+      const xsGemelos = lista.map(({ llegada }) => llegada.x);
+      const xComun = (Math.min(...xsGemelos) + Math.max(...xsGemelos)) / 2;
+      for (const { v, llegada } of lista) {
+        rutas.push({ id: v.id, clave: `${v.id}-gemelo`, recorrido: [{ x: xComun, y: yBus }, llegada] });
+      }
+      if (lista.length >= 2 && lista.some(({ v }) => v.identicos)) {
+        const orden = [...lista].sort((a, b) => a.llegada.x - b.llegada.x);
+        const izq = orden[0].llegada;
+        const der = orden[orden.length - 1].llegada;
+        const yBarra = (yBus + izq.y) / 2;
+        rutas.push({
+          id: lista[0].v.id,
+          clave: `${lista[0].v.id}-barra`,
+          recorrido: [
+            { x: izq.x, y: yBarra },
+            { x: der.x, y: yBarra },
+          ],
+        });
+      }
     }
   }
   return rutas;
+}
+
+/* Alinea las figuras por generaciones: las parejas comparten
+   altura, los hermanos del mismo origen también, y todo se
+   redondea a múltiplos de 5 para que las filas queden parejas.
+   Solo ajusta `y`; nunca mueve las figuras horizontalmente. */
+export function alinearGeneraciones(genograma) {
+  const alturas = new Map(genograma.personas.map((p) => [p.id, p.y]));
+  const promedio = (ids) => {
+    const valores = ids.map((id) => alturas.get(id)).filter((y) => y != null);
+    if (valores.length === 0) return null;
+    return Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) / 5) * 5;
+  };
+  // Parejas alineadas a la misma altura.
+  for (const v of genograma.vinculos) {
+    if (esDescendencia(v.tipo)) continue;
+    const y = promedio([v.de, v.a]);
+    if (y != null) {
+      alturas.set(v.de, y);
+      alturas.set(v.a, y);
+    }
+  }
+  // Hermanos del mismo origen a la misma altura.
+  const porOrigen = new Map();
+  for (const v of genograma.vinculos) {
+    if (!esDescendencia(v.tipo)) continue;
+    const lista = porOrigen.get(v.de) ?? [];
+    lista.push(v.a);
+    porOrigen.set(v.de, lista);
+  }
+  for (const ids of porOrigen.values()) {
+    if (ids.length < 2) continue;
+    const y = promedio(ids);
+    if (y != null) for (const id of ids) alturas.set(id, y);
+  }
+  return {
+    ...genograma,
+    personas: genograma.personas.map((p) => ({ ...p, y: alturas.get(p.id) ?? p.y })),
+  };
 }
 
 /* Geometría de una relación de calidad: segmento y estilo.
@@ -893,7 +1020,7 @@ export function geometriaDeRelacion(genograma, relacion) {
   const normal = { x: -dy / len, y: dx / len };
   const hayPareja = genograma.vinculos.some(
     (v) =>
-      v.tipo !== "hijo" &&
+      !esDescendencia(v.tipo) &&
       ((v.de === relacion.de && v.a === relacion.a) || (v.de === relacion.a && v.a === relacion.de))
   );
   if (!hayPareja) return { inicio, fin, normal };

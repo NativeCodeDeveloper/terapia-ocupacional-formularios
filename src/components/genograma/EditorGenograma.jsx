@@ -4,16 +4,20 @@ import { useMemo, useRef, useState } from "react";
 import {
   LEYENDA_GENOGRAMA,
   SEXOS,
+  SIMBOLOS_PERSONA,
   TIPOS_RELACION,
   TIPOS_VINCULO,
+  alinearGeneraciones,
   cambiarTipoConexion,
   conexionAgregada,
   conexionEliminada,
+  esDescendencia,
   genogramaVacio,
   grupoActualizado,
   grupoAgregado,
   grupoEliminado,
   guardarEnBiblioteca,
+  nuevoId,
   normalizarGenograma,
   nuevaPersona,
   personaActualizada,
@@ -227,12 +231,40 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
       borrador.vinculos.find((c) => c.id === conexionId) ??
       borrador.relaciones.find((c) => c.id === conexionId);
     if (!objetivo) return;
-    const etiqueta = objetivo.tipo === "hijo"
+    const etiqueta = esDescendencia(objetivo.tipo)
       ? `la descendencia hacia ${nombreDe(objetivo.a)}`
       : `el registro entre ${nombreDe(objetivo.de)} y ${nombreDe(objetivo.a)}`;
     if (!window.confirm(`¿Eliminar ${etiqueta}?`)) return;
     setBorrador((prev) => conexionEliminada(prev, objetivo.id));
     setConexionId(null);
+  }
+
+  /* Partos múltiples: marca o desmarca como gemelos o trillizos
+     a toda la descendencia del mismo origen. */
+  function cambiarGemelar(activar) {
+    setBorrador((prev) => {
+      const objetivo = prev.vinculos.find((c) => c.id === conexionId);
+      if (!objetivo) return prev;
+      return {
+        ...prev,
+        vinculos: prev.vinculos.map((v) =>
+          esDescendencia(v.tipo) && v.de === objetivo.de
+            ? { ...v, gemelar: activar ? nuevoId("g") : "", identicos: activar ? v.identicos : false }
+            : v
+        ),
+      };
+    });
+  }
+
+  function cambiarIdenticos(valor) {
+    setBorrador((prev) => {
+      const objetivo = prev.vinculos.find((c) => c.id === conexionId);
+      if (!objetivo || !objetivo.gemelar) return prev;
+      return {
+        ...prev,
+        vinculos: prev.vinculos.map((v) => (v.gemelar === objetivo.gemelar ? { ...v, identicos: valor } : v)),
+      };
+    });
   }
 
   /* ---------- Biblioteca y acciones ---------- */
@@ -258,7 +290,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   /* Agrega una persona en un espacio libre del lienzo (en
      anillos alrededor del centro para no apilarlas). */
-  function agregarPersona(sexo) {
+  function agregarPersona(sexo, simbolo = "") {
     const n = borrador.personas.length;
     const anillo = Math.floor(n / 6);
     const angulo = (n % 6) * (Math.PI / 3) + anillo * 0.5;
@@ -267,7 +299,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
       x: Math.min(Math.max(LIENZO_ANCHO / 2 + Math.cos(angulo) * radio, 80), LIENZO_ANCHO - 80),
       y: Math.min(Math.max(LIENZO_ALTO / 2 + Math.sin(angulo) * radio, 70), LIENZO_ALTO - 80),
     };
-    const siguiente = nuevaPersona(borrador, sexo, posicion);
+    const siguiente = nuevaPersona(borrador, sexo, posicion, simbolo);
     setBorrador(siguiente);
     setPersonaId(siguiente.personas[siguiente.personas.length - 1].id);
     setConexionId(null);
@@ -315,6 +347,30 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         <button type="button" onClick={() => agregarPersona("otro")} className={BOTON_NEUTRO}>
           <span aria-hidden="true" className="text-indigo-600">＋</span> Otro
         </button>
+        <button
+          type="button"
+          onClick={() => agregarPersona("mujer", "embarazo")}
+          className={BOTON_NEUTRO}
+          title="Triángulo: embarazo"
+        >
+          <span aria-hidden="true" className="text-indigo-600">＋</span> Embarazo
+        </button>
+        <button
+          type="button"
+          onClick={() => agregarPersona("mujer", "abortoEspontaneo")}
+          className={BOTON_NEUTRO}
+          title="Triángulo con X: aborto (espontáneo o inducido, se cambia en el panel)"
+        >
+          <span aria-hidden="true" className="text-indigo-600">＋</span> Aborto
+        </button>
+        <button
+          type="button"
+          onClick={() => agregarPersona("hombre", "muerteFetal")}
+          className={BOTON_NEUTRO}
+          title="Símbolo pequeño con X: muerte fetal (masculina o femenina según el sexo)"
+        >
+          <span aria-hidden="true" className="text-indigo-600">＋</span> Muerte fetal
+        </button>
         <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" />
         <button
           type="button"
@@ -348,6 +404,17 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">{borrador.personas.length} integrantes</span>
+        <button
+          type="button"
+          onClick={() => {
+            setBorrador((prev) => alinearGeneraciones(prev));
+            setAviso("Figuras alineadas: parejas y hermanos comparten altura.");
+          }}
+          className={BOTON_NEUTRO}
+          title="Pareja y hermanos quedan en filas parejas (no mueve horizontalmente)"
+        >
+          Alinear
+        </button>
         <button
           type="button"
           onClick={borrarTodo}
@@ -549,6 +616,22 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   className={CONTROL}
                 />
               </div>
+              {persona.simbolo && (
+                <div className="sm:col-span-2">
+                  <label htmlFor="genograma-simbolo" className={ETIQUETA_CAMPO}>Situación</label>
+                  <select
+                    id="genograma-simbolo"
+                    value={persona.simbolo}
+                    onChange={(e) => actualizarPersona({ simbolo: e.target.value })}
+                    className={CONTROL}
+                  >
+                    <option value="">Ninguna (figura normal)</option>
+                    {SIMBOLOS_PERSONA.map((s) => (
+                      <option key={s.valor} value={s.valor}>{s.etiqueta}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <label htmlFor="genograma-ocupacion" className={ETIQUETA_CAMPO}>Ocupación o rol familiar (opcional)</label>
                 <input
@@ -644,7 +727,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           <div className="rounded-xl border border-neutral-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[13px] font-semibold text-neutral-900">
-                {conexion.tipo === "hijo" ? "Descendencia" : ES_RELACION(conexion.tipo) ? "Relación" : "Vínculo de pareja"}
+                {esDescendencia(conexion.tipo) ? "Descendencia" : ES_RELACION(conexion.tipo) ? "Relación" : "Vínculo de pareja"}
               </p>
               <button
                 type="button"
@@ -655,31 +738,62 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
               </button>
             </div>
             <p className="mt-1 text-[13px] text-neutral-500">
-              {conexion.tipo === "hijo"
+              {esDescendencia(conexion.tipo)
                 ? `${nombreDe(conexion.a)} es hijo/a de ${origenDe(conexion.de)}.`
                 : `${nombreDe(conexion.de)} — ${nombreDe(conexion.a)}.`}
             </p>
-            {conexion.tipo !== "hijo" && (
-              <div className="mt-3">
-                <label htmlFor="genograma-tipo-conexion" className={ETIQUETA_CAMPO}>Tipo</label>
-                <select
-                  id="genograma-tipo-conexion"
-                  value={conexion.tipo}
-                  onChange={(e) => setBorrador((prev) => cambiarTipoConexion(prev, conexionId, e.target.value))}
-                  className={CONTROL}
-                >
-                  {(ES_RELACION(conexion.tipo) ? TIPOS_RELACION : OPCIONES_PAREJA).map((t) => (
-                    <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
-                  ))}
-                </select>
+            <div className="mt-3">
+              <label htmlFor="genograma-tipo-conexion" className={ETIQUETA_CAMPO}>Tipo</label>
+              <select
+                id="genograma-tipo-conexion"
+                value={conexion.tipo}
+                onChange={(e) => setBorrador((prev) => cambiarTipoConexion(prev, conexionId, e.target.value))}
+                className={CONTROL}
+              >
+                {esDescendencia(conexion.tipo)
+                  ? TIPOS_VINCULO.filter((t) => t.grupo === "descendencia").map((t) => (
+                      <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                    ))
+                  : (ES_RELACION(conexion.tipo) ? TIPOS_RELACION : OPCIONES_PAREJA).map((t) => (
+                      <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                    ))}
+              </select>
+            </div>
+            {esDescendencia(conexion.tipo) && (
+              <div className="mt-3 flex flex-wrap items-center gap-4">
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-neutral-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(conexion.gemelar)}
+                    onChange={(e) => cambiarGemelar(e.target.checked)}
+                    className="size-4 accent-indigo-600"
+                  />
+                  Gemelos o trillizos (nacen juntos)
+                </label>
+                {Boolean(conexion.gemelar) && (
+                  <label className="flex cursor-pointer items-center gap-2 text-[13px] text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(conexion.identicos)}
+                      onChange={(e) => cambiarIdenticos(e.target.checked)}
+                      className="size-4 accent-indigo-600"
+                    />
+                    Idénticos
+                  </label>
+                )}
               </div>
+            )}
+            {esDescendencia(conexion.tipo) && Boolean(conexion.gemelar) && (
+              <p className="mt-1 text-xs text-neutral-400">
+                Todos los hijos de este origen salen del mismo punto en el dibujo.
+              </p>
             )}
             <button
               type="button"
               onClick={eliminarConexion}
               className="mt-3 text-[13px] font-medium text-red-600 underline-offset-2 hover:underline"
             >
-              Eliminar {conexion.tipo === "hijo" ? "descendencia" : ES_RELACION(conexion.tipo) ? "relación" : "vínculo"}
+              Eliminar {esDescendencia(conexion.tipo) ? "descendencia" : ES_RELACION(conexion.tipo) ? "relación" : "vínculo"}
             </button>
           </div>
         )}

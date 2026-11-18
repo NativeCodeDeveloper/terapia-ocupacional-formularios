@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  COLOR_DESCENDENCIA,
   COLOR_RELACION,
   NODO,
   envolverTexto,
   geometriaDeGrupo,
   geometriaDePareja,
   geometriaDeRelacion,
+  ladoDeAbreviaturas,
   limitesDiagrama,
   listaDeAbreviaturas,
   puntosDeZigzag,
@@ -52,40 +54,51 @@ export function puntoSvg(svg, clienteX, clienteY) {
   return { x: vb.x + (clienteX - rect.left) * escalaX, y: vb.y + (clienteY - rect.top) * escalaY };
 }
 
-function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) {
+function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, eventos }) {
   const { x, y } = persona;
-  /* Abreviaturas de las patologías principales: lista sobre la
-     figura (una línea por patología), en cursiva y gris. */
+  /* Abreviaturas de las patologías principales: lista al costado
+     de la figura (una línea por patología), en cursiva y gris,
+     hacia afuera del centro del genograma. */
   const lineasAbrev = listaDeAbreviaturas(persona);
+  const abrevALaDerecha = lado === "derecha";
   const lineasPatologias = persona.patologias?.trim() ? envolverTexto(persona.patologias, 26, 3) : [];
-  const lado = NODO.lado;
   const r = NODO.radio;
+  const esTriangulo = ["embarazo", "abortoEspontaneo", "abortoInducido"].includes(persona.simbolo);
+  const esMuerteFetal = persona.simbolo === "muerteFetal";
+  const rr = esMuerteFetal ? r * 0.55 : r;
   const borde = seleccionada || activa ? TINTES.seleccion : TINTES.trazo;
   const grosor = seleccionada || activa ? 2.4 : GROSOR;
-  const relleno = activa ? "#eef2ff" : "#ffffff";
+  const relleno = persona.indicado ? "#fef3c7" : activa ? "#eef2ff" : "#ffffff";
 
-  const forma =
-    persona.sexo === "mujer" ? (
-      <circle cx={x} cy={y} r={r} fill={relleno} stroke={borde} strokeWidth={grosor} />
-    ) : persona.sexo === "otro" ? (
-      <polygon
-        points={`${x - r},${y} ${x},${y - r} ${x + r},${y} ${x},${y + r}`}
-        fill={relleno}
-        stroke={borde}
-        strokeWidth={grosor}
-      />
-    ) : (
-      <rect
-        x={x - r}
-        y={y - r}
-        width={lado}
-        height={lado}
-        rx={2.5}
-        fill={relleno}
-        stroke={borde}
-        strokeWidth={grosor}
-      />
-    );
+  const forma = esTriangulo ? (
+    <polygon
+      points={`${x - r * 1.1},${y + r * 0.85} ${x},${y - r} ${x + r * 1.1},${y + r * 0.85}`}
+      fill={relleno}
+      stroke={borde}
+      strokeWidth={grosor}
+      strokeLinejoin="round"
+    />
+  ) : persona.sexo === "mujer" ? (
+    <circle cx={x} cy={y} r={rr} fill={relleno} stroke={borde} strokeWidth={grosor} />
+  ) : persona.sexo === "otro" ? (
+    <polygon
+      points={`${x - rr},${y} ${x},${y - rr} ${x + rr},${y} ${x},${y + rr}`}
+      fill={relleno}
+      stroke={borde}
+      strokeWidth={grosor}
+    />
+  ) : (
+    <rect
+      x={x - rr}
+      y={y - rr}
+      width={rr * 2}
+      height={rr * 2}
+      rx={2.5}
+      fill={relleno}
+      stroke={borde}
+      strokeWidth={grosor}
+    />
+  );
 
   return (
     <g
@@ -94,38 +107,56 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
       aria-label={persona.nombre?.trim() || "Persona sin nombre"}
     >
       {forma}
-      {persona.indicado && persona.sexo === "mujer" && (
-        <circle cx={x} cy={y} r={r - 3} fill="none" stroke={borde} strokeWidth={1} />
+      {/* Aborto: X dentro del triángulo; el inducido lleva una
+          línea horizontal que cruza el símbolo. */}
+      {(persona.simbolo === "abortoEspontaneo" || persona.simbolo === "abortoInducido") && (
+        <g stroke={borde} strokeWidth={GROSOR}>
+          <line x1={x - r * 0.62} y1={y - r * 0.42} x2={x + r * 0.62} y2={y + r * 0.52} />
+          <line x1={x + r * 0.62} y1={y - r * 0.42} x2={x - r * 0.62} y2={y + r * 0.52} />
+        </g>
       )}
-      {persona.indicado && persona.sexo === "hombre" && (
+      {persona.simbolo === "abortoInducido" && (
+        <line
+          x1={x - r * 1.4}
+          y1={y + r * 0.05}
+          x2={x + r * 1.4}
+          y2={y + r * 0.05}
+          stroke={borde}
+          strokeWidth={GROSOR}
+        />
+      )}
+      {persona.indicado && !esTriangulo && persona.sexo === "mujer" && (
+        <circle cx={x} cy={y} r={rr - 3} fill="none" stroke={borde} strokeWidth={1} />
+      )}
+      {persona.indicado && !esTriangulo && persona.sexo === "hombre" && (
         <rect
-          x={x - r + 3}
-          y={y - r + 3}
-          width={lado - 6}
-          height={lado - 6}
+          x={x - rr + 3}
+          y={y - rr + 3}
+          width={rr * 2 - 6}
+          height={rr * 2 - 6}
           rx={1.5}
           fill="none"
           stroke={borde}
           strokeWidth={1}
         />
       )}
-      {persona.indicado && persona.sexo === "otro" && (
+      {persona.indicado && !esTriangulo && persona.sexo === "otro" && (
         <polygon
-          points={`${x - r + 4.5},${y} ${x},${y - r + 4.5} ${x + r - 4.5},${y} ${x},${y + r - 4.5}`}
+          points={`${x - rr + 4.5},${y} ${x},${y - rr + 4.5} ${x + rr - 4.5},${y} ${x},${y + rr - 4.5}`}
           fill="none"
           stroke={borde}
           strokeWidth={1}
         />
       )}
-      {persona.fallecido && (
+      {(persona.fallecido || esMuerteFetal) && (
         <g stroke={borde} strokeWidth={GROSOR}>
-          <line x1={x - r * 0.72} y1={y - r * 0.72} x2={x + r * 0.72} y2={y + r * 0.72} />
-          <line x1={x - r * 0.72} y1={y + r * 0.72} x2={x + r * 0.72} y2={y - r * 0.72} />
+          <line x1={x - rr * 0.72} y1={y - rr * 0.72} x2={x + rr * 0.72} y2={y + rr * 0.72} />
+          <line x1={x - rr * 0.72} y1={y + rr * 0.72} x2={x + rr * 0.72} y2={y - rr * 0.72} />
         </g>
       )}
       {/* Edad: dentro de la figura, también en los fallecidos
           (con halo blanco para leerla sobre la X). */}
-      {persona.edad?.toString().trim() && (
+      {!esTriangulo && persona.edad?.toString().trim() && (
         <text
           x={x}
           y={y + 4.5}
@@ -166,7 +197,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           {linea}
         </text>
       ))}
-      {persona.indicado && (
+      {persona.indicado && !esTriangulo && (
         <text
           x={x}
           y={y - r - 7}
@@ -179,13 +210,14 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           usuario/a
         </text>
       )}
+      {/* Abreviaturas al costado de la figura, hacia afuera. */}
       <g>
         {lineasAbrev.map((linea, i) => (
           <text
             key={`${i}-${linea}`}
-            x={x}
-            y={y - r - 7 - (persona.indicado ? 11 : 0) - (lineasAbrev.length - 1 - i) * 11}
-            textAnchor="middle"
+            x={abrevALaDerecha ? x + r + 5 : x - r - 5}
+            y={y - r + 8 + i * 11}
+            textAnchor={abrevALaDerecha ? "start" : "end"}
             fontSize="10.5"
             fontStyle="italic"
             fill={TINTES.secundario}
@@ -278,6 +310,7 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
               stroke={colorLinea}
               strokeWidth={grosor}
               strokeLinejoin="round"
+              strokeDasharray={geometria.discontinua ? "6 5" : undefined}
             />
           )}
           {geometria.barras?.map((barra, i) => (
@@ -447,15 +480,28 @@ export default function DiagramaGenograma({
             );
           })}
         {/* Descendencia: tallo y guía compartidos por origen,
-            una caída por hijo (o por progenitor). */}
-        {rutasDeDescendencia(genograma).map((ruta) => (
-          <LineaConexion
-            key={ruta.clave}
-            geometria={{ recorrido: ruta.recorrido }}
-            seleccionada={conexionSeleccionada === ruta.id}
-            alClic={interactivo && alClicConexion ? () => alClicConexion({ id: ruta.id }) : null}
-          />
-        ))}
+            una caída por hijo (o por progenitor); adoptado y
+            crianza se dibujan discontinuos y con color. */}
+        {rutasDeDescendencia(genograma).map((ruta) => {
+          const vinculoRuta = genograma.vinculos.find((w) => w.id === ruta.id);
+          const especial =
+            vinculoRuta?.tipo === "adoptado" || vinculoRuta?.tipo === "crianza";
+          return (
+            <LineaConexion
+              key={ruta.clave}
+              geometria={{ recorrido: ruta.recorrido, discontinua: especial }}
+              color={
+                vinculoRuta?.tipo === "adoptado"
+                  ? COLOR_DESCENDENCIA.adoptado
+                  : vinculoRuta?.tipo === "crianza"
+                    ? COLOR_DESCENDENCIA.crianza
+                    : null
+              }
+              seleccionada={conexionSeleccionada === ruta.id}
+              alClic={interactivo && alClicConexion ? () => alClicConexion({ id: ruta.id }) : null}
+            />
+          );
+        })}
         {genograma.relaciones.map((r) => {
           const base = geometriaDeRelacion(genograma, r);
           if (!base) return null;
@@ -508,6 +554,7 @@ export default function DiagramaGenograma({
           <FiguraPersona
             key={p.id}
             persona={p}
+            lado={ladoDeAbreviaturas(genograma, p)}
             seleccionada={personaSeleccionada === p.id}
             activa={personaActiva === p.id || idsActivos.includes(p.id)}
             interactivo={interactivo}

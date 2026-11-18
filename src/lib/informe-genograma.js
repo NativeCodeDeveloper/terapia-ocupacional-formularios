@@ -2,10 +2,12 @@ import {
   LEYENDA_GENOGRAMA,
   NODO,
   envolverTexto,
+  esDescendencia,
   filasDeIntegrantes,
   geometriaDeGrupo,
   geometriaDePareja,
   geometriaDeRelacion,
+  ladoDeAbreviaturas,
   limitesDiagrama,
   listaDeAbreviaturas,
   puntosDeZigzag,
@@ -34,51 +36,71 @@ const GROSOR = 1;
 
 /* ---- Diagrama vectorial ---- */
 
-function dibujarFigura(doc, persona, ox, oy, escala) {
+function dibujarFigura(doc, persona, ox, oy, escala, ladoTexto) {
   const cx = ox + persona.x * escala;
   const cy = oy + persona.y * escala;
   const r = NODO.radio * escala;
-  const lado = NODO.lado * escala;
+  const esTriangulo = ["embarazo", "abortoEspontaneo", "abortoInducido"].includes(persona.simbolo);
+  const esMuerteFetal = persona.simbolo === "muerteFetal";
+  const rr = esMuerteFetal ? r * 0.55 : r;
 
   doc.setDrawColor(...TRAZO);
   doc.setLineWidth(GROSOR * Math.max(escala, 0.75));
-  doc.setFillColor(255, 255, 255);
+  // El usuario/a evaluado se destaca con relleno amarillo.
+  doc.setFillColor(...(persona.indicado ? [254, 243, 199] : [255, 255, 255]));
 
   const dibujarInterior = () => {
     if (!persona.indicado) return;
     doc.setLineWidth(GROSOR * Math.max(escala, 0.75) * 0.7);
     const margen = 3.2 * escala;
-    if (persona.sexo === "mujer") doc.circle(cx, cy, r - margen);
+    if (persona.sexo === "mujer") doc.circle(cx, cy, rr - margen);
     else if (persona.sexo === "otro") {
-      const rr = r - margen;
-      doc.lines([[rr, -rr], [rr, rr], [-rr, rr]], cx - rr, cy + rr, [1, 1], null, true);
+      const interior = rr - margen;
+      doc.lines([[interior, -interior], [interior, interior], [-interior, interior]], cx - interior, cy + interior, [1, 1], null, true);
     } else {
-      doc.rect(cx - r + margen, cy - r + margen, lado - margen * 2, lado - margen * 2);
+      doc.rect(cx - rr + margen, cy - rr + margen, rr * 2 - margen * 2, rr * 2 - margen * 2);
     }
     doc.setLineWidth(GROSOR * Math.max(escala, 0.75));
   };
 
-  if (persona.sexo === "mujer") {
-    doc.circle(cx, cy, r, "FD");
+  if (esTriangulo) {
+    doc.lines(
+      [[r * 1.1, -r * 1.85], [r * 1.1, r * 1.85], [-r * 2.2, 0]],
+      cx - r * 1.1,
+      cy + r * 0.85,
+      [1, 1],
+      "FD",
+      true
+    );
+  } else if (persona.sexo === "mujer") {
+    doc.circle(cx, cy, rr, "FD");
     dibujarInterior();
   } else if (persona.sexo === "otro") {
-    doc.lines([[r, -r], [r, r], [-r, r]], cx - r, cy + r, [1, 1], "FD", true);
+    doc.lines([[rr, -rr], [rr, rr], [-rr, rr]], cx - rr, cy + rr, [1, 1], "FD", true);
     dibujarInterior();
   } else {
-    doc.rect(cx - r, cy - r, lado, lado, "FD");
+    doc.rect(cx - rr, cy - rr, rr * 2, rr * 2, "FD");
     dibujarInterior();
   }
 
-  if (persona.fallecido) {
-    const d = r * 0.72;
+  if (persona.simbolo === "abortoEspontaneo" || persona.simbolo === "abortoInducido") {
+    doc.line(cx - r * 0.62, cy - r * 0.42, cx + r * 0.62, cy + r * 0.52);
+    doc.line(cx + r * 0.62, cy - r * 0.42, cx - r * 0.62, cy + r * 0.52);
+  }
+  if (persona.simbolo === "abortoInducido") {
+    doc.line(cx - r * 1.4, cy + r * 0.05, cx + r * 1.4, cy + r * 0.05);
+  }
+
+  if (persona.fallecido || esMuerteFetal) {
+    const d = rr * 0.72;
     doc.line(cx - d, cy - d, cx + d, cy + d);
     doc.line(cx - d, cy + d, cx + d, cy - d);
   }
-  if (persona.edad?.toString().trim()) {
+  if (!esTriangulo && persona.edad?.toString().trim()) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9 * Math.max(escala, 0.75));
     doc.setTextColor(...TRAZO);
-    if (persona.fallecido) {
+    if (persona.fallecido || esMuerteFetal) {
       // Franja blanca tras la edad para leerla sobre la X.
       const ancho = doc.getTextWidth(persona.edad.toString()) + 3 * escala;
       const alto = 8 * escala;
@@ -104,24 +126,24 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     });
   }
 
-  if (persona.indicado) {
+  if (persona.indicado && !esTriangulo) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8 * Math.max(escala, 0.75));
     doc.setTextColor(GRIS_TEXTO);
     doc.text("usuario/a", cx, cy - r - 6 * escala, { align: "center" });
   }
 
-  /* Abreviaturas de las patologías principales: lista sobre la
-     figura, en cursiva y gris. */
+  /* Abreviaturas de las patologías principales: lista al costado
+     de la figura, en cursiva y gris, hacia afuera del centro. */
   const lineasAbrev = listaDeAbreviaturas(persona);
   if (lineasAbrev.length > 0) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8 * Math.max(escala, 0.75));
     doc.setTextColor(GRIS_TEXTO);
     lineasAbrev.forEach((linea, i) => {
-      const yLinea =
-        cy - r - (6 + (persona.indicado ? 9.5 : 0) + (lineasAbrev.length - 1 - i) * 9.5) * escala;
-      doc.text(linea, cx, yLinea, { align: "center" });
+      const yLinea = cy - r + (8 + i * 9.5) * escala;
+      if (ladoTexto === "derecha") doc.text(linea, cx + r + 5 * escala, yLinea, { align: "left" });
+      else doc.text(linea, cx - r - 5 * escala, yLinea, { align: "right" });
     });
   }
 }
@@ -142,6 +164,7 @@ function dibujarRecorrido(doc, puntos) {
 /* Línea de pareja (la descendencia se dibuja con
    dibujarRutaDescendencia, compartiendo tallo y guía). */
 function dibujarVinculo(doc, genograma, vinculo, ox, oy, escala) {
+  if (esDescendencia(vinculo.tipo)) return;
   const pareja = geometriaDePareja(genograma, vinculo);
   if (!pareja) return;
   const inicio = { x: ox + pareja.inicio.x * escala, y: oy + pareja.inicio.y * escala };
@@ -271,12 +294,22 @@ function dibujarDiagrama(doc, genograma, { y, margen, anchoUtil, altoPagina, mar
   const oy = y - limites.minY * escala;
 
   for (const grupo of genograma.grupos ?? []) dibujarGrupo(doc, genograma, grupo, ox, oy, escala);
-  for (const v of genograma.vinculos) {
-    if (v.tipo !== "hijo") dibujarVinculo(doc, genograma, v, ox, oy, escala);
+  for (const v of genograma.vinculos) dibujarVinculo(doc, genograma, v, ox, oy, escala);
+  for (const ruta of rutasDeDescendencia(genograma)) {
+    const v = genograma.vinculos.find((w) => w.id === ruta.id);
+    if (v && (v.tipo === "adoptado" || v.tipo === "crianza")) {
+      doc.setDrawColor(v.tipo === "adoptado" ? 37 : 21, v.tipo === "adoptado" ? 99 : 128, v.tipo === "adoptado" ? 235 : 61);
+      doc.setLineDashPattern([4, 3], 0);
+    } else {
+      trazoDeLinea(doc, escala);
+    }
+    dibujarRutaDescendencia(doc, ruta, ox, oy, escala);
+    doc.setLineDashPattern([], 0);
   }
-  for (const ruta of rutasDeDescendencia(genograma)) dibujarRutaDescendencia(doc, ruta, ox, oy, escala);
   for (const r of genograma.relaciones) dibujarRelacion(doc, genograma, r, ox, oy, escala);
-  for (const p of genograma.personas) dibujarFigura(doc, p, ox, oy, escala);
+  for (const p of genograma.personas) {
+    dibujarFigura(doc, p, ox, oy, escala, ladoDeAbreviaturas(genograma, p));
+  }
 
   /* El borde inferior del contenido (coordenada maxY del
      diagrama) queda en página en y + alto · escala. */
