@@ -7,6 +7,7 @@ import {
   geometriaDePareja,
   geometriaDeRelacion,
   limitesDiagrama,
+  listaDeAbreviaturas,
   puntosDeZigzag,
   rutasDeDescendencia,
 } from "./genograma.js";
@@ -79,22 +80,11 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     doc.text(persona.edad.toString(), cx, cy + 3.5 * Math.max(escala, 0.75), { align: "center" });
   }
 
-  /* Abreviaturas de las patologías principales, sobre el nombre. */
-  const abreviaturas = persona.patologiasAbrev?.trim()
-    ? envolverTexto(persona.patologiasAbrev, 24, 1)[0]
-    : null;
-  if (abreviaturas) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5 * Math.max(escala, 0.75));
-    doc.setTextColor(...TRAZO);
-    doc.text(abreviaturas, cx, cy + r + 11.5 * escala, { align: "center" });
-  }
-
   doc.setFont("helvetica", persona.indicado ? "bold" : "normal");
   doc.setFontSize(9.5 * Math.max(escala, 0.75));
   doc.setTextColor(...TRAZO);
   const nombre = doc.splitTextToSize(persona.nombre?.trim() || "Sin nombre", 150 * escala);
-  doc.text(nombre[0], cx, cy + r + (abreviaturas ? 23 : 12) * escala, { align: "center" });
+  doc.text(nombre[0], cx, cy + r + 12 * escala, { align: "center" });
 
   if (persona.patologias?.trim()) {
     const lineas = envolverTexto(persona.patologias, 26, 3);
@@ -102,7 +92,7 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     doc.setFontSize(8 * Math.max(escala, 0.75));
     doc.setTextColor(GRIS_TEXTO);
     lineas.forEach((linea, i) => {
-      doc.text(linea, cx, cy + r + ((abreviaturas ? 33 : 21) + i * 9.5) * escala, { align: "center" });
+      doc.text(linea, cx, cy + r + (21 + i * 9.5) * escala, { align: "center" });
     });
   }
 
@@ -111,6 +101,20 @@ function dibujarFigura(doc, persona, ox, oy, escala) {
     doc.setFontSize(8 * Math.max(escala, 0.75));
     doc.setTextColor(GRIS_TEXTO);
     doc.text("usuario/a", cx, cy - r - 6 * escala, { align: "center" });
+  }
+
+  /* Abreviaturas de las patologías principales: lista sobre la
+     figura, en cursiva y gris. */
+  const lineasAbrev = listaDeAbreviaturas(persona);
+  if (lineasAbrev.length > 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8 * Math.max(escala, 0.75));
+    doc.setTextColor(GRIS_TEXTO);
+    lineasAbrev.forEach((linea, i) => {
+      const yLinea =
+        cy - r - (6 + (persona.indicado ? 9.5 : 0) + (lineasAbrev.length - 1 - i) * 9.5) * escala;
+      doc.text(linea, cx, yLinea, { align: "center" });
+    });
   }
 }
 
@@ -194,8 +198,8 @@ function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
     dibujarSegmento(doc, inicio, fin);
     doc.setLineDashPattern([], 0);
   } else {
-    // corte: línea con dos barras al medio (vínculo roto)
-    dibujarSegmento(doc, inicio, fin);
+    // corte (relación rota): la línea se separa al medio y cada
+    // extremo lleva una marca perpendicular
     const dx = fin.x - inicio.x;
     const dy = fin.y - inicio.y;
     const len = Math.hypot(dx, dy) || 1;
@@ -203,32 +207,43 @@ function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
     const uy = dy / len;
     const nx = -uy;
     const ny = ux;
+    const hueco = 6 * escala;
     const medio = { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 };
-    const largo = 7 * Math.max(escala, 0.75);
+    dibujarSegmento(doc, inicio, { x: medio.x - ux * hueco, y: medio.y - uy * hueco });
+    dibujarSegmento(doc, { x: medio.x + ux * hueco, y: medio.y + uy * hueco }, fin);
+    const marca = 6 * Math.max(escala, 0.75);
     doc.setLineWidth(GROSOR * Math.max(escala, 0.75) + 0.2);
-    for (const s of [-5, 5]) {
-      const px = medio.x + ux * s * escala;
-      const py = medio.y + uy * s * escala;
-      doc.line(px - nx * largo, py - ny * largo, px + nx * largo, py + ny * largo);
+    for (const s of [-1, 1]) {
+      const px = medio.x + ux * hueco * s;
+      const py = medio.y + uy * hueco * s;
+      doc.line(px - nx * marca, py - ny * marca, px + nx * marca, py + ny * marca);
     }
   }
   trazoDeLinea(doc, escala);
 }
 
-/* Óvalo punteado de convivencia, detrás de líneas y figuras. */
+/* Contorno punteado de convivencia, detrás de líneas y figuras. */
 function dibujarGrupo(doc, genograma, grupo, ox, oy, escala) {
   const geo = geometriaDeGrupo(genograma, grupo);
   if (!geo) return;
-  const cx = ox + geo.cx * escala;
-  const cy = oy + geo.cy * escala;
+  const puntos = geo.puntos.map((p) => ({ x: ox + p.x * escala, y: oy + p.y * escala }));
   trazoDeLinea(doc, escala);
   doc.setLineDashPattern([5, 4], 0);
-  doc.ellipse(cx, cy, geo.rx * escala, geo.ry * escala);
+  doc.lines(
+    puntos.slice(1).map((p, i) => [p.x - puntos[i].x, p.y - puntos[i].y]),
+    puntos[0].x,
+    puntos[0].y,
+    [1, 1],
+    null,
+    true
+  );
   doc.setLineDashPattern([], 0);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8.5 * Math.max(escala, 0.75));
   doc.setTextColor(GRIS_TEXTO);
-  doc.text(geo.etiqueta, cx, oy + (geo.cy - geo.ry + 14) * escala, { align: "center" });
+  doc.text(geo.etiqueta, ox + ((geo.minX + geo.maxX) / 2) * escala, oy + (geo.minY + 14) * escala, {
+    align: "center",
+  });
 }
 
 function dibujarDiagrama(doc, genograma, { y, margen, anchoUtil, altoPagina, margenInferior }) {

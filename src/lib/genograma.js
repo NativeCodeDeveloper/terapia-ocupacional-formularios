@@ -69,7 +69,7 @@ export const COLOR_RELACION = {
 
 /* Leyenda impresa bajo el diagrama del informe. */
 export const LEYENDA_GENOGRAMA =
-  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Óvalo punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Abreviaturas sobre el nombre: patologías principales";
+  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Doble borde: usuario/a evaluado/a · Contorno punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Lista sobre la figura: patologías principales";
 
 /* ============================================================
    IDENTIFICADORES Y CREACIÓN
@@ -562,6 +562,23 @@ export function envolverTexto(texto, maxCaracteres = 26, maxLineas = 3) {
   return lineas;
 }
 
+/* Lista de abreviaturas de las patologías principales: el texto
+   se separa por comas y se dibuja una línea por patología,
+   sobre la figura (máximo cuatro; la última con «…»). */
+export function listaDeAbreviaturas(persona) {
+  const bruto = String(persona?.patologiasAbrev ?? "").trim();
+  if (!bruto) return [];
+  const items = bruto
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => envolverTexto(s, 24, 1)[0]);
+  if (items.length <= 4) return items;
+  const recortadas = items.slice(0, 4);
+  recortadas[3] = `${recortadas[3].replace(/…$/, "")}…`;
+  return recortadas;
+}
+
 export function personaDe(genograma, id) {
   return genograma.personas.find((p) => p.id === id) ?? null;
 }
@@ -580,34 +597,147 @@ export function limitesDiagrama(genograma) {
   const xs = genograma.personas.map((p) => p.x);
   const ys = genograma.personas.map((p) => p.y);
   let minX = Math.min(...xs) - 72;
-  let minY = Math.min(...ys) - 42;
+  let minY = Math.min(...ys) - NODO.radio - 17;
   let maxX = Math.max(...xs) + 72;
   let maxY = Math.max(...ys) + 82;
+  /* Las abreviaturas de patologías suben sobre la figura (una
+     línea por patología, más la marca de usuario si aplica). */
+  for (const p of genograma.personas) {
+    const alto = listaDeAbreviaturas(p).length * 11 + (p.indicado ? 11 : 0);
+    if (alto > 0) minY = Math.min(minY, p.y - NODO.radio - 7 - alto - 10);
+  }
   for (const grupo of genograma.grupos ?? []) {
     const geo = geometriaDeGrupo(genograma, grupo);
     if (!geo) continue;
-    minX = Math.min(minX, geo.cx - geo.rx - 8);
-    minY = Math.min(minY, geo.cy - geo.ry - 8);
-    maxX = Math.max(maxX, geo.cx + geo.rx + 8);
-    maxY = Math.max(maxY, geo.cy + geo.ry + 8);
+    minX = Math.min(minX, geo.minX - 8);
+    minY = Math.min(minY, geo.minY - 8);
+    maxX = Math.max(maxX, geo.maxX + 8);
+    maxY = Math.max(maxY, geo.maxY + 8);
   }
   return { minX, minY, ancho: maxX - minX, alto: maxY - minY };
 }
 
-/* Óvalo punteado que rodea a los integrantes de un círculo de
-   convivencia. Devuelve null con menos de dos miembros. */
+/* Envolvente convexa de los puntos (cadena de monotanía), en
+   orden con área positiva. */
+function envolventeConvexa(puntos) {
+  const ordenados = [...puntos].sort((a, b) => a.x - b.x || a.y - b.y);
+  if (ordenados.length < 3) return ordenados;
+  const cruz = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const inferior = [];
+  for (const p of ordenados) {
+    while (inferior.length >= 2 && cruz(inferior[inferior.length - 2], inferior[inferior.length - 1], p) <= 0) {
+      inferior.pop();
+    }
+    inferior.push(p);
+  }
+  const superior = [];
+  for (let i = ordenados.length - 1; i >= 0; i--) {
+    const p = ordenados[i];
+    while (superior.length >= 2 && cruz(superior[superior.length - 2], superior[superior.length - 1], p) <= 0) {
+      superior.pop();
+    }
+    superior.push(p);
+  }
+  inferior.pop();
+  superior.pop();
+  const lista = inferior.concat(superior);
+  const area = lista.reduce((acc, p, i) => {
+    const q = lista[(i + 1) % lista.length];
+    return acc + (p.x * q.y - q.x * p.y);
+  }, 0);
+  return area >= 0 ? lista : lista.reverse();
+}
+
+/* Contorno cerrado de la envolvente convexa de `centros`,
+   expandida `margen` hacia afuera y con esquinas redondeadas
+   (suma de Minkowski con un disco): abraza a los integrantes
+   del círculo de convivencia sin tragar a vecinos que no. */
+function contornoDePuntos(centros, margen) {
+  const hull = envolventeConvexa(centros);
+  if (hull.length === 0) return null;
+  const puntos = [];
+  if (hull.length === 1) {
+    for (let i = 0; i < 24; i++) {
+      const t = (i / 24) * Math.PI * 2;
+      puntos.push({ x: hull[0].x + Math.cos(t) * margen, y: hull[0].y + Math.sin(t) * margen });
+    }
+    return puntos;
+  }
+  if (hull.length === 2) {
+    // Cápsula: dos lados con extremos semicirculares.
+    const [a, b] = hull;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = dy / len;
+    const ny = -dx / len;
+    puntos.push({ x: a.x + nx * margen, y: a.y + ny * margen });
+    puntos.push({ x: b.x + nx * margen, y: b.y + ny * margen });
+    const a0 = Math.atan2(ny, nx);
+    for (let i = 1; i < 8; i++) {
+      const t = a0 + (i / 8) * Math.PI;
+      puntos.push({ x: b.x + Math.cos(t) * margen, y: b.y + Math.sin(t) * margen });
+    }
+    puntos.push({ x: b.x - nx * margen, y: b.y - ny * margen });
+    puntos.push({ x: a.x - nx * margen, y: a.y - ny * margen });
+    for (let i = 1; i < 8; i++) {
+      const t = a0 + Math.PI + (i / 8) * Math.PI;
+      puntos.push({ x: a.x + Math.cos(t) * margen, y: a.y + Math.sin(t) * margen });
+    }
+    return puntos;
+  }
+  const n = hull.length;
+  const normales = [];
+  for (let i = 0; i < n; i++) {
+    const a = hull[i];
+    const b = hull[(i + 1) % n];
+    const ex = b.x - a.x;
+    const ey = b.y - a.y;
+    const len = Math.hypot(ex, ey) || 1;
+    normales.push({ x: ey / len, y: -ex / len }); // hacia afuera
+  }
+  for (let i = 0; i < n; i++) {
+    const v = hull[(i + 1) % n];
+    const n0 = normales[i];
+    const n1 = normales[(i + 1) % n];
+    puntos.push({ x: v.x + n0.x * margen, y: v.y + n0.y * margen });
+    const a0 = Math.atan2(n0.y, n0.x);
+    let delta = Math.atan2(n1.y, n1.x) - a0;
+    while (delta <= -Math.PI) delta += Math.PI * 2;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    for (let s = 1; s <= 6; s++) {
+      const t = a0 + (delta * s) / 7;
+      puntos.push({ x: v.x + Math.cos(t) * margen, y: v.y + Math.sin(t) * margen });
+    }
+  }
+  return puntos;
+}
+
+/* Contorno punteado del círculo de convivencia: abraza a sus
+   integrantes con un margen fijo, de modo que alguien colocado
+   cerca pero fuera del hogar queda fuera del contorno. Devuelve
+   { puntos, etiqueta, minX, minY, maxX, maxY } o null con
+   menos de dos miembros. */
 export function geometriaDeGrupo(genograma, grupo) {
   const miembros = (grupo.integrantes ?? [])
     .map((id) => personaDe(genograma, id))
     .filter(Boolean);
   if (miembros.length < 2) return null;
-  const xs = miembros.map((p) => p.x);
-  const ys = miembros.map((p) => p.y);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const rx = Math.max((Math.max(...xs) - Math.min(...xs)) / 2 + NODO.radio + 36, 100);
-  const ry = Math.max((Math.max(...ys) - Math.min(...ys)) / 2 + NODO.radio + 42, 80);
-  return { cx, cy, rx, ry, etiqueta: grupo.nombre?.trim() || ETIQUETA_CONVIVENCIA };
+  const puntos = contornoDePuntos(
+    miembros.map((p) => ({ x: p.x, y: p.y })),
+    NODO.radio + 20
+  );
+  if (!puntos) return null;
+  const xs = puntos.map((p) => p.x);
+  const ys = puntos.map((p) => p.y);
+  return {
+    puntos,
+    etiqueta: grupo.nombre?.trim() || ETIQUETA_CONVIVENCIA,
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys),
+  };
 }
 
 /* Punto del borde de la figura en la dirección del vector

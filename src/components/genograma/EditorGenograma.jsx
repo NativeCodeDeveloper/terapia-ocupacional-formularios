@@ -60,7 +60,7 @@ const PASOS_GUIA = [
     "Conecta con vínculos",
     "pulsa «Conectar», haz clic en una persona y luego en la otra, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo descienda de dos personas —p. ej., de José y de María— conecta con cada progenitor; si forman pareja entre sí, la descendencia se dibuja como una sola línea desde la pareja.",
   ],
-  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un óvalo punteado que los rodea."],
+  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno punteado que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
   ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla."],
   ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
 ];
@@ -554,7 +554,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                   type="text"
                   value={persona.patologiasAbrev}
                   onChange={(e) => actualizarPersona({ patologiasAbrev: e.target.value })}
-                  placeholder="Se ven sobre el nombre, p. ej., DM, HTA, TDAH"
+                  placeholder="Separadas por coma, se ven sobre la figura; p. ej., DM, HTA, TDAH"
                   className={CONTROL}
                 />
               </div>

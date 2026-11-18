@@ -11,14 +11,17 @@ import {
   copiarParaEvaluacion,
   eliminarDeBiblioteca,
   envolverTexto,
+  geometriaDeGrupo,
   filasDeIntegrantes,
   genogramaVacio,
   geometriaDePareja,
   geometriaDeRelacion,
   guardarEnBiblioteca,
   etiquetaConexionesDe,
+  grupoAgregado,
   leerBiblioteca,
   limitesDiagrama,
+  listaDeAbreviaturas,
   normalizarGenograma,
   nuevaPersona,
   personaActualizada,
@@ -390,6 +393,54 @@ test("las patologías principales se guardan y aparecen en la tabla", () => {
     relaciones: [],
   });
   assert.equal(reparado.personas[0].patologiasAbrev, "TDAH");
+});
+
+test("las abreviaturas se separan por coma y se listan una por línea", () => {
+  assert.deepEqual(listaDeAbreviaturas({ patologiasAbrev: "HTA, DM2, TDAH" }), ["HTA", "DM2", "TDAH"]);
+  // Sin coma, la línea completa es un solo ítem.
+  assert.deepEqual(listaDeAbreviaturas({ patologiasAbrev: "HTA DM2" }), ["HTA DM2"]);
+  // Ignora vacíos y corta en cuatro ítems con «…» en el último.
+  assert.deepEqual(listaDeAbreviaturas({ patologiasAbrev: " a , , b , c , d , e " }), ["a", "b", "c", "d…"]);
+  assert.deepEqual(listaDeAbreviaturas({}), []);
+  assert.deepEqual(listaDeAbreviaturas(null), []);
+});
+
+test("el contorno de convivencia rodea a sus integrantes y deja fuera a quien vive aparte", () => {
+  let g = nuevaPersona(
+    nuevaPersona(
+      nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 500, y: 200 }),
+      "hombre",
+      { x: 400, y: 300 }
+    ),
+    "hombre",
+    { x: 320, y: 320 }
+  );
+  const [samuel, cristina, marcelo, felipe] = g.personas;
+  g = grupoAgregado(g, [samuel.id, cristina.id, marcelo.id]);
+  assert.equal(g.grupos.length, 1);
+  assert.deepEqual(g.grupos[0].integrantes, [samuel.id, cristina.id, marcelo.id]);
+
+  const geo = geometriaDeGrupo(g, g.grupos[0]);
+  assert.ok(geo);
+
+  /* Prueba de punto en polígono (ray casting). */
+  const dentro = (px, py) => {
+    let adentro = false;
+    const pts = geo.puntos;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const a = pts[i];
+      const b = pts[j];
+      if (a.y > py !== b.y > py && px < ((b.x - a.x) * (py - a.y)) / (b.y - a.y) + a.x) adentro = !adentro;
+    }
+    return adentro;
+  };
+
+  // Los integrantes quedan dentro del contorno.
+  for (const miembro of [samuel, cristina, marcelo]) {
+    assert.equal(dentro(miembro.x, miembro.y), true, `integrante en ${miembro.x},${miembro.y}`);
+  }
+  // Quien vive aparte, fuera.
+  assert.equal(dentro(felipe.x, felipe.y), false);
 });
 
 /* ============================================================

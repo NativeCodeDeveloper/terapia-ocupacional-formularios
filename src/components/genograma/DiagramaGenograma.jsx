@@ -8,6 +8,7 @@ import {
   geometriaDePareja,
   geometriaDeRelacion,
   limitesDiagrama,
+  listaDeAbreviaturas,
   puntosDeZigzag,
   rutasDeDescendencia,
 } from "@/lib/genograma";
@@ -53,10 +54,9 @@ export function puntoSvg(svg, clienteX, clienteY) {
 
 function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) {
   const { x, y } = persona;
-  /* Abreviaturas de las patologías principales, sobre el nombre. */
-  const abreviaturas = persona.patologiasAbrev?.trim()
-    ? envolverTexto(persona.patologiasAbrev, 24, 1)[0]
-    : null;
+  /* Abreviaturas de las patologías principales: lista sobre la
+     figura (una línea por patología), en cursiva y gris. */
+  const lineasAbrev = listaDeAbreviaturas(persona);
   const lineasPatologias = persona.patologias?.trim() ? envolverTexto(persona.patologias, 26, 3) : [];
   const lado = NODO.lado;
   const r = NODO.radio;
@@ -135,22 +135,9 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           {persona.edad}
         </text>
       )}
-      {abreviaturas && (
-        <text
-          x={x}
-          y={y + r + 12}
-          textAnchor="middle"
-          fontSize="10.5"
-          fontWeight={600}
-          fill={TINTES.etiqueta}
-          style={{ pointerEvents: "none", userSelect: "none" }}
-        >
-          {abreviaturas}
-        </text>
-      )}
       <text
         x={x}
-        y={y + r + (abreviaturas ? 25 : 13)}
+        y={y + r + 13}
         textAnchor="middle"
         fontSize="12.5"
         fontWeight={persona.indicado ? 700 : 500}
@@ -163,7 +150,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
         <text
           key={i}
           x={x}
-          y={y + r + (abreviaturas ? 36 : 25) + i * 11}
+          y={y + r + 25 + i * 11}
           textAnchor="middle"
           fontSize="10.5"
           fontStyle="italic"
@@ -186,6 +173,22 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, eventos }) 
           usuario/a
         </text>
       )}
+      <g>
+        {lineasAbrev.map((linea, i) => (
+          <text
+            key={`${i}-${linea}`}
+            x={x}
+            y={y - r - 7 - (persona.indicado ? 11 : 0) - (lineasAbrev.length - 1 - i) * 11}
+            textAnchor="middle"
+            fontSize="10.5"
+            fontStyle="italic"
+            fill={TINTES.secundario}
+            style={{ pointerEvents: "none", userSelect: "none" }}
+          >
+            {linea}
+          </text>
+        ))}
+      </g>
     </g>
   );
 }
@@ -228,7 +231,7 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
                   strokeWidth={grosor}
                 />
               ))
-            : tieneLinea && (
+            : tieneLinea && !geometria.segmentos && (
                 <line
                   x1={extremos.inicio.x}
                   y1={extremos.inicio.y}
@@ -239,6 +242,29 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
                   strokeDasharray={geometria.discontinua ? "6 5" : undefined}
                 />
               )}
+          {/* Corte (relación rota): dos tramos con espacio al medio. */}
+          {geometria.segmentos?.map(([a, b], i) => (
+            <line
+              key={`s${i}`}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke={colorLinea}
+              strokeWidth={grosor}
+            />
+          ))}
+          {geometria.ticks?.map((p, i) => (
+            <line
+              key={`t${i}`}
+              x1={p.x - geometria.direccion.x * 6}
+              y1={p.y - geometria.direccion.y * 6}
+              x2={p.x + geometria.direccion.x * 6}
+              y2={p.y + geometria.direccion.y * 6}
+              stroke={colorLinea}
+              strokeWidth={grosor + 0.4}
+            />
+          ))}
           {geometria.recorrido && (
             <polyline
               points={geometria.recorrido.map((p) => `${p.x},${p.y}`).join(" ")}
@@ -352,25 +378,23 @@ export default function DiagramaGenograma({
           if (!geo) return null;
           const seleccionado = grupoSeleccionado === grupo.id;
           const color = seleccionado ? TINTES.seleccion : TINTES.secundario;
+          const puntos = geo.puntos.map((p) => `${p.x},${p.y}`).join(" ");
           return (
             <g
               key={grupo.id}
               onClick={interactivo && alClicGrupo ? () => alClicGrupo(grupo) : null}
               style={interactivo && alClicGrupo ? { cursor: "pointer" } : undefined}
             >
-              <ellipse
-                cx={geo.cx}
-                cy={geo.cy}
-                rx={geo.rx}
-                ry={geo.ry}
+              <polygon
+                points={puntos}
                 fill="none"
                 stroke={color}
                 strokeWidth={seleccionado ? 2.4 : 1.8}
                 strokeDasharray="7 6"
               />
               <text
-                x={geo.cx}
-                y={geo.cy - geo.ry + 15}
+                x={(geo.minX + geo.maxX) / 2}
+                y={geo.minY + 15}
                 textAnchor="middle"
                 fontSize="11"
                 fontStyle="italic"
@@ -380,11 +404,8 @@ export default function DiagramaGenograma({
                 {geo.etiqueta}
               </text>
               {interactivo && alClicGrupo && (
-                <ellipse
-                  cx={geo.cx}
-                  cy={geo.cy}
-                  rx={geo.rx}
-                  ry={geo.ry}
+                <polygon
+                  points={puntos}
                   fill="none"
                   stroke="transparent"
                   strokeWidth={16}
@@ -443,21 +464,25 @@ export default function DiagramaGenograma({
           } else if (r.tipo === "distante") {
             g = { inicio, fin, discontinua: true };
           } else {
-            // corte: línea con dos barras al medio (vínculo roto)
+            // corte (relación rota): la línea se separa al medio
+            // y cada extremo lleva una marca perpendicular
             const medio = { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 };
             const dx = fin.x - inicio.x;
             const dy = fin.y - inicio.y;
             const len = Math.hypot(dx, dy) || 1;
             const ux = dx / len;
             const uy = dy / len;
+            const p1 = { x: medio.x - ux * 6, y: medio.y - uy * 6 };
+            const p2 = { x: medio.x + ux * 6, y: medio.y + uy * 6 };
             g = {
               inicio,
               fin,
-              barras: [
-                { x: medio.x - ux * 5, y: medio.y - uy * 5, largo: 7 },
-                { x: medio.x + ux * 5, y: medio.y + uy * 5, largo: 7 },
+              segmentos: [
+                [inicio, p1],
+                [p2, fin],
               ],
-              barrasDireccion: { x: -uy, y: ux },
+              ticks: [p1, p2],
+              direccion: { x: -uy, y: ux },
             };
           }
           return (
