@@ -486,7 +486,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
             setSeleccionCirculo([]);
             deseleccionar();
           }}
-          className={conectando ? BOTON_PRIMARIO : BOTON_NEUTRO}
+          className={`${BOTON} border-teal-700 bg-teal-700 text-white shadow-sm hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 aria-pressed:bg-teal-900 aria-pressed:ring-2 aria-pressed:ring-teal-300`}
           aria-pressed={conectando}
         >
           {conectando ? "● Conectando…" : "Conectar"}
