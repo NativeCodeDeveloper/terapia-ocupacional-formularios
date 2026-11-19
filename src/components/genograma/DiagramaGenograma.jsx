@@ -6,6 +6,7 @@ import {
   COLOR_RELACION,
   NODO,
   envolverTexto,
+  esDescendencia,
   geometriaDeGrupo,
   geometriaDePareja,
   geometriaDeRelacion,
@@ -473,11 +474,11 @@ export default function DiagramaGenograma({
       {/* Vínculos y relaciones por debajo de las figuras */}
       <g>
         {g.vinculos
-          .filter((v) => v.tipo !== "hijo")
+          .filter((v) => !esDescendencia(v.tipo))
           .map((v) => {
             const pareja = geometriaDePareja(g, v);
             if (!pareja) return null;
-            const g = {
+            const geometria = {
               inicio: pareja.inicio,
               fin: pareja.fin,
               discontinua: pareja.discontinua,
@@ -487,7 +488,7 @@ export default function DiagramaGenograma({
             return (
               <LineaConexion
                 key={v.id}
-                geometria={g}
+                geometria={geometria}
                 seleccionada={conexionSeleccionada === v.id}
                 alClic={interactivo && alClicConexion ? () => alClicConexion(v) : null}
               />
@@ -520,15 +521,15 @@ export default function DiagramaGenograma({
           const base = geometriaDeRelacion(g, r);
           if (!base) return null;
           const { inicio, fin, normal } = base;
-          let g;
+          let geometria;
           if (r.tipo === "conflicto") {
-            g = { zigzag: puntosDeZigzag(inicio, fin) };
+            geometria = { zigzag: puntosDeZigzag(inicio, fin) };
           } else if (r.tipo === "cercana") {
-            g = { inicio, fin, normal, lineasParalelas: [-2.6, 2.6] };
+            geometria = { inicio, fin, normal, lineasParalelas: [-2.6, 2.6] };
           } else if (r.tipo === "fusion") {
-            g = { inicio, fin, normal, lineasParalelas: [-4.6, 0, 4.6] };
+            geometria = { inicio, fin, normal, lineasParalelas: [-4.6, 0, 4.6] };
           } else if (r.tipo === "distante") {
-            g = { inicio, fin, discontinua: true };
+            geometria = { inicio, fin, discontinua: true };
           } else {
             // corte (relación rota): la línea se separa al medio
             // y cada extremo lleva una marca perpendicular
@@ -540,7 +541,7 @@ export default function DiagramaGenograma({
             const uy = dy / len;
             const p1 = { x: medio.x - ux * 6, y: medio.y - uy * 6 };
             const p2 = { x: medio.x + ux * 6, y: medio.y + uy * 6 };
-            g = {
+            geometria = {
               inicio,
               fin,
               segmentos: [
@@ -554,7 +555,7 @@ export default function DiagramaGenograma({
           return (
             <LineaConexion
               key={r.id}
-              geometria={g}
+              geometria={geometria}
               color={COLOR_RELACION[r.tipo] ?? null}
               seleccionada={conexionSeleccionada === r.id}
               alClic={interactivo && alClicConexion ? () => alClicConexion(r) : null}
