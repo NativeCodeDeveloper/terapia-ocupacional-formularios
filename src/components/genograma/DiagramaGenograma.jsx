@@ -113,6 +113,18 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
       style={interactivo ? { cursor: "pointer" } : undefined}
       aria-label={persona.nombre?.trim() || "Persona sin nombre"}
     >
+      <text
+        x={x}
+        y={y + r + 15}
+        filter={`url(#${idFondoNombre})`}
+        textAnchor="middle"
+        fontSize="12.5"
+        fontWeight={persona.indicado ? 700 : 500}
+        fill={TINTES.etiqueta}
+        className="pointer-events-none select-none"
+      >
+        {persona.nombre?.trim() || "Sin nombre"}
+      </text>
       {forma}
       {/* Aborto: X dentro del triángulo; el inducido lleva una
           línea horizontal que cruza el símbolo. */}
@@ -179,18 +191,6 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
           {persona.edad}
         </text>
       )}
-      <text
-        x={x}
-        y={y + r + 15}
-        filter={`url(#${idFondoNombre})`}
-        textAnchor="middle"
-        fontSize="12.5"
-        fontWeight={persona.indicado ? 700 : 500}
-        fill={TINTES.etiqueta}
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        {persona.nombre?.trim() || "Sin nombre"}
-      </text>
       {lineasPatologias.map((linea, i) => (
         <text
           key={i}
