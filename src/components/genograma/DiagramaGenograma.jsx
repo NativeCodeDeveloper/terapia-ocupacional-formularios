@@ -181,6 +181,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
       <text
         x={x}
         y={y + r + 13}
+        className="stroke-white stroke-[3px] [paint-order:stroke]"
         textAnchor="middle"
         fontSize="12.5"
         fontWeight={persona.indicado ? 700 : 500}
@@ -194,6 +195,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
           key={i}
           x={x}
           y={y + r + 25 + i * 11}
+          className="stroke-white stroke-[3px] [paint-order:stroke]"
           textAnchor="middle"
           fontSize="10.5"
           fontStyle="italic"
@@ -207,6 +209,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
         <text
           x={x}
           y={y - r - 7}
+          className="stroke-white stroke-[3px] [paint-order:stroke]"
           textAnchor="middle"
           fontSize="10"
           fontStyle="italic"
@@ -223,6 +226,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
             key={`${i}-${linea}`}
             x={abrevALaDerecha ? x + r + 5 : x - r - 5}
             y={y - r + 8 + i * 11}
+            className="stroke-white stroke-[3px] [paint-order:stroke]"
             textAnchor={abrevALaDerecha ? "start" : "end"}
             fontSize="10.5"
             fontStyle="italic"
@@ -584,7 +588,7 @@ export default function DiagramaGenograma({
           fill="#9ca3af"
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
-          genograma v7
+          genograma v8
         </text>
       )}
     </svg>

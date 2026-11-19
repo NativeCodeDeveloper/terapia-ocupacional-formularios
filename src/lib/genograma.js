@@ -821,9 +821,9 @@ function contornoDePuntos(centros, margen) {
   return puntos;
 }
 
-/* Contorno punteado del círculo de convivencia: abraza a sus
-   integrantes con un margen fijo, de modo que alguien colocado
-   cerca pero fuera del hogar queda fuera del contorno. Devuelve
+/* Contorno punteado del círculo de convivencia: deja más
+   espacio para las etiquetas cuando el hogar ocupa todo el
+   diagrama y un margen más compacto si hay otros hogares. Devuelve
    { puntos, etiqueta, minX, minY, maxX, maxY } o null con
    menos de dos miembros. */
 export function geometriaDeGrupo(genograma, grupo) {
@@ -833,7 +833,7 @@ export function geometriaDeGrupo(genograma, grupo) {
   if (miembros.length < 2) return null;
   const puntos = contornoDePuntos(
     miembros.map((p) => ({ x: p.x, y: p.y })),
-    NODO.radio + 20
+    miembros.length === genograma.personas.length ? 108 : 52
   );
   if (!puntos) return null;
   const xs = puntos.map((p) => p.x);
