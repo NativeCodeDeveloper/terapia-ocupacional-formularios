@@ -475,6 +475,55 @@ test("marcar la descendencia reemplaza una pareja equivocada entre las mismas pe
   assert.equal(conexionAgregada(conDescendencia, "union", gabriel.id, nicolas.id), conDescendencia);
 });
 
+test("la descendencia registrada al revés se corrige y no se duplica", () => {
+  // El flujo real del error: primero se conecta en el sentido
+  // equivocado («B es hijo/a de A») y después se corrige con el
+  // bueno. Antes quedaban dos descendencias y la invertida se
+  // dibujaba como una diagonal recta sobre el codo correcto.
+  let g = nuevaPersona(
+    nuevaPersona(genogramaVacio(), "hombre", { x: 280, y: 140 }),
+    "hombre",
+    { x: 280, y: 340 }
+  );
+  const [b, a] = g.personas; // B arriba (progenitor), A abajo (hijo)
+  g = conexionAgregada(g, "hijo", a.id, b.id); // registrado al revés
+  assert.equal(g.vinculos.length, 1);
+  g = conexionAgregada(g, "hijo", b.id, a.id); // marca el sentido bueno
+
+  // Queda una sola descendencia, con el sentido correcto.
+  assert.equal(g.vinculos.length, 1);
+  assert.equal(g.vinculos[0].de, b.id);
+  assert.equal(g.vinculos[0].a, a.id);
+
+  // Repetir la marca correcta no cambia nada…
+  const antes = g;
+  g = conexionAgregada(g, "hijo", b.id, a.id);
+  assert.equal(g, antes);
+
+  // …y ningún recorrido tiene tramos diagonales.
+  for (const ruta of rutasDeDescendencia(g)) {
+    for (let i = 1; i < ruta.recorrido.length; i++) {
+      const p = ruta.recorrido[i - 1];
+      const q = ruta.recorrido[i];
+      assert.ok(p.x === q.x || p.y === q.y);
+    }
+  }
+
+  // Los datos guardados con las dos direcciones se reparan al
+  // cargar: queda la que va del progenitor (arriba) hacia el hijo.
+  const reparado = normalizarGenograma({
+    ...g,
+    vinculos: [
+      { id: "v-inv", tipo: "hijo", de: a.id, a: b.id },
+      { id: "v-bueno", tipo: "hijo", de: b.id, a: a.id },
+    ],
+  });
+  const descendencias = reparado.vinculos.filter((v) => esDescendencia(v.tipo));
+  assert.equal(descendencias.length, 1);
+  assert.equal(descendencias[0].de, b.id);
+  assert.equal(descendencias[0].a, a.id);
+});
+
 test("la descendencia de un progenitor con pareja sale del punto medio de la pareja", () => {
   // Felipe y Marcelo conectados solo con Samuel, que forma
   // pareja con Cristina: las líneas salen del medio de la pareja.

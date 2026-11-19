@@ -244,7 +244,10 @@ export function parejaEntre(genograma, idA, idB) {
      está relacionada por la descendencia;
    - marcar la descendencia entre dos personas ya unidas como
      pareja reemplaza ese vínculo equivocado: quedan relacionadas
-     solo como progenitor e hijo, con una sola línea. */
+     solo como progenitor e hijo, con una sola línea;
+   - marcar la descendencia entre dos personas que ya la tienen
+     registrada en el sentido inverso corrige el sentido, no
+     agrega una segunda línea. */
 export function conexionAgregada(genograma, tipo, de, a) {
   const personaA = genograma.personas.find((p) => p.id === a);
   if (!personaA || de === a) return genograma;
@@ -272,20 +275,41 @@ export function conexionAgregada(genograma, tipo, de, a) {
       );
       return { ...genograma, vinculos: [...restantes, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }] };
     }
-    if (genograma.vinculos.some((v) => esDescendencia(v.tipo) && v.de === de && v.a === a)) return genograma;
-    /* Si las dos personas ya estaban unidas por un vínculo de
-       pareja (conexión equivocada), la descendencia lo reemplaza:
-       queda una sola línea entre ambas. Los hijos que colgaran de
-       esa línea de pareja pasan al progenitor. */
+    /* Dentro del mismo par de personas solo puede haber una
+       descendencia y ninguna pareja:
+       - ya registrada en el mismo sentido: no se duplica (y si
+         quedara una pareja equivocada entre ambos, se elimina);
+       - ya registrada en el sentido inverso (p. ej., primero
+         «B es hijo/a de A» y ahora «A es hijo/a de B»): la nueva
+         marca corrige el sentido en lugar de sumar una segunda
+         línea, que era la que dibujaba la diagonal;
+       - una pareja entre ambos (conexión equivocada): la
+         descendencia la reemplaza y sus hijos pasan al
+         progenitor. */
+    const previaMisma = genograma.vinculos.find(
+      (v) => esDescendencia(v.tipo) && v.de === de && v.a === a
+    );
+    const previaInvertida = genograma.vinculos.find(
+      (v) => esDescendencia(v.tipo) && v.de === a && v.a === de
+    );
     const parejaPrevia = parejaEntre(genograma, de, a);
-    const base = parejaPrevia
+    const sinPareja = parejaPrevia
       ? genograma.vinculos
           .filter((v) => v.id !== parejaPrevia.id)
           .map((v) => (esDescendencia(v.tipo) && v.de === parejaPrevia.id ? { ...v, de } : v))
       : genograma.vinculos;
+    if (previaMisma) {
+      return parejaPrevia ? { ...genograma, vinculos: sinPareja } : genograma;
+    }
+    if (previaInvertida) {
+      return {
+        ...genograma,
+        vinculos: sinPareja.map((v) => (v.id === previaInvertida.id ? { ...v, de, a, tipo } : v)),
+      };
+    }
     const agregada = {
       ...genograma,
-      vinculos: [...base, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
+      vinculos: [...sinPareja, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
     };
     const parejaDe = (idA, idB) =>
       agregada.vinculos.find(
@@ -417,8 +441,37 @@ export function normalizarGenograma(datos) {
   /* Datos guardados con parejas entre progenitor e hijo (error
      de conexión: dibujan un triángulo sin sentido sobre la
      descendencia): se descartan al reparar. */
+  const parejasInvalidas = new Set(
+    vinculos
+      .filter((v) => !esDescendencia(v.tipo) && esProgenitorHijo({ vinculos }, v.de, v.a))
+      .map((v) => v.id)
+  );
+  /* Descendencia registrada en los dos sentidos (p. ej., «B es
+     hijo/a de A» y también «A es hijo/a de B»): se conserva una
+     sola, prefiriendo la que va del progenitor hacia el hijo
+     (el progenitor queda arriba en el dibujo); a igualdad, la
+     primera registrada. */
+  const porPar = new Map();
+  for (const v of vinculos) {
+    if (!esDescendencia(v.tipo)) continue;
+    const clave = parDe(v);
+    const lista = porPar.get(clave) ?? [];
+    lista.push(v);
+    porPar.set(clave, lista);
+  }
+  const invertidas = new Set();
+  for (const lista of porPar.values()) {
+    if (lista.length < 2) continue;
+    const buena =
+      lista.find((v) => {
+        const origen = personas.find((p) => p.id === v.de);
+        const hijo = personas.find((p) => p.id === v.a);
+        return origen && hijo && origen.y <= hijo.y;
+      }) ?? lista[0];
+    for (const v of lista) if (v !== buena) invertidas.add(v.id);
+  }
   const vinculosValidos = vinculos.filter(
-    (v) => esDescendencia(v.tipo) || !esProgenitorHijo({ vinculos }, v.de, v.a)
+    (v) => !parejasInvalidas.has(v.id) && !invertidas.has(v.id)
   );
   return {
     version: 1,

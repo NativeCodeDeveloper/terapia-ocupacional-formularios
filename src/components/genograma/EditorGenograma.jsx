@@ -213,6 +213,9 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   function elegirTipo(tipo) {
     if (!menu) return;
     const previaPareja = esDescendencia(tipo) ? parejaEntre(borrador, menu.de, menu.a) : null;
+    const previaInvertida = esDescendencia(tipo)
+      ? borrador.vinculos.find((v) => esDescendencia(v.tipo) && v.de === menu.a && v.a === menu.de)
+      : null;
     const siguiente = conexionAgregada(borrador, tipo, menu.de, menu.a);
     setBorrador(siguiente);
     cancelarMenu();
@@ -225,9 +228,13 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           : "No se creó la conexión: ya existe o no es válida entre esas dos personas.",
         true
       );
+    } else if (previaInvertida) {
+      avisar(
+        `La descendencia entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} estaba registrada al revés: se corrigió el sentido.`
+      );
     } else if (previaPareja) {
       avisar(
-        `El vínculo de pareja entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} se reemplazó por la descendencia: quedan con una sola línea, como progenitor e hijo.`
+        `El vínculo de pareja entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} se eliminó: quedan relacionados solo como progenitor e hijo, con una sola línea.`
       );
     } else {
       avisar("");
