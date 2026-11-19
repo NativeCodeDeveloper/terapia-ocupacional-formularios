@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   COLOR_DESCENDENCIA,
   COLOR_RELACION,
@@ -11,6 +12,7 @@ import {
   ladoDeAbreviaturas,
   limitesDiagrama,
   listaDeAbreviaturas,
+  normalizarGenograma,
   puntosDeZigzag,
   rutasDeDescendencia,
 } from "@/lib/genograma";
@@ -32,6 +34,10 @@ import {
    guía. Relaciones (en color): doble línea verde (cercana),
    triple verde (fusión), punteada roja (distante), zigzag rojo
    (conflicto), línea roja con dos barras (corte).
+   El dibujo parte siempre de los datos reparados
+   (normalizarGenograma): un vínculo imposible que quedara en la
+   sesión —p. ej., una pareja entre progenitor e hijo— no se
+   dibuja, sin esperar a recargar.
    ============================================================ */
 
 const TINTES = {
@@ -370,7 +376,11 @@ export default function DiagramaGenograma({
   alPointerSoltarPersona = null,
   referenciaSvg = null,
 }) {
-  const limites = limitesDiagrama(genograma);
+  /* Reparación en vivo: el dibujo usa los datos saneados, de modo
+     que un vínculo inválido que sobreviva en el estado del editor
+     (creado antes de una corrección) desaparece sin recargar. */
+  const g = useMemo(() => normalizarGenograma(genograma), [genograma]);
+  const limites = limitesDiagrama(g);
   if (!limites) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-[13px] text-neutral-400">
@@ -412,8 +422,8 @@ export default function DiagramaGenograma({
 
       {/* Círculos de convivencia, detrás de líneas y figuras */}
       <g>
-        {(genograma.grupos ?? []).map((grupo) => {
-          const geo = geometriaDeGrupo(genograma, grupo);
+        {(g.grupos ?? []).map((grupo) => {
+          const geo = geometriaDeGrupo(g, grupo);
           if (!geo) return null;
           const seleccionado = grupoSeleccionado === grupo.id;
           const color = seleccionado ? TINTES.seleccion : TINTES.secundario;
@@ -458,10 +468,10 @@ export default function DiagramaGenograma({
 
       {/* Vínculos y relaciones por debajo de las figuras */}
       <g>
-        {genograma.vinculos
+        {g.vinculos
           .filter((v) => v.tipo !== "hijo")
           .map((v) => {
-            const pareja = geometriaDePareja(genograma, v);
+            const pareja = geometriaDePareja(g, v);
             if (!pareja) return null;
             const g = {
               inicio: pareja.inicio,
@@ -482,8 +492,8 @@ export default function DiagramaGenograma({
         {/* Descendencia: tallo y guía compartidos por origen,
             una caída por hijo (o por progenitor); adoptado y
             crianza se dibujan discontinuos y con color. */}
-        {rutasDeDescendencia(genograma).map((ruta) => {
-          const vinculoRuta = genograma.vinculos.find((w) => w.id === ruta.id);
+        {rutasDeDescendencia(g).map((ruta) => {
+          const vinculoRuta = g.vinculos.find((w) => w.id === ruta.id);
           const especial =
             vinculoRuta?.tipo === "adoptado" || vinculoRuta?.tipo === "crianza";
           return (
@@ -502,8 +512,8 @@ export default function DiagramaGenograma({
             />
           );
         })}
-        {genograma.relaciones.map((r) => {
-          const base = geometriaDeRelacion(genograma, r);
+        {g.relaciones.map((r) => {
+          const base = geometriaDeRelacion(g, r);
           if (!base) return null;
           const { inicio, fin, normal } = base;
           let g;
@@ -550,11 +560,11 @@ export default function DiagramaGenograma({
       </g>
 
       <g>
-        {genograma.personas.map((p) => (
+        {g.personas.map((p) => (
           <FiguraPersona
             key={p.id}
             persona={p}
-            lado={ladoDeAbreviaturas(genograma, p)}
+            lado={ladoDeAbreviaturas(g, p)}
             seleccionada={personaSeleccionada === p.id}
             activa={personaActiva === p.id || idsActivos.includes(p.id)}
             interactivo={interactivo}
