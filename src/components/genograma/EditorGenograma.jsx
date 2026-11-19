@@ -21,6 +21,7 @@ import {
   normalizarGenograma,
   organizarGenograma,
   nuevaPersona,
+  parejaEntre,
   personaActualizada,
   personaEliminada,
   personaIndicada,
@@ -211,6 +212,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   function elegirTipo(tipo) {
     if (!menu) return;
+    const previaPareja = esDescendencia(tipo) ? parejaEntre(borrador, menu.de, menu.a) : null;
     const siguiente = conexionAgregada(borrador, tipo, menu.de, menu.a);
     setBorrador(siguiente);
     cancelarMenu();
@@ -222,6 +224,10 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           ? `Entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} ya hay vínculo de progenitor e hijo: la descendencia se dibuja desde su línea, no como pareja.`
           : "No se creó la conexión: ya existe o no es válida entre esas dos personas.",
         true
+      );
+    } else if (previaPareja) {
+      avisar(
+        `El vínculo de pareja entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} se reemplazó por la descendencia: quedan con una sola línea, como progenitor e hijo.`
       );
     } else {
       avisar("");
@@ -357,7 +363,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
       </div>
 
       {/* Barra de herramientas */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => agregarPersona("hombre")} className={BOTON_NEUTRO}>
           <span aria-hidden="true" className="text-indigo-600">＋</span> Hombre
         </button>

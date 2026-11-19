@@ -442,6 +442,39 @@ test("no se crea ni se conserva una pareja entre progenitor e hijo", () => {
   }
 });
 
+test("marcar la descendencia reemplaza una pareja equivocada entre las mismas personas", () => {
+  // Pareja creada por error primero y «es hijo/a de» después: no
+  // deben quedar dos líneas (diagonal + codo) entre las dos figuras.
+  let g = nuevaPersona(
+    nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 220, y: 210 }), "hombre", { x: 540, y: 530 })
+  );
+  const [gabriel, nicolas] = g.personas;
+  g = conexionAgregada(g, "union", gabriel.id, nicolas.id);
+  assert.equal(g.vinculos.length, 1);
+  g = conexionAgregada(g, "hijo", gabriel.id, nicolas.id);
+
+  // Queda una sola conexión: la descendencia.
+  assert.equal(g.vinculos.length, 1);
+  assert.equal(esDescendencia(g.vinculos[0].tipo), true);
+  assert.equal(g.vinculos[0].de, gabriel.id);
+  assert.equal(g.vinculos[0].a, nicolas.id);
+
+  // El dibujo no tiene tramos diagonales: todo el recorrido es
+  // vertical u horizontal.
+  for (const ruta of rutasDeDescendencia(g)) {
+    for (let i = 1; i < ruta.recorrido.length; i++) {
+      const a = ruta.recorrido[i - 1];
+      const b = ruta.recorrido[i];
+      assert.ok(a.x === b.x || a.y === b.y);
+    }
+  }
+
+  // Un vínculo de pareja entre progenitor e hijo sigue sin crearse
+  // (orden inverso: descendencia primero, pareja después).
+  const conDescendencia = g;
+  assert.equal(conexionAgregada(conDescendencia, "union", gabriel.id, nicolas.id), conDescendencia);
+});
+
 test("la descendencia de un progenitor con pareja sale del punto medio de la pareja", () => {
   // Felipe y Marcelo conectados solo con Samuel, que forma
   // pareja con Cristina: las líneas salen del medio de la pareja.

@@ -223,6 +223,15 @@ export function esProgenitorHijo(genograma, idA, idB) {
   return (hijos.get(idA) ?? []).includes(idB) || (hijos.get(idB) ?? []).includes(idA);
 }
 
+/* Vínculo de pareja entre dos personas, si existe. */
+export function parejaEntre(genograma, idA, idB) {
+  return (
+    genograma.vinculos.find(
+      (v) => !esDescendencia(v.tipo) && ((v.de === idA && v.a === idB) || (v.de === idB && v.a === idA))
+    ) ?? null
+  );
+}
+
 /* Agrega un vínculo o una relación. Reglas mínimas para
    mantener el diagrama legible:
    - exige que ambas personas existan («hijo» admite que `de`
@@ -232,7 +241,10 @@ export function esProgenitorHijo(genograma, idA, idB) {
    - una relación nueva reemplaza la anterior del mismo par;
    - no duplica el mismo par en un vínculo de pareja;
    - no crea parejas entre progenitor e hijo: la familia ya
-     está relacionada por la descendencia. */
+     está relacionada por la descendencia;
+   - marcar la descendencia entre dos personas ya unidas como
+     pareja reemplaza ese vínculo equivocado: quedan relacionadas
+     solo como progenitor e hijo, con una sola línea. */
 export function conexionAgregada(genograma, tipo, de, a) {
   const personaA = genograma.personas.find((p) => p.id === a);
   if (!personaA || de === a) return genograma;
@@ -261,9 +273,19 @@ export function conexionAgregada(genograma, tipo, de, a) {
       return { ...genograma, vinculos: [...restantes, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }] };
     }
     if (genograma.vinculos.some((v) => esDescendencia(v.tipo) && v.de === de && v.a === a)) return genograma;
+    /* Si las dos personas ya estaban unidas por un vínculo de
+       pareja (conexión equivocada), la descendencia lo reemplaza:
+       queda una sola línea entre ambas. Los hijos que colgaran de
+       esa línea de pareja pasan al progenitor. */
+    const parejaPrevia = parejaEntre(genograma, de, a);
+    const base = parejaPrevia
+      ? genograma.vinculos
+          .filter((v) => v.id !== parejaPrevia.id)
+          .map((v) => (esDescendencia(v.tipo) && v.de === parejaPrevia.id ? { ...v, de } : v))
+      : genograma.vinculos;
     const agregada = {
       ...genograma,
-      vinculos: [...genograma.vinculos, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
+      vinculos: [...base, { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false }],
     };
     const parejaDe = (idA, idB) =>
       agregada.vinculos.find(
