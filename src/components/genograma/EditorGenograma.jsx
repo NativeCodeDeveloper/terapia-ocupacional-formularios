@@ -184,7 +184,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         setBorrador((prev) =>
           personaActualizada(prev, personaClic.id, { x: estado.origen.x, y: estado.origen.y })
         );
-        setMenu({ de: personaClic.id, a: objetivoId });
+        abrirMenu(personaClic.id, objetivoId);
         setDesde(null);
       }
       return;
@@ -203,7 +203,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
       } else if (desde === personaClic.id) {
         setDesde(null);
       } else {
-        setMenu({ de: desde, a: personaClic.id });
+        abrirMenu(desde, personaClic.id);
         setDesde(null);
       }
       return;
@@ -211,6 +211,16 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     setPersonaId(personaClic.id);
     setConexionId(null);
     setGrupoId(null);
+  }
+
+  /* Abre el menú de conexión ordenando el sentido por altura: el
+     progenitor es la figura de arriba (pauta). Así, arrastre en
+     cualquier dirección o clic en cualquier orden produce la
+     descendencia con el sentido correcto. */
+  function abrirMenu(idUno, idOtro) {
+    const uno = borrador.personas.find((p) => p.id === idUno);
+    const otro = borrador.personas.find((p) => p.id === idOtro);
+    setMenu(uno && otro && uno.y > otro.y ? { de: idOtro, a: idUno } : { de: idUno, a: idOtro });
   }
 
   function alClicConexion(conexionClic) {
@@ -484,7 +494,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">
-          {borrador.personas.length} integrantes · genograma v3
+          {borrador.personas.length} integrantes · genograma v4
         </span>
         <button
           type="button"

@@ -572,6 +572,21 @@ export default function DiagramaGenograma({
           />
         ))}
       </g>
+
+      {/* Marca de versión solo en el lienzo del editor: identifica
+          la build desde la que se dibuja ante cualquier duda. */}
+      {interactivo && (
+        <text
+          x={(ancho ?? 680) - 8}
+          y={(alto ?? 540) - 6}
+          textAnchor="end"
+          fontSize="10"
+          fill="#9ca3af"
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          genograma v4
+        </text>
+      )}
     </svg>
   );
 }
