@@ -212,6 +212,16 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   function elegirTipo(tipo) {
     if (!menu) return;
+    /* Solo la descendencia se confirma antes de crear: es el
+       vínculo cuyo sentido se confunde más fácilmente al conectar
+       (el menú depende del orden de los clics). Al cancelar, el
+       menú queda abierto para invertir el sentido o cancelar. */
+    if (
+      esDescendencia(tipo) &&
+      !window.confirm(`¿Estás seguro de que «${nombreDe(menu.a)}» es hijo/a de «${nombreDe(menu.de)}»?`)
+    ) {
+      return;
+    }
     const previaPareja = esDescendencia(tipo) ? parejaEntre(borrador, menu.de, menu.a) : null;
     const previaInvertida = esDescendencia(tipo)
       ? borrador.vinculos.find((v) => esDescendencia(v.tipo) && v.de === menu.a && v.a === menu.de)
