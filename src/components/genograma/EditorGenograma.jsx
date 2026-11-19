@@ -67,7 +67,7 @@ const PASOS_GUIA = [
     "Conecta con vínculos",
     "arrastra una figura sobre otra —o pulsa «Conectar» y haz clic en las dos personas— y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
   ],
-  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno punteado que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
+  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno continuo que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
   ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla."],
   ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
 ];
@@ -259,16 +259,6 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   function elegirTipo(tipo) {
     if (!menu) return;
-    /* Solo la descendencia se confirma antes de crear: es el
-       vínculo cuyo sentido se confunde más fácilmente al conectar
-       (el menú depende del orden de los clics). Al cancelar, el
-       menú queda abierto para invertir el sentido o cancelar. */
-    if (
-      esDescendencia(tipo) &&
-      !window.confirm(`¿Estás seguro de que «${nombreDe(menu.a)}» es hijo/a de «${nombreDe(menu.de)}»?`)
-    ) {
-      return;
-    }
     const previaPareja = esDescendencia(tipo) ? parejaEntre(borrador, menu.de, menu.a) : null;
     const previaInvertida = esDescendencia(tipo)
       ? borrador.vinculos.find((v) => esDescendencia(v.tipo) && v.de === menu.a && v.a === menu.de)
@@ -503,12 +493,12 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           }}
           className={modoCirculo ? BOTON_PRIMARIO : BOTON_NEUTRO}
           aria-pressed={modoCirculo}
-          title="Marca un círculo punteado alrededor de quienes viven juntos"
+          title="Marca un contorno continuo alrededor de quienes viven juntos"
         >
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">
-          {borrador.personas.length} integrantes · genograma v8
+          {borrador.personas.length} integrantes · genograma v9
         </span>
         <button
           type="button"

@@ -83,9 +83,10 @@ export const COLOR_RELACION = {
   corte: "#dc2626",
 };
 
-/* Leyenda impresa bajo el diagrama del informe. */
+/* Leyenda impresa bajo el diagrama del informe (pauta:
+   «El genograma y el mapa de relaciones familiares»). */
 export const LEYENDA_GENOGRAMA =
-  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X: fallecido · Amarillo con doble borde: usuario/a evaluado/a · Triángulo: embarazo · Triángulo con X: aborto · Símbolo pequeño con X: muerte fetal · Contorno punteado: convivencia (quiénes viven juntos) · Línea verde: relación cercana o de fusión · Línea roja: relación distante, de conflicto o corte · Descendencia discontinua azul: hijo/a adoptado/a; verde: hijo/a de crianza · Líneas que nacen del mismo punto: gemelos o trillizos · Al costado de la figura: patologías principales";
+  "Cuadrado: hombre · Círculo: mujer · Rombo: otro · X dentro del símbolo: fallecido · Amarillo con doble borde: usuario/a evaluado/a · Triángulo: embarazo · Triángulo con X: aborto · Símbolo pequeño con X que sobresale: muerte fetal · Línea continua entre dos personas: matrimonio o pareja estable · Línea discontinua con casa: convivencia (pareja no casada) · Dos barras diagonales sobre la línea: separación o divorcio · Contorno continuo: hogar (quiénes viven juntos) · Línea verde doble: relación cercana; triple: relación de fusión · Línea roja punteada: relación distante; en zigzag: conflicto; con dos barras: corte o ruptura · Descendencia discontinua azul: hijo/a adoptado/a; verde: hijo/a de crianza · Líneas que nacen del mismo punto: gemelos o trillizos · Al costado de la figura: patologías principales";
 
 /* ============================================================
    IDENTIFICADORES Y CREACIÓN
@@ -163,8 +164,9 @@ export function personaEliminada(genograma, id) {
 
 /* ============================================================
    CÍRCULOS DE CONVIVENCIA (quiénes viven juntos)
-   Cada grupo se dibuja como un óvalo punteado que rodea a sus
-   integrantes en el diagrama. Exige al menos dos personas.
+   Cada grupo se dibuja como un contorno continuo que rodea a
+   sus integrantes en el diagrama (pauta: «línea continua
+   alrededor» del hogar). Exige al menos dos personas.
    ============================================================ */
 
 export const ETIQUETA_CONVIVENCIA = "Convivencia";
@@ -821,7 +823,7 @@ function contornoDePuntos(centros, margen) {
   return puntos;
 }
 
-/* Contorno punteado del círculo de convivencia: deja más
+/* Contorno continuo del círculo de convivencia: deja más
    espacio para las etiquetas cuando el hogar ocupa todo el
    diagrama y un margen más compacto si hay otros hogares. Devuelve
    { puntos, etiqueta, minX, minY, maxX, maxY } o null con
@@ -890,7 +892,10 @@ function puntosEntre(a, b) {
 }
 
 /* Geometría de un vínculo de pareja: segmento [inicio, fin] y
-   marcas (barra de separación o de divorcio). */
+   marcas. Pauta: separación y divorcio llevan dos barras
+   diagonales paralelas (inclined ~30° desde la perpendicular),
+   y la convivencia lleva una casa al medio de la línea
+   discontinua (quienes comparten hogar). */
 export function geometriaDePareja(genograma, vinculo) {
   const p1 = personaDe(genograma, vinculo.de);
   const p2 = personaDe(genograma, vinculo.a);
@@ -906,14 +911,23 @@ export function geometriaDePareja(genograma, vinculo) {
     vinculo.tipo === "separacion" || vinculo.tipo === "divorcio"
       ? {
           largo: 16,
-          posiciones:
-            vinculo.tipo === "divorcio"
-              ? [{ x: medio.x - ux * 6, y: medio.y - uy * 6 }, { x: medio.x + ux * 6, y: medio.y + uy * 6 }]
-              : [{ x: medio.x, y: medio.y }],
-          direccion: { x: -uy, y: ux },
+          posiciones: [
+            { x: medio.x - ux * 6, y: medio.y - uy * 6 },
+            { x: medio.x + ux * 6, y: medio.y + uy * 6 },
+          ],
+          /* Diagonal inclinada (como «//»): perpendicular girada
+             30° hacia la dirección de la línea. */
+          direccion: { x: -uy * 0.866 - ux * 0.5, y: ux * 0.866 - uy * 0.5 },
         }
       : null;
-  return { inicio, fin, medio, discontinua: vinculo.tipo === "convivencia", barras };
+  return {
+    inicio,
+    fin,
+    medio,
+    discontinua: vinculo.tipo === "convivencia",
+    casa: vinculo.tipo === "convivencia" ? medio : null,
+    barras,
+  };
 }
 
 /* Recorridos dibujables de toda la descendencia. Los hijos

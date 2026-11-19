@@ -84,15 +84,18 @@ function dibujarFigura(doc, persona, ox, oy, escala, ladoTexto) {
   }
 
   if (persona.simbolo === "abortoEspontaneo" || persona.simbolo === "abortoInducido") {
-    doc.line(cx - r * 0.62, cy - r * 0.42, cx + r * 0.62, cy + r * 0.52);
-    doc.line(cx + r * 0.62, cy - r * 0.42, cx - r * 0.62, cy + r * 0.52);
+    // X que cruza el triángulo y sobresale de sus lados.
+    doc.line(cx - r * 0.95, cy - r * 0.95, cx + r * 0.95, cy + r * 0.95);
+    doc.line(cx + r * 0.95, cy - r * 0.95, cx - r * 0.95, cy + r * 0.95);
   }
   if (persona.simbolo === "abortoInducido") {
     doc.line(cx - r * 1.4, cy + r * 0.05, cx + r * 1.4, cy + r * 0.05);
   }
 
+  // Fallecido: X dentro del símbolo. Muerte fetal: X que
+  // sobresale de las esquinas del símbolo pequeño.
   if (persona.fallecido || esMuerteFetal) {
-    const d = rr * 0.72;
+    const d = rr * (esMuerteFetal ? 1.3 : 0.72);
     doc.line(cx - d, cy - d, cx + d, cy + d);
     doc.line(cx - d, cy + d, cx + d, cy - d);
   }
@@ -184,6 +187,28 @@ function dibujarVinculo(doc, genograma, vinculo, ox, oy, escala) {
     }
     trazoDeLinea(doc, escala);
   }
+  /* Convivencia: casa al medio de la línea discontinua, con
+     relleno blanco para tapar los guiones de debajo. */
+  if (pareja.casa) {
+    const mx = ox + pareja.casa.x * escala;
+    const my = oy + pareja.casa.y * escala;
+    const w = 5 * escala;
+    doc.setFillColor(255, 255, 255);
+    doc.lines(
+      [
+        [0, -6 * escala],
+        [w, -5 * escala],
+        [w, 5 * escala],
+        [0, 6 * escala],
+        [-2 * w, 0],
+      ],
+      mx - w,
+      my + 4 * escala,
+      [1, 1],
+      "FD",
+      true
+    );
+  }
 }
 
 function dibujarRutaDescendencia(doc, ruta, ox, oy, escala) {
@@ -253,13 +278,13 @@ function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
   trazoDeLinea(doc, escala);
 }
 
-/* Contorno punteado de convivencia, detrás de líneas y figuras. */
+/* Contorno continuo del hogar (convivencia), detrás de líneas
+   y figuras: la pauta lo traza con línea continua. */
 function dibujarGrupo(doc, genograma, grupo, ox, oy, escala) {
   const geo = geometriaDeGrupo(genograma, grupo);
   if (!geo) return;
   const puntos = geo.puntos.map((p) => ({ x: ox + p.x * escala, y: oy + p.y * escala }));
   trazoDeLinea(doc, escala);
-  doc.setLineDashPattern([5, 4], 0);
   doc.lines(
     puntos.slice(1).map((p, i) => [p.x - puntos[i].x, p.y - puntos[i].y]),
     puntos[0].x,
@@ -268,7 +293,6 @@ function dibujarGrupo(doc, genograma, grupo, ox, oy, escala) {
     null,
     true
   );
-  doc.setLineDashPattern([], 0);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8.5 * Math.max(escala, 0.75));
   doc.setTextColor(GRIS_TEXTO);

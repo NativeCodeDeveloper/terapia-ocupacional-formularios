@@ -73,6 +73,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
   const esTriangulo = ["embarazo", "abortoEspontaneo", "abortoInducido"].includes(persona.simbolo);
   const esMuerteFetal = persona.simbolo === "muerteFetal";
   const rr = esMuerteFetal ? r * 0.55 : r;
+  const fx = esMuerteFetal ? 1.3 : 0.72; // alcance de la X
   const borde = seleccionada || activa ? TINTES.seleccion : TINTES.trazo;
   const grosor = seleccionada || activa ? 2.4 : GROSOR;
   const relleno = persona.indicado ? "#fef3c7" : activa ? "#eef2ff" : "#ffffff";
@@ -126,12 +127,13 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
         {persona.nombre?.trim() || "Sin nombre"}
       </text>
       {forma}
-      {/* Aborto: X dentro del triángulo; el inducido lleva una
-          línea horizontal que cruza el símbolo. */}
+      {/* Aborto: X que cruza el triángulo y sobresale de sus
+          lados; el inducido lleva además una línea horizontal que
+          atraviesa el símbolo. */}
       {(persona.simbolo === "abortoEspontaneo" || persona.simbolo === "abortoInducido") && (
         <g stroke={borde} strokeWidth={GROSOR}>
-          <line x1={x - r * 0.62} y1={y - r * 0.42} x2={x + r * 0.62} y2={y + r * 0.52} />
-          <line x1={x + r * 0.62} y1={y - r * 0.42} x2={x - r * 0.62} y2={y + r * 0.52} />
+          <line x1={x - r * 0.95} y1={y - r * 0.95} x2={x + r * 0.95} y2={y + r * 0.95} />
+          <line x1={x + r * 0.95} y1={y - r * 0.95} x2={x - r * 0.95} y2={y + r * 0.95} />
         </g>
       )}
       {persona.simbolo === "abortoInducido" && (
@@ -167,10 +169,12 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
           strokeWidth={1}
         />
       )}
+      {/* Fallecido: X dentro del símbolo (pauta). Muerte fetal:
+          X que sobresale de las esquinas del símbolo pequeño. */}
       {(persona.fallecido || esMuerteFetal) && (
         <g stroke={borde} strokeWidth={GROSOR}>
-          <line x1={x - rr * 0.72} y1={y - rr * 0.72} x2={x + rr * 0.72} y2={y + rr * 0.72} />
-          <line x1={x - rr * 0.72} y1={y + rr * 0.72} x2={x + rr * 0.72} y2={y - rr * 0.72} />
+          <line x1={x - rr * fx} y1={y - rr * fx} x2={x + rr * fx} y2={y + rr * fx} />
+          <line x1={x - rr * fx} y1={y + rr * fx} x2={x + rr * fx} y2={y - rr * fx} />
         </g>
       )}
       {/* Edad: dentro de la figura, también en los fallecidos
@@ -433,7 +437,8 @@ export default function DiagramaGenograma({
       </defs>
       {conRejilla && <rect width="100%" height="100%" fill="url(#genograma-rejilla)" />}
 
-      {/* Círculos de convivencia, detrás de líneas y figuras */}
+      {/* Hogares (convivencia), detrás de líneas y figuras: la
+          pauta los traza con línea continua alrededor. */}
       <g>
         {(g.grupos ?? []).map((grupo) => {
           const geo = geometriaDeGrupo(g, grupo);
@@ -452,7 +457,6 @@ export default function DiagramaGenograma({
                 fill="none"
                 stroke={color}
                 strokeWidth={seleccionado ? 2.4 : 1.8}
-                strokeDasharray="7 6"
               />
               <text
                 x={(geo.minX + geo.maxX) / 2}
@@ -493,13 +497,34 @@ export default function DiagramaGenograma({
               barras: pareja.barras?.posiciones.map((p) => ({ ...p, largo: pareja.barras.largo })),
               barrasDireccion: pareja.barras?.direccion,
             };
-            return (
-              <LineaConexion
-                key={v.id}
-                geometria={geometria}
-                seleccionada={conexionSeleccionada === v.id}
-                alClic={interactivo && alClicConexion ? () => alClicConexion(v) : null}
+            /* Convivencia: casa al medio de la línea discontinua
+               (cohabitación); el relleno blanco tapa los guiones
+               que pasarían por debajo. */
+            const casa = pareja.casa && (
+              <polygon
+                points={[
+                  `${pareja.casa.x - 5},${pareja.casa.y + 4}`,
+                  `${pareja.casa.x - 5},${pareja.casa.y - 2}`,
+                  `${pareja.casa.x},${pareja.casa.y - 7}`,
+                  `${pareja.casa.x + 5},${pareja.casa.y - 2}`,
+                  `${pareja.casa.x + 5},${pareja.casa.y + 4}`,
+                ].join(" ")}
+                fill="#ffffff"
+                stroke={conexionSeleccionada === v.id ? TINTES.seleccion : TINTES.trazo}
+                strokeWidth={conexionSeleccionada === v.id ? 2 : 1.5}
+                strokeLinejoin="round"
+                className="pointer-events-none"
               />
+            );
+            return (
+              <g key={v.id}>
+                <LineaConexion
+                  geometria={geometria}
+                  seleccionada={conexionSeleccionada === v.id}
+                  alClic={interactivo && alClicConexion ? () => alClicConexion(v) : null}
+                />
+                {casa}
+              </g>
             );
           })}
         {/* Descendencia: tallo y guía compartidos por origen,
@@ -598,7 +623,7 @@ export default function DiagramaGenograma({
           fill="#9ca3af"
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
-          genograma v8
+          genograma v9
         </text>
       )}
     </svg>
