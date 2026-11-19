@@ -508,7 +508,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">
-          {borrador.personas.length} integrantes · genograma v5
+          {borrador.personas.length} integrantes · genograma v6
         </span>
         <button
           type="button"
