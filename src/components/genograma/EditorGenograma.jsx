@@ -11,6 +11,7 @@ import {
   conexionAgregada,
   conexionEliminada,
   esDescendencia,
+  esProgenitorHijo,
   genogramaVacio,
   grupoActualizado,
   grupoAgregado,
@@ -83,8 +84,15 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   const [nombreBiblioteca, setNombreBiblioteca] = useState("");
   const [guardandoEnBiblioteca, setGuardandoEnBiblioteca] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [avisoError, setAvisoError] = useState(false);
   const referenciaSvg = useRef(null);
   const arrastre = useRef(null);
+
+  /* Aviso bajo el lienzo: confirmaciones en verde, rechazos en rojo. */
+  const avisar = (texto, error = false) => {
+    setAviso(texto);
+    setAvisoError(error);
+  };
 
   const persona = borrador.personas.find((p) => p.id === personaId) ?? null;
   const conexion =
@@ -190,7 +198,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     setGrupoId(siguiente.grupos[siguiente.grupos.length - 1].id);
     setSeleccionCirculo([]);
     setModoCirculo(false);
-    setAviso("");
+    avisar("");
   }
 
   function disolverCirculo() {
@@ -203,9 +211,21 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   function elegirTipo(tipo) {
     if (!menu) return;
-    setBorrador((prev) => conexionAgregada(prev, tipo, menu.de, menu.a));
+    const siguiente = conexionAgregada(borrador, tipo, menu.de, menu.a);
+    setBorrador(siguiente);
     cancelarMenu();
-    setAviso("");
+    if (siguiente === borrador) {
+      /* La conexión no se creó: ya existía o no es válida. Entre
+         progenitor e hijo, por ejemplo, no hay pareja. */
+      avisar(
+        esProgenitorHijo(borrador, menu.de, menu.a)
+          ? `Entre ${nombreDe(menu.de)} y ${nombreDe(menu.a)} ya hay vínculo de progenitor e hijo: la descendencia se dibuja desde su línea, no como pareja.`
+          : "No se creó la conexión: ya existe o no es válida entre esas dos personas.",
+        true
+      );
+    } else {
+      avisar("");
+    }
   }
 
   /* ---------- Panel de persona ---------- */
@@ -277,7 +297,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     const guardado = guardarEnBiblioteca(borrador, nombre);
     setGuardandoEnBiblioteca(false);
     setNombreBiblioteca("");
-    setAviso(guardado ? `Guardado en la biblioteca como «${nombre}».` : "No se pudo guardar en este navegador.");
+    avisar(guardado ? `Guardado en la biblioteca como «${nombre}».` : "No se pudo guardar en este navegador.");
   }
 
   function borrarTodo() {
@@ -285,7 +305,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     setBorrador(genogramaVacio());
     deseleccionar();
     setAyudaAbierta(true);
-    setAviso("");
+    avisar("");
   }
 
   /* Agrega una persona en un espacio libre del lienzo (en
@@ -303,7 +323,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     setBorrador(siguiente);
     setPersonaId(siguiente.personas[siguiente.personas.length - 1].id);
     setConexionId(null);
-    setAviso("");
+    avisar("");
   }
 
   return (
@@ -408,7 +428,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           type="button"
           onClick={() => {
             setBorrador((prev) => organizarGenograma(prev));
-            setAviso("Genograma ordenado: una fila por generación y hijos centrados bajo su pareja.");
+            avisar("Genograma ordenado: una fila por generación y hijos centrados bajo su pareja.");
           }}
           className={BOTON_NEUTRO}
           title="Ordena por generaciones: parejas comparten altura y los hijos quedan centrados bajo su pareja o progenitor"
@@ -893,7 +913,9 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         >
           {sucio ? "Cancelar cambios" : "Cerrar editor"}
         </button>
-        {aviso && <p className="ml-1 text-[13px] text-emerald-700">{aviso}</p>}
+        {aviso && (
+          <p className={`ml-1 text-[13px] ${avisoError ? "text-red-600" : "text-emerald-700"}`}>{aviso}</p>
+        )}
       </div>
     </div>
   );

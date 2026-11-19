@@ -197,6 +197,32 @@ function parDe(conexion) {
   return [conexion.de, conexion.a].sort().join("|");
 }
 
+/* Mapa de hijos directos: para cada persona, quiénes descienden
+   de ella —por vínculo directo o por la línea de pareja de la
+   que forma parte. */
+function hijosDirectos(vinculos) {
+  const parejas = new Map(
+    vinculos.filter((v) => !esDescendencia(v.tipo)).map((v) => [v.id, [v.de, v.a]])
+  );
+  const hijos = new Map();
+  for (const v of vinculos) {
+    if (!esDescendencia(v.tipo)) continue;
+    for (const miembro of parejas.get(v.de) ?? [v.de]) {
+      hijos.set(miembro, [...(hijos.get(miembro) ?? []), v.a]);
+    }
+  }
+  return hijos;
+}
+
+/* Verdadero cuando entre las dos personas ya hay una relación
+   progenitor–hijo directa: una pareja entre ambas no tendría
+   sentido en el genograma (es siempre un error de conexión) y
+   no se crea; los datos guardados que la traigan se reparan. */
+export function esProgenitorHijo(genograma, idA, idB) {
+  const hijos = hijosDirectos(genograma.vinculos);
+  return (hijos.get(idA) ?? []).includes(idB) || (hijos.get(idB) ?? []).includes(idA);
+}
+
 /* Agrega un vínculo o una relación. Reglas mínimas para
    mantener el diagrama legible:
    - exige que ambas personas existan («hijo» admite que `de`
@@ -204,7 +230,9 @@ function parDe(conexion) {
    - un hijo admite varios orígenes (p. ej., hijo del padre y
      de la madre); solo se evita duplicar el mismo origen;
    - una relación nueva reemplaza la anterior del mismo par;
-   - no duplica el mismo par en un vínculo de pareja. */
+   - no duplica el mismo par en un vínculo de pareja;
+   - no crea parejas entre progenitor e hijo: la familia ya
+     está relacionada por la descendencia. */
 export function conexionAgregada(genograma, tipo, de, a) {
   const personaA = genograma.personas.find((p) => p.id === a);
   if (!personaA || de === a) return genograma;
@@ -266,6 +294,9 @@ export function conexionAgregada(genograma, tipo, de, a) {
   if (!TIPOS_VINCULO.some((t) => t.valor === tipo)) return genograma;
   const nueva = { id: nuevoId("v"), tipo, de, a, gemelar: "", identicos: false };
   if (genograma.vinculos.some((v) => !esDescendencia(v.tipo) && parDe(v) === parDe(nueva))) return genograma;
+  // Progenitor e hijo ya están relacionados por la descendencia:
+  // una pareja entre ambos no se crea (rompería el dibujo).
+  if (esProgenitorHijo(genograma, de, a)) return genograma;
   return { ...genograma, vinculos: [...genograma.vinculos, nueva] };
 }
 
@@ -361,10 +392,16 @@ export function normalizarGenograma(datos) {
         ids.has(r.a)
     )
     .map((r) => ({ id: texto(r.id) || nuevoId("r"), tipo: r.tipo, de: r.de, a: r.a }));
+  /* Datos guardados con parejas entre progenitor e hijo (error
+     de conexión: dibujan un triángulo sin sentido sobre la
+     descendencia): se descartan al reparar. */
+  const vinculosValidos = vinculos.filter(
+    (v) => esDescendencia(v.tipo) || !esProgenitorHijo({ vinculos }, v.de, v.a)
+  );
   return {
     version: 1,
     personas,
-    vinculos,
+    vinculos: vinculosValidos,
     relaciones,
     grupos: (Array.isArray(base.grupos) ? base.grupos : [])
       .filter((g) => g && typeof g === "object")

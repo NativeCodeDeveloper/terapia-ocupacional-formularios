@@ -404,6 +404,44 @@ test("las abreviaturas se separan por coma y se listan una por línea", () => {
   assert.deepEqual(listaDeAbreviaturas(null), []);
 });
 
+test("no se crea ni se conserva una pareja entre progenitor e hijo", () => {
+  // El «triángulo» del diagrama: parejas creadas por error entre
+  // Samuel y sus hijos, que se dibujaban como líneas rectas sobre
+  // la descendencia y además la desviaban del punto medio.
+  let g = nuevaPersona(
+    nuevaPersona(
+      nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 140 }), "mujer", { x: 480, y: 140 }),
+      "hombre",
+      { x: 300, y: 340 }
+    ),
+    "hombre",
+    { x: 420, y: 340 }
+  );
+  const [samuel, cristina, felipe] = g.personas;
+  g = conexionAgregada(g, "union", samuel.id, cristina.id);
+  g = conexionAgregada(g, "hijo", samuel.id, felipe.id);
+
+  // Crear la pareja progenitor–hijo no tiene ningún efecto.
+  const antes = g;
+  g = conexionAgregada(g, "union", samuel.id, felipe.id);
+  assert.equal(g, antes);
+
+  // Los datos guardados con ese error se reparan al cargar: solo
+  // queda la pareja de verdad y la descendencia vuelve a salir del
+  // punto medio de la línea de pareja (pauta).
+  const guardado = {
+    ...g,
+    vinculos: [...g.vinculos, { id: "v-error", tipo: "union", de: samuel.id, a: felipe.id }],
+  };
+  const reparado = normalizarGenograma(guardado);
+  const parejas = reparado.vinculos.filter((v) => !esDescendencia(v.tipo));
+  assert.equal(parejas.length, 1);
+  const medio = geometriaDePareja(reparado, parejas[0]).medio;
+  for (const ruta of rutasDeDescendencia(reparado).filter((r) => r.clave.includes("-guia"))) {
+    assert.deepEqual(ruta.recorrido[0], medio);
+  }
+});
+
 test("la descendencia de un progenitor con pareja sale del punto medio de la pareja", () => {
   // Felipe y Marcelo conectados solo con Samuel, que forma
   // pareja con Cristina: las líneas salen del medio de la pareja.
