@@ -275,7 +275,7 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
                   strokeWidth={grosor}
                 />
               ))
-            : tieneLinea && !geometria.segmentos && (
+            : tieneLinea && !geometria.segmentos && !geometria.recorrido && (
                 <line
                   x1={extremos.inicio.x}
                   y1={extremos.inicio.y}
