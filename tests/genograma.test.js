@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   TIPOS_RELACION,
   TIPOS_VINCULO,
+  NODO,
   conexionAgregada,
   conexionEliminada,
   copiarParaEvaluacion,
@@ -29,6 +30,7 @@ import {
   personaActualizada,
   personaEliminada,
   personaIndicada,
+  relacionActualizada,
   rutasDeDescendencia,
 } from "../src/lib/genograma.js";
 import { descargarInformePDFHogarPreescolar } from "../src/lib/informe-hogar-preescolar.js";
@@ -293,11 +295,14 @@ test("la relación de calidad se dibuja junto a la línea de pareja, no encima",
 
   const pareja = geometriaDePareja(g, g.vinculos[0]);
   const relacion = geometriaDeRelacion(g, g.relaciones[0]);
-  const distancia = Math.hypot(
-    relacion.inicio.x - pareja.inicio.x,
-    relacion.inicio.y - pareja.inicio.y
+  // Con pareja la relación nace desviada (11) junto a la línea:
+  // los extremos tocan las figuras y el medio queda separado.
+  assert.equal(relacion.desvio, 11);
+  const separacion = Math.hypot(
+    relacion.medio.x - pareja.medio.x,
+    relacion.medio.y - pareja.medio.y
   );
-  assert.equal(distancia > 5, true);
+  assert.equal(separacion > 5, true);
 
   // Sin vínculo de pareja la relación va borde a borde.
   let solos = nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 400, y: 200 });
@@ -308,6 +313,41 @@ test("la relación de calidad se dibuja junto a la línea de pareja, no encima",
     { x: Math.round(directa.inicio.x), y: Math.round(directa.inicio.y) },
     { x: 220, y: 200 }
   );
+});
+
+test("la relación se puede desviar arrastrándola para que no se monte sobre otras líneas", () => {
+  let g = nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 400, y: 200 });
+  const [a, b] = g.personas;
+  g = conexionAgregada(g, "conflicto", a.id, b.id);
+
+  // Recta por defecto; el zigzag parte y termina en los extremos.
+  const recta = geometriaDeRelacion(g, g.relaciones[0]);
+  assert.equal(recta.desvio, 0);
+  assert.deepEqual(recta.zigzag[0], [recta.inicio.x, recta.inicio.y]);
+  const ultimoZigzag = recta.zigzag[recta.zigzag.length - 1];
+  assert.deepEqual(ultimoZigzag, [recta.fin.x, recta.fin.y]);
+
+  // El usuario desvía la línea 40 unidades: el medio se corre a
+  // un lado pero los extremos siguen sobre el borde de las dos
+  // figuras (goma elástica sujeta en sus extremos).
+  g = relacionActualizada(g, g.relaciones[0].id, { desvio: 40 });
+  const desviada = geometriaDeRelacion(g, g.relaciones[0]);
+  assert.equal(desviada.desvio, 40);
+  const correccion = Math.hypot(
+    desviada.medio.x - recta.medio.x,
+    desviada.medio.y - recta.medio.y
+  );
+  assert.equal(correccion > 30, true);
+  assert.equal(Math.hypot(desviada.inicio.x - a.x, desviada.inicio.y - a.y) <= NODO.radio + 0.6, true);
+  assert.equal(Math.hypot(desviada.fin.x - b.x, desviada.fin.y - b.y) <= NODO.radio + 0.6, true);
+
+  // El desvío sobrevive a la normalización (datos guardados).
+  const reparado = normalizarGenograma(JSON.parse(JSON.stringify(g)));
+  assert.equal(reparado.relaciones[0].desvio, 40);
+
+  // Quitar el desvío vuelve al comportamiento automático.
+  g = relacionActualizada(g, g.relaciones[0].id, { desvio: null });
+  assert.equal(geometriaDeRelacion(g, g.relaciones[0]).desvio, 0);
 });
 
 test("envolverTexto parte las etiquetas largas y recorta con puntos suspensivos", () => {

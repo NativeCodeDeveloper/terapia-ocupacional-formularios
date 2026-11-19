@@ -333,7 +333,7 @@ export function conexionAgregada(genograma, tipo, de, a) {
     };
   }
   if (esRelacion) {
-    const nueva = { id: nuevoId("r"), tipo, de, a };
+    const nueva = { id: nuevoId("r"), tipo, de, a, desvio: null };
     return {
       ...genograma,
       relaciones: [...genograma.relaciones.filter((r) => parDe(r) !== parDe(nueva)), nueva],
@@ -367,6 +367,16 @@ export function cambiarTipoConexion(genograma, id, tipo) {
   const vinculo = genograma.vinculos.find((v) => v.id === id);
   if (vinculo) return { ...genograma, vinculos: genograma.vinculos.map((v) => (v.id === id ? { ...v, tipo } : v)) };
   return { ...genograma, relaciones: genograma.relaciones.map((r) => (r.id === id ? { ...r, tipo } : r)) };
+}
+
+/* Desvío lateral de una relación de calidad (arrastre en el
+   lienzo): `null` vuelve al comportamiento automático (junto a
+   la línea de pareja si la tiene, recta si no). */
+export function relacionActualizada(genograma, id, cambios) {
+  return {
+    ...genograma,
+    relaciones: genograma.relaciones.map((r) => (r.id === id ? { ...r, ...cambios } : r)),
+  };
 }
 
 /* Marca a una persona como usuario/a evaluado/a y desmarca al
@@ -439,7 +449,13 @@ export function normalizarGenograma(datos) {
         ids.has(r.de) &&
         ids.has(r.a)
     )
-    .map((r) => ({ id: texto(r.id) || nuevoId("r"), tipo: r.tipo, de: r.de, a: r.a }));
+    .map((r) => ({
+      id: texto(r.id) || nuevoId("r"),
+      tipo: r.tipo,
+      de: r.de,
+      a: r.a,
+      desvio: Number.isFinite(r.desvio) ? r.desvio : null,
+    }));
   /* Datos guardados con parejas entre progenitor e hijo (error
      de conexión: dibujan un triángulo sin sentido sobre la
      descendencia): se descartan al reparar. */
@@ -1280,48 +1296,154 @@ export function organizarGenograma(genograma) {
   };
 }
 
-/* Geometría de una relación de calidad: segmento y estilo.
-   `normal` es la perpendicular unitaria para las líneas
-   paralelas (cercana/fusión). Si el par ya tiene un vínculo
-   de pareja, la relación se desplaza a una línea paralela
-   junto a ella para no dibujarse encima. */
+/* ============================================================
+   GEOMETRÍA DE POLILÍNEAS (para las relaciones de calidad,
+   que se pueden doblar para no montarse sobre otras líneas)
+   ============================================================ */
+
+function largoDePolilinea(puntos) {
+  let total = 0;
+  for (let i = 1; i < puntos.length; i++) {
+    total += Math.hypot(puntos[i].x - puntos[i - 1].x, puntos[i].y - puntos[i - 1].y);
+  }
+  return total;
+}
+
+/* Punto y tangente unitaria de una polilínea a distancia `d`
+   del inicio, midiendo por longitud de arco. */
+function puntoEnPolilinea(puntos, d) {
+  let restante = Math.max(0, d);
+  for (let i = 1; i < puntos.length; i++) {
+    const a = puntos[i - 1];
+    const b = puntos[i];
+    const tramo = Math.hypot(b.x - a.x, b.y - a.y);
+    if (tramo === 0) continue;
+    const t = Math.min(1, restante / tramo);
+    const punto = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    if (restante <= tramo || i === puntos.length - 1) {
+      return { ...punto, ux: (b.x - a.x) / tramo, uy: (b.y - a.y) / tramo };
+    }
+    restante -= tramo;
+  }
+  const ultimo = puntos[puntos.length - 1] ?? { x: 0, y: 0 };
+  const penultimo = puntos[puntos.length - 2] ?? ultimo;
+  const tramo = Math.hypot(ultimo.x - penultimo.x, ultimo.y - penultimo.y) || 1;
+  return { x: ultimo.x, y: ultimo.y, ux: (ultimo.x - penultimo.x) / tramo, uy: (ultimo.y - penultimo.y) / tramo };
+}
+
+/* Muestreo uniforme de una polilínea (por longitud de arco). */
+function muestrearPolilinea(puntos, muestras = 26) {
+  const total = largoDePolilinea(puntos) || 1;
+  const salida = [];
+  for (let i = 0; i < muestras; i++) {
+    const p = puntoEnPolilinea(puntos, (total * i) / (muestras - 1));
+    salida.push({ x: p.x, y: p.y });
+  }
+  return salida;
+}
+
+/* Perpendicular local de cada punto de una polilínea abierta
+   (para las líneas paralelas de cercana y fusión). */
+function normalesDePolilinea(puntos) {
+  return puntos.map((_, i) => {
+    const a = puntos[Math.max(0, i - 1)];
+    const b = puntos[Math.min(puntos.length - 1, i + 1)];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: -dy / len, y: dx / len };
+  });
+}
+
+/* Zigzag siguiendo una polilínea (recta o doblada): tramos
+   alternados a ambos lados de la línea. Devuelve [[x, y], …]. */
+export function zigzagDePolilinea(puntos, amplitud = 4.5, tramo = 12) {
+  if (puntos.length < 2) return [];
+  const total = largoDePolilinea(puntos) || 1;
+  const tramos = Math.max(2, Math.round(total / tramo));
+  const salida = [];
+  for (let i = 0; i <= tramos; i++) {
+    const p = puntoEnPolilinea(puntos, (total * i) / tramos);
+    const desvio = i === 0 || i === tramos ? 0 : i % 2 === 1 ? amplitud : -amplitud;
+    salida.push([p.x + -p.uy * desvio, p.y + p.ux * desvio]);
+  }
+  return salida;
+}
+
+/* Corte (relación rota) sobre una polilínea: dos tramos con un
+   hueco al medio (por longitud de arco) y la perpendicular en
+   cada extremo del hueco. */
+function corteDePolilinea(puntos, hueco = 6) {
+  const total = largoDePolilinea(puntos) || 1;
+  const h = Math.min(hueco, total * 0.3);
+  const p1 = puntoEnPolilinea(puntos, total / 2 - h);
+  const p2 = puntoEnPolilinea(puntos, total / 2 + h);
+  const muestras = muestrearPolilinea(puntos);
+  const d1 = total / 2 - h;
+  const d2 = total / 2 + h;
+  let acumulado = 0;
+  const izquierdo = [];
+  const derecho = [];
+  for (let i = 0; i < muestras.length; i++) {
+    if (i > 0) {
+      acumulado += Math.hypot(muestras[i].x - muestras[i - 1].x, muestras[i].y - muestras[i - 1].y);
+    }
+    if (acumulado < d1) izquierdo.push(muestras[i]);
+    if (acumulado > d2) derecho.push(muestras[i]);
+  }
+  izquierdo.push({ x: p1.x, y: p1.y });
+  derecho.unshift({ x: p2.x, y: p2.y });
+  return {
+    segmentos: [izquierdo, derecho],
+    ticks: [
+      { x: p1.x, y: p1.y },
+      { x: p2.x, y: p2.y },
+    ],
+    direccion: { x: -p1.uy, y: p1.ux },
+  };
+}
+
+/* Geometría de una relación de calidad. Los extremos quedan
+   siempre sobre el borde de las dos figuras; la línea se dobla
+   por el punto medio corrido `desvio` unidades a un lado
+   (goma elástica sujeta en sus extremos), de modo que el
+   usuario puede arrastrarla para que no se monte sobre otras
+   líneas. Sin desvío propio, una relación sobre la línea de
+   pareja de su par nace desviada junto a ella (desvio 11).
+   Devuelve además, según el tipo, el trazado ya preparado:
+   `lineas` (cercana/fusión), `zigzag` (conflicto) o
+   `segmentos`/`ticks`/`direccion` (corte). */
 export function geometriaDeRelacion(genograma, relacion) {
   const p1 = personaDe(genograma, relacion.de);
   const p2 = personaDe(genograma, relacion.a);
   if (!p1 || !p2) return null;
-  const [inicio, fin] = puntosEntre(p1, p2);
-  const dx = fin.x - inicio.x;
-  const dy = fin.y - inicio.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const normal = { x: -dy / len, y: dx / len };
   const hayPareja = genograma.vinculos.some(
     (v) =>
       !esDescendencia(v.tipo) &&
       ((v.de === relacion.de && v.a === relacion.a) || (v.de === relacion.a && v.a === relacion.de))
   );
-  if (!hayPareja) return { inicio, fin, normal };
-  return {
-    inicio: { x: inicio.x + normal.x * 11, y: inicio.y + normal.y * 11 },
-    fin: { x: fin.x + normal.x * 11, y: fin.y + normal.y * 11 },
-    normal,
-  };
-}
-
-/* Puntos del zigzag de una relación de conflicto. */
-export function puntosDeZigzag(inicio, fin, amplitud = 4.5, tramo = 12) {
+  const desvio = Number.isFinite(relacion.desvio) ? relacion.desvio : hayPareja ? 11 : 0;
+  const [inicio, fin] = puntosEntre(p1, p2);
   const dx = fin.x - inicio.x;
   const dy = fin.y - inicio.y;
   const len = Math.hypot(dx, dy) || 1;
-  const ux = dx / len;
-  const uy = dy / len;
-  const nx = -uy;
-  const ny = ux;
-  const tramos = Math.max(2, Math.round(len / tramo));
-  const puntos = [];
-  for (let i = 0; i <= tramos; i++) {
-    const t = i / tramos;
-    const desvio = i === 0 || i === tramos ? 0 : i % 2 === 1 ? amplitud : -amplitud;
-    puntos.push([inicio.x + ux * len * t + nx * desvio, inicio.y + uy * len * t + ny * desvio]);
+  const normal = { x: -dy / len, y: dx / len };
+  const medio = {
+    x: (inicio.x + fin.x) / 2 + normal.x * desvio,
+    y: (inicio.y + fin.y) / 2 + normal.y * desvio,
+  };
+  const puntos = muestrearPolilinea([inicio, medio, fin]);
+  const resultado = { inicio, fin, medio, normal, desvio, puntos };
+  if (relacion.tipo === "cercana" || relacion.tipo === "fusion") {
+    const desvios = relacion.tipo === "cercana" ? [-2.6, 2.6] : [-4.6, 0, 4.6];
+    const normales = normalesDePolilinea(puntos);
+    resultado.lineas = desvios.map((d) =>
+      puntos.map((p, i) => ({ x: p.x + normales[i].x * d, y: p.y + normales[i].y * d }))
+    );
+  } else if (relacion.tipo === "conflicto") {
+    resultado.zigzag = zigzagDePolilinea(puntos);
+  } else if (relacion.tipo === "corte") {
+    Object.assign(resultado, corteDePolilinea(puntos));
   }
-  return puntos;
+  return resultado;
 }

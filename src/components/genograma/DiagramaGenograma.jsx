@@ -14,7 +14,6 @@ import {
   limitesDiagrama,
   listaDeAbreviaturas,
   normalizarGenograma,
-  puntosDeZigzag,
   rutasDeDescendencia,
 } from "@/lib/genograma";
 
@@ -246,7 +245,7 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
   );
 }
 
-function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
+function LineaConexion({ geometria, seleccionada, alClic, color = null, eventos = null }) {
   if (!geometria) return null;
   const colorLinea = seleccionada ? TINTES.seleccion : color ?? TINTES.trazo;
   const grosor = seleccionada ? 2.6 : GROSOR;
@@ -261,7 +260,11 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
   const tieneLinea = Boolean(extremos.inicio && extremos.fin);
 
   return (
-    <g onClick={alClic} style={alClic ? { cursor: "pointer" } : undefined}>
+    <g
+      {...(eventos ?? {})}
+      onClick={alClic}
+      style={alClic ? { cursor: "pointer" } : undefined}
+    >
       {geometria.zigzag ? (
         <polyline
           points={geometria.zigzag.map((p) => p.join(",")).join(" ")}
@@ -272,39 +275,38 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
         />
       ) : (
         <>
-          {geometria.lineasParalelas
-            ? geometria.lineasParalelas.map((desvio, i) => (
-                <line
-                  key={i}
-                  x1={geometria.inicio.x + geometria.normal.x * desvio}
-                  y1={geometria.inicio.y + geometria.normal.y * desvio}
-                  x2={geometria.fin.x + geometria.normal.x * desvio}
-                  y2={geometria.fin.y + geometria.normal.y * desvio}
-                  stroke={colorLinea}
-                  strokeWidth={grosor}
-                />
-              ))
-            : tieneLinea && !geometria.segmentos && !geometria.recorrido && (
-                <line
-                  x1={extremos.inicio.x}
-                  y1={extremos.inicio.y}
-                  x2={extremos.fin.x}
-                  y2={extremos.fin.y}
-                  stroke={colorLinea}
-                  strokeWidth={grosor}
-                  strokeDasharray={geometria.discontinua ? "6 5" : undefined}
-                />
-              )}
-          {/* Corte (relación rota): dos tramos con espacio al medio. */}
-          {geometria.segmentos?.map(([a, b], i) => (
-            <line
-              key={`s${i}`}
-              x1={a.x}
-              y1={a.y}
-              x2={b.x}
-              y2={b.y}
+          {/* Relación de doble o triple línea (cercana/fusión):
+              polilíneas paralelas al recorrido, doblado o no. */}
+          {geometria.lineas?.map((linea, i) => (
+            <polyline
+              key={i}
+              points={linea.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
               stroke={colorLinea}
               strokeWidth={grosor}
+              strokeLinejoin="round"
+            />
+          ))}
+          {tieneLinea && !geometria.segmentos && !geometria.lineas && !geometria.recorrido && (
+            <line
+              x1={extremos.inicio.x}
+              y1={extremos.inicio.y}
+              x2={extremos.fin.x}
+              y2={extremos.fin.y}
+              stroke={colorLinea}
+              strokeWidth={grosor}
+              strokeDasharray={geometria.discontinua ? "6 5" : undefined}
+            />
+          )}
+          {/* Corte (relación rota): dos tramos con espacio al medio. */}
+          {geometria.segmentos?.map((segmento, i) => (
+            <polyline
+              key={`s${i}`}
+              points={segmento.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke={colorLinea}
+              strokeWidth={grosor}
+              strokeLinejoin="round"
             />
           ))}
           {geometria.ticks?.map((p, i) => (
@@ -342,15 +344,16 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
           {geometria.punto && <circle cx={geometria.punto.x} cy={geometria.punto.y} r={3.4} fill={colorLinea} />}
         </>
       )}
-      {/* Zona de clic: sigue todo el recorrido (codos y guías),
-          no solo la línea recta entre los extremos. */}
-      {geometria.recorrido ? (
+      {/* Zona de clic y arrastre: sigue todo el recorrido (codos,
+          guías y relaciones dobladas), no solo la recta entre los
+          extremos. */}
+      {geometria.zona ?? geometria.recorrido ? (
         <polyline
-          points={geometria.recorrido.map((p) => `${p.x},${p.y}`).join(" ")}
+          points={(geometria.zona ?? geometria.recorrido).map((p) => `${p.x},${p.y}`).join(" ")}
           fill="none"
           stroke="transparent"
           strokeWidth={14}
-          style={{ pointerEvents: alClic ? "stroke" : "none" }}
+          style={{ pointerEvents: alClic || eventos ? "stroke" : "none" }}
         />
       ) : (
         <line
@@ -360,7 +363,7 @@ function LineaConexion({ geometria, seleccionada, alClic, color = null }) {
           y2={extremos.fin?.y}
           stroke="transparent"
           strokeWidth={14}
-          style={{ pointerEvents: alClic ? "stroke" : "none" }}
+          style={{ pointerEvents: alClic || eventos ? "stroke" : "none" }}
         />
       )}
     </g>
@@ -383,6 +386,9 @@ export default function DiagramaGenograma({
   alPointerAbajoPersona = null,
   alPointerMoverPersona = null,
   alPointerSoltarPersona = null,
+  alPointerAbajoRelacion = null,
+  alPointerMoverRelacion = null,
+  alPointerSoltarRelacion = null,
   referenciaSvg = null,
 }) {
   /* Reparación en vivo: el dibujo usa los datos saneados, de modo
@@ -553,36 +559,23 @@ export default function DiagramaGenograma({
         {g.relaciones.map((r) => {
           const base = geometriaDeRelacion(g, r);
           if (!base) return null;
-          const { inicio, fin, normal } = base;
+          /* La geometría llega lista desde la biblioteca, sobre la
+             polilínea (recta o doblada por el desvío del usuario). */
           let geometria;
           if (r.tipo === "conflicto") {
-            geometria = { zigzag: puntosDeZigzag(inicio, fin) };
-          } else if (r.tipo === "cercana") {
-            geometria = { inicio, fin, normal, lineasParalelas: [-2.6, 2.6] };
-          } else if (r.tipo === "fusion") {
-            geometria = { inicio, fin, normal, lineasParalelas: [-4.6, 0, 4.6] };
+            geometria = { zigzag: base.zigzag, zona: base.puntos };
+          } else if (r.tipo === "cercana" || r.tipo === "fusion") {
+            geometria = { lineas: base.lineas, zona: base.puntos };
           } else if (r.tipo === "distante") {
-            geometria = { inicio, fin, discontinua: true };
+            geometria = { recorrido: base.puntos, discontinua: true };
           } else {
-            // corte (relación rota): la línea se separa al medio
-            // y cada extremo lleva una marca perpendicular
-            const medio = { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 };
-            const dx = fin.x - inicio.x;
-            const dy = fin.y - inicio.y;
-            const len = Math.hypot(dx, dy) || 1;
-            const ux = dx / len;
-            const uy = dy / len;
-            const p1 = { x: medio.x - ux * 6, y: medio.y - uy * 6 };
-            const p2 = { x: medio.x + ux * 6, y: medio.y + uy * 6 };
+            // corte (relación rota): dos tramos con hueco al medio
+            // y una marca perpendicular en cada extremo del hueco
             geometria = {
-              inicio,
-              fin,
-              segmentos: [
-                [inicio, p1],
-                [p2, fin],
-              ],
-              ticks: [p1, p2],
-              direccion: { x: -uy, y: ux },
+              segmentos: base.segmentos,
+              ticks: base.ticks,
+              direccion: base.direccion,
+              zona: base.puntos,
             };
           }
           return (
@@ -592,6 +585,20 @@ export default function DiagramaGenograma({
               color={COLOR_RELACION[r.tipo] ?? null}
               seleccionada={conexionSeleccionada === r.id}
               alClic={interactivo && alClicConexion ? () => alClicConexion(r) : null}
+              /* Las relaciones se pueden arrastrar para desviarlas
+                 y que no se monten sobre otras líneas. */
+              eventos={
+                interactivo && alPointerAbajoRelacion
+                  ? {
+                      onPointerDown: (e) => {
+                        e.preventDefault();
+                        alPointerAbajoRelacion(r, e);
+                      },
+                      onPointerMove: (e) => alPointerMoverRelacion?.(r, e),
+                      onPointerUp: (e) => alPointerSoltarRelacion?.(r, e),
+                    }
+                  : null
+              }
             />
           );
         })}
@@ -623,7 +630,7 @@ export default function DiagramaGenograma({
           fill="#9ca3af"
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
-          genograma v9
+          genograma v10
         </text>
       )}
     </svg>

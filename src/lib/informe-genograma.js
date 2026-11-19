@@ -10,7 +10,6 @@ import {
   ladoDeAbreviaturas,
   limitesDiagrama,
   listaDeAbreviaturas,
-  puntosDeZigzag,
   rutasDeDescendencia,
 } from "./genograma.js";
 
@@ -223,56 +222,39 @@ const ROJO_RELACION = [220, 38, 38];
 function dibujarRelacion(doc, genograma, relacion, ox, oy, escala) {
   const base = geometriaDeRelacion(genograma, relacion);
   if (!base) return;
-  const inicio = { x: ox + base.inicio.x * escala, y: oy + base.inicio.y * escala };
-  const fin = { x: ox + base.fin.x * escala, y: oy + base.fin.y * escala };
-  const normal = base.normal;
+  /* La geometría llega lista desde la biblioteca, sobre la
+     polilínea (recta o doblada por el desvío del usuario). */
+  const aPagina = (puntos) => puntos.map((p) => ({ x: ox + p.x * escala, y: oy + p.y * escala }));
   trazoDeLinea(doc, escala);
   const positiva = relacion.tipo === "cercana" || relacion.tipo === "fusion";
   doc.setDrawColor(...(positiva ? VERDE_RELACION : ROJO_RELACION));
 
-  if (relacion.tipo === "conflicto") {
-    const puntos = puntosDeZigzag(inicio, fin, 4.5 * escala, 12 * escala);
+  if (base.lineas) {
+    // cercana (doble) y fusión (triple): polilíneas paralelas
+    for (const linea of base.lineas) dibujarRecorrido(doc, aPagina(linea));
+  } else if (base.zigzag) {
+    const puntos = aPagina(base.zigzag.map(([x, y]) => ({ x, y })));
     doc.lines(
-      puntos.slice(1).map((p, i) => [p[0] - puntos[i][0], p[1] - puntos[i][1]]),
-      puntos[0][0],
-      puntos[0][1],
+      puntos.slice(1).map((p, i) => [p.x - puntos[i].x, p.y - puntos[i].y]),
+      puntos[0].x,
+      puntos[0].y,
       [1, 1],
       null,
       false
     );
-  } else if (positiva) {
-    const desvios = relacion.tipo === "cercana" ? [-2.6, 2.6] : [-4.6, 0, 4.6];
-    for (const desvio of desvios) {
-      dibujarSegmento(
-        doc,
-        { x: inicio.x + normal.x * desvio * escala, y: inicio.y + normal.y * desvio * escala },
-        { x: fin.x + normal.x * desvio * escala, y: fin.y + normal.y * desvio * escala }
-      );
-    }
   } else if (relacion.tipo === "distante") {
     doc.setLineDashPattern([3, 4], 0);
-    dibujarSegmento(doc, inicio, fin);
+    dibujarRecorrido(doc, aPagina(base.puntos));
     doc.setLineDashPattern([], 0);
   } else {
-    // corte (relación rota): la línea se separa al medio y cada
-    // extremo lleva una marca perpendicular
-    const dx = fin.x - inicio.x;
-    const dy = fin.y - inicio.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
-    const nx = -uy;
-    const ny = ux;
-    const hueco = 6 * escala;
-    const medio = { x: (inicio.x + fin.x) / 2, y: (inicio.y + fin.y) / 2 };
-    dibujarSegmento(doc, inicio, { x: medio.x - ux * hueco, y: medio.y - uy * hueco });
-    dibujarSegmento(doc, { x: medio.x + ux * hueco, y: medio.y + uy * hueco }, fin);
+    // corte (relación rota): dos tramos con hueco al medio y una
+    // marca perpendicular en cada extremo del hueco
+    for (const segmento of base.segmentos) dibujarRecorrido(doc, aPagina(segmento));
     const marca = 6 * Math.max(escala, 0.75);
+    const d = base.direccion;
     doc.setLineWidth(GROSOR * Math.max(escala, 0.75) + 0.2);
-    for (const s of [-1, 1]) {
-      const px = medio.x + ux * hueco * s;
-      const py = medio.y + uy * hueco * s;
-      doc.line(px - nx * marca, py - ny * marca, px + nx * marca, py + ny * marca);
+    for (const p of aPagina(base.ticks)) {
+      doc.line(p.x - d.x * marca, p.y - d.y * marca, p.x + d.x * marca, p.y + d.y * marca);
     }
   }
   trazoDeLinea(doc, escala);

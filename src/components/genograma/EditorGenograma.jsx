@@ -13,6 +13,7 @@ import {
   esDescendencia,
   esProgenitorHijo,
   genogramaVacio,
+  geometriaDeRelacion,
   grupoActualizado,
   grupoAgregado,
   grupoEliminado,
@@ -26,6 +27,7 @@ import {
   personaActualizada,
   personaEliminada,
   personaIndicada,
+  relacionActualizada,
 } from "@/lib/genograma";
 import DiagramaGenograma, { puntoSvg } from "./DiagramaGenograma";
 
@@ -68,7 +70,7 @@ const PASOS_GUIA = [
     "arrastra una figura sobre otra —o pulsa «Conectar» y haz clic en las dos personas— y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
   ],
   ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno continuo que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
-  ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla."],
+  ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla. Si una relación se cruza con otra línea, arrástrala para desviarla."],
   ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
 ];
 
@@ -89,6 +91,9 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   const [avisoError, setAvisoError] = useState(false);
   const referenciaSvg = useRef(null);
   const arrastre = useRef(null);
+  /* Relación agarrada para desviarla: el arrastre corre la línea
+     lateralmente (desvío) sin dejar de tocar las dos figuras. */
+  const arrastreRelacion = useRef(null);
   /* Figura apuntada mientras se arrastra otra: si se suelta sobre
      ella, el arrastre se convierte en conexión (menú de vínculos). */
   const objetivoArrastreRef = useRef(null);
@@ -234,6 +239,45 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     setGrupoId(grupoClic.id);
     setPersonaId(null);
     setConexionId(null);
+  }
+
+  /* ---------- Desvío de relaciones (arrastrar la línea) ---------- */
+
+  function alAbajoRelacion(relacionClic, evento) {
+    if (conectando || modoCirculo) return; // en conectar y círculo solo importa el clic
+    const base = geometriaDeRelacion(borrador, relacionClic);
+    if (!base) return;
+    evento.currentTarget.setPointerCapture(evento.pointerId);
+    arrastreRelacion.current = {
+      id: relacionClic.id,
+      normal: base.normal,
+      referencia: base.inicio,
+      puntoInicial: puntoSvg(referenciaSvg.current, evento.clientX, evento.clientY),
+      desvioInicial: base.desvio,
+      movio: false,
+    };
+    setConexionId(relacionClic.id);
+    setPersonaId(null);
+    setGrupoId(null);
+  }
+
+  function alMoverRelacion(relacionClic, evento) {
+    const estado = arrastreRelacion.current;
+    if (!estado || estado.id !== relacionClic.id) return;
+    const punto = puntoSvg(referenciaSvg.current, evento.clientX, evento.clientY);
+    if (!estado.movio && Math.hypot(punto.x - estado.puntoInicial.x, punto.y - estado.puntoInicial.y) < 4) return;
+    estado.movio = true;
+    /* Cuánto se corrió el puntero en la dirección perpendicular
+       a la línea: ese es el nuevo desvío, con techo para no
+       perder la línea del lienzo. */
+    const delta =
+      (punto.x - estado.referencia.x) * estado.normal.x + (punto.y - estado.referencia.y) * estado.normal.y;
+    const desvio = Math.max(-90, Math.min(90, Math.round(estado.desvioInicial + delta)));
+    setBorrador((prev) => relacionActualizada(prev, estado.id, { desvio }));
+  }
+
+  function alSoltarRelacion() {
+    arrastreRelacion.current = null;
   }
 
   /* ---------- Círculo de convivencia ---------- */
@@ -498,7 +542,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">
-          {borrador.personas.length} integrantes · genograma v9
+          {borrador.personas.length} integrantes · genograma v10
         </span>
         <button
           type="button"
@@ -548,6 +592,9 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
               alPointerAbajoPersona={alAbajoPersona}
               alPointerMoverPersona={alMoverPersona}
               alPointerSoltarPersona={alSoltarPersona}
+              alPointerAbajoRelacion={alAbajoRelacion}
+              alPointerMoverRelacion={alMoverRelacion}
+              alPointerSoltarRelacion={alSoltarRelacion}
               alClicConexion={alClicConexion}
               alClicGrupo={alClicGrupo}
             />
@@ -612,7 +659,8 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
         ) : (
           <p>
             Arrastra una figura sobre otra para conectarlas, o suéltala en el lienzo para acomodarla. Haz
-            clic en una figura o en una línea para editarla.
+            clic en una figura o en una línea para editarla. Si una relación se monta sobre otra línea,
+            arrástrala para desviarla.
           </p>
         )}
           </div>
@@ -896,6 +944,20 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
               <p className="mt-1 text-xs text-neutral-400">
                 Todos los hijos de este origen salen del mismo punto en el dibujo.
               </p>
+            )}
+            {ES_RELACION(conexion.tipo) && (
+              <p className="mt-2 text-xs text-neutral-400">
+                Arrastra la línea en el lienzo para desviarla y que no se monte sobre otras.
+              </p>
+            )}
+            {ES_RELACION(conexion.tipo) && Number.isFinite(conexion.desvio) && (
+              <button
+                type="button"
+                onClick={() => setBorrador((prev) => relacionActualizada(prev, conexionId, { desvio: null }))}
+                className="mt-2 block text-[13px] font-medium text-indigo-600 underline-offset-2 hover:underline"
+              >
+                Quitar desvío de la línea
+              </button>
             )}
             <button
               type="button"
