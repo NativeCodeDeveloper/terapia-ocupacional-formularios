@@ -524,6 +524,43 @@ test("la descendencia registrada al revés se corrige y no se duplica", () => {
   assert.equal(descendencias[0].a, a.id);
 });
 
+test("el dibujo garantiza una sola línea por par y jamás dibuja diagonales", () => {
+  // Garantía a nivel de dibujo: aunque los datos traigan el mismo
+  // par duplicado en los dos sentidos, solo se dibuja una línea.
+  let g = nuevaPersona(
+    nuevaPersona(genogramaVacio(), "hombre", { x: 180, y: 140 }),
+    "hombre",
+    { x: 460, y: 515 }
+  );
+  const [padre, hijo] = g.personas;
+  g = {
+    ...g,
+    vinculos: [
+      { id: "v1", tipo: "hijo", de: padre.id, a: hijo.id },
+      { id: "v2", tipo: "hijo", de: hijo.id, a: padre.id },
+    ],
+  };
+  const rutas = rutasDeDescendencia(g);
+  assert.equal(rutas.length, 1);
+  const sinDiagonales = (rutasDe) => {
+    for (const ruta of rutasDe) {
+      for (let i = 1; i < ruta.recorrido.length; i++) {
+        const p = ruta.recorrido[i - 1];
+        const q = ruta.recorrido[i];
+        assert.ok(p.x === q.x || p.y === q.y);
+      }
+    }
+  };
+  sinDiagonales(rutas);
+
+  // Vínculo invertido suelto (el «hijo» quedó arriba): codo hacia
+  // arriba, también sin diagonales.
+  const invertido = { ...g, vinculos: [{ id: "v", tipo: "hijo", de: hijo.id, a: padre.id }] };
+  const rutasInvertidas = rutasDeDescendencia(invertido);
+  assert.equal(rutasInvertidas.length, 1);
+  sinDiagonales(rutasInvertidas);
+});
+
 test("la descendencia de un progenitor con pareja sale del punto medio de la pareja", () => {
   // Felipe y Marcelo conectados solo con Samuel, que forma
   // pareja con Cristina: las líneas salen del medio de la pareja.

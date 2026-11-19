@@ -928,8 +928,25 @@ export function geometriaDePareja(genograma, vinculo) {
    y `clave` identifica cada tramo dibujado. */
 export function rutasDeDescendencia(genograma) {
   const rutas = [];
-  const hijos = genograma.vinculos.filter((v) => esDescendencia(v.tipo));
-  if (hijos.length === 0) return rutas;
+  const crudos = genograma.vinculos.filter((v) => esDescendencia(v.tipo));
+  if (crudos.length === 0) return rutas;
+
+  /* Garantía de dibujo: una sola línea por par progenitor–hijo.
+     Si el mismo par llegara duplicado —en cualquiera de los dos
+     sentidos y sin importar el estado de los datos— solo se
+     dibuja una: la que va del progenitor de arriba hacia el hijo. */
+  const porParDibujo = new Map();
+  const vaDelProgenitorArriba = (v) => {
+    const origen = personaDe(genograma, v.de);
+    const hijo = personaDe(genograma, v.a);
+    return Boolean(origen && hijo && origen.y <= hijo.y);
+  };
+  for (const v of crudos) {
+    const clave = parDe(v);
+    const previa = porParDibujo.get(clave);
+    porParDibujo.set(clave, previa && vaDelProgenitorArriba(v) && !vaDelProgenitorArriba(previa) ? v : previa ?? v);
+  }
+  const hijos = [...porParDibujo.values()];
 
   /* Origen efectivo de cada vínculo: punto medio de la línea
      de pareja (si el vínculo sale de una pareja) o borde
@@ -1013,13 +1030,29 @@ export function rutasDeDescendencia(genograma) {
       if (!hijo) continue;
       const llegada = { x: hijo.x + (desvioDeClave.get(`${v.a}|${clave}`) ?? 0), y: hijo.y - NODO.radio };
       if (llegada.y <= origen.y + 6) {
-        /* Hijo al nivel del origen o encima: línea directa
-           borde a borde, sin tallo ni guía. */
-        rutas.push({
-          id: v.id,
-          clave: v.id,
-          recorrido: [origen, puntoBorde(hijo, origen.x - hijo.x, origen.y - hijo.y)],
-        });
+        if (origen.y - llegada.y <= NODO.radio) {
+          /* Hijo a la altura del origen: línea directa borde a
+             borde (casi horizontal), sin tallo ni guía. */
+          rutas.push({
+            id: v.id,
+            clave: v.id,
+            recorrido: [origen, puntoBorde(hijo, origen.x - hijo.x, origen.y - hijo.y)],
+          });
+        } else {
+          /* Hijo por encima del origen (vínculo invertido o figura
+             muy arriba): codo hacia arriba desde el borde superior
+             del progenitor — una diagonal nunca. */
+          const progenitorPersona = personaDe(genograma, v.de);
+          const salida = progenitorPersona
+            ? puntoBorde(progenitorPersona, hijo.x - progenitorPersona.x, hijo.y - progenitorPersona.y)
+            : origen;
+          const yCodo = (salida.y + llegada.y) / 2;
+          rutas.push({
+            id: v.id,
+            clave: v.id,
+            recorrido: [salida, { x: salida.x, y: yCodo }, { x: llegada.x, y: yCodo }, llegada],
+          });
+        }
       } else {
         conTecho.push({ v, clave, llegada });
       }

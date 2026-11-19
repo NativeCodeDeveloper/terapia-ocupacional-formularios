@@ -584,7 +584,7 @@ export default function DiagramaGenograma({
           fill="#9ca3af"
           style={{ pointerEvents: "none", userSelect: "none" }}
         >
-          genograma v4
+          genograma v5
         </text>
       )}
     </svg>
