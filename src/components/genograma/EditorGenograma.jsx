@@ -359,6 +359,20 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
 
   /* ---------- Biblioteca y acciones ---------- */
 
+  /* Copia el estado exacto del genograma al portapapeles (para
+     diagnóstico: ver qué hay realmente guardado). */
+  function copiarDatos() {
+    const texto = JSON.stringify(borrador);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(texto)
+        .then(() => avisar("Datos del genograma copiados al portapapeles. Pégalos donde los necesites."))
+        .catch(() => avisar("No se pudo copiar en este navegador.", true));
+    } else {
+      avisar("No se pudo copiar en este navegador.", true);
+    }
+  }
+
   const nombreSugerido =
     usuario?.nombre?.trim() || (contexto ? `Genograma · ${contexto}` : "Genograma familiar");
 
@@ -513,6 +527,14 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           className={`${BOTON} border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100`}
         >
           Borrar todo
+        </button>
+        <button
+          type="button"
+          onClick={copiarDatos}
+          className={`${BOTON} border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100`}
+          title="Copia los datos exactos del genograma al portapapeles (diagnóstico)"
+        >
+          Copiar datos
         </button>
       </div>
 
