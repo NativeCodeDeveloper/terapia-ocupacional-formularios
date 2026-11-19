@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
   COLOR_DESCENDENCIA,
   COLOR_RELACION,
@@ -61,7 +61,7 @@ export function puntoSvg(svg, clienteX, clienteY) {
   return { x: vb.x + (clienteX - rect.left) * escalaX, y: vb.y + (clienteY - rect.top) * escalaY };
 }
 
-function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, eventos }) {
+function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, eventos, idFondoNombre }) {
   const { x, y } = persona;
   /* Abreviaturas de las patologías principales: lista al costado
      de la figura (una línea por patología), en cursiva y gris,
@@ -181,8 +181,8 @@ function FiguraPersona({ persona, seleccionada, activa, interactivo, lado, event
       )}
       <text
         x={x}
-        y={y + r + 13}
-        className="stroke-white stroke-[3px] [paint-order:stroke]"
+        y={y + r + 15}
+        filter={`url(#${idFondoNombre})`}
         textAnchor="middle"
         fontSize="12.5"
         fontWeight={persona.indicado ? 700 : 500}
@@ -384,6 +384,7 @@ export default function DiagramaGenograma({
   /* Reparación en vivo: el dibujo usa los datos saneados, de modo
      que un vínculo inválido que sobreviva en el estado del editor
      (creado antes de una corrección) desaparece sin recargar. */
+  const idFondoNombre = useId();
   const g = useMemo(() => normalizarGenograma(genograma), [genograma]);
   const limites = limitesDiagrama(g);
   if (!limites) {
@@ -416,13 +417,20 @@ export default function DiagramaGenograma({
       role="img"
       aria-label="Diagrama del genograma familiar"
     >
-      {conRejilla && (
-        <defs>
+      <defs>
+        <filter id={idFondoNombre} x="-8%" y="-20%" width="116%" height="145%">
+          <feFlood className="[flood-color:white]" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {conRejilla && (
           <pattern id="genograma-rejilla" width="24" height="24" patternUnits="userSpaceOnUse">
             <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" strokeWidth="1" />
           </pattern>
-        </defs>
-      )}
+        )}
+      </defs>
       {conRejilla && <rect width="100%" height="100%" fill="url(#genograma-rejilla)" />}
 
       {/* Círculos de convivencia, detrás de líneas y figuras */}
@@ -569,6 +577,7 @@ export default function DiagramaGenograma({
           <FiguraPersona
             key={p.id}
             persona={p}
+            idFondoNombre={idFondoNombre}
             lado={ladoDeAbreviaturas(g, p)}
             seleccionada={personaSeleccionada === p.id}
             activa={personaActiva === p.id || idsActivos.includes(p.id)}
