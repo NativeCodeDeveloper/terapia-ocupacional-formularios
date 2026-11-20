@@ -170,6 +170,18 @@ const VENTAJAS = [
   },
 ];
 
+/* Vista previa del módulo Material TO (la lista completa vive
+   en /material). */
+const MATERIALES_DESTACADOS = [
+  "Manual de ergoterapias",
+  "Manual de objetivos",
+  "Manual de órtesis",
+  "Estimulación cognitiva",
+  "Talleres grupales",
+  "Pautas de TO",
+  "Patologías asociadas a TO",
+];
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-geist-sans)] text-neutral-900">
@@ -191,12 +203,20 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <a
-            href="#formularios"
-            className="hidden h-9 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 sm:inline-flex"
-          >
-            Ver formularios
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="#formularios"
+              className="hidden h-9 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 sm:inline-flex"
+            >
+              Ver formularios
+            </a>
+            <Link
+              href="/material"
+              className="hidden h-9 items-center rounded-xl border border-teal-600 px-4 text-[13px] font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:inline-flex"
+            >
+              Material TO
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -266,6 +286,46 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Material Terapia Ocupacional: módulo separado de los
+            formularios, con identidad propia (verde azulado). */}
+        <section
+          id="material"
+          aria-labelledby="titulo-material"
+          className="scroll-mt-24 pb-4 sm:pb-6"
+        >
+          <div className="rounded-3xl border border-teal-200 bg-teal-50/50 p-6 sm:p-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-600">
+              Nuevo módulo
+            </p>
+            <h2 id="titulo-material" className="mt-2 text-2xl font-bold tracking-tight">
+              Material Terapia Ocupacional
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+              Manuales, pautas, actividades y estrategias de TO para la práctica diaria. Un módulo
+              aparte de los formularios de evaluación, con descargas organizadas por tema.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {MATERIALES_DESTACADOS.map((m) => (
+                <span
+                  key={m}
+                  className="rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-medium text-teal-800"
+                >
+                  {m}
+                </span>
+              ))}
+              <span className="rounded-full px-3 py-1 text-xs font-medium text-teal-700/70">
+                y más…
+              </span>
+            </div>
+            <Link
+              href="/material"
+              className="mt-7 inline-flex h-11 items-center rounded-xl bg-teal-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
+            >
+              Ir al material TO →
+            </Link>
+          </div>
+        </section>
+
         {/* Cómo se puntúa */}
         <section aria-labelledby="titulo-puntuacion" className="scroll-mt-24 pb-16 sm:pb-20">
           <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 p-6 sm:p-10">
@@ -299,7 +359,7 @@ export default function Home() {
       <footer className="border-t border-neutral-200/80 py-8">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-neutral-400 lg:px-0">
           <p>© 2026 Teraocupame.cl — Instrumentos de evaluación en salud mental</p>
-          <p>SPM-2 © Western Psychological Services · Fichas de Evaluación Inicial TeraOcupame · Uso profesional</p>
+          <p>SPM-2 © Western Psychological Services · Fichas de Evaluación Inicial y Material TO TeraOcupame · Uso profesional</p>
         </div>
       </footer>
     </div>
