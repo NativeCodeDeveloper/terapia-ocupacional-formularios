@@ -21,6 +21,7 @@ import {
   guardarEnBiblioteca,
   etiquetaConexionesDe,
   grupoAgregado,
+  grupoSinIntegrante,
   leerBiblioteca,
   limitesDiagrama,
   listaDeAbreviaturas,
@@ -757,6 +758,33 @@ test("el contorno de convivencia rodea a sus integrantes y deja fuera a quien vi
   }
   // Quien vive aparte, fuera.
   assert.equal(dentro(felipe.x, felipe.y), false);
+});
+
+test("se puede quitar a una persona del círculo de convivencia; con una sola se disuelve", () => {
+  let g = nuevaPersona(
+    nuevaPersona(
+      nuevaPersona(nuevaPersona(genogramaVacio(), "hombre", { x: 200, y: 200 }), "mujer", { x: 500, y: 200 }),
+      "hombre",
+      { x: 400, y: 300 }
+    ),
+    "hombre",
+    { x: 320, y: 320 }
+  );
+  const [samuel, cristina, marcelo, felipe] = g.personas;
+  g = grupoAgregado(g, [samuel.id, cristina.id, marcelo.id]);
+  const idGrupo = g.grupos[0].id;
+
+  // Quitar a un integrante deja al resto en el círculo.
+  g = grupoSinIntegrante(g, idGrupo, marcelo.id);
+  assert.deepEqual(g.grupos[0].integrantes, [samuel.id, cristina.id]);
+
+  // Quitar a alguien que no es integrante no cambia el círculo.
+  const igual = grupoSinIntegrante(g, idGrupo, felipe.id);
+  assert.deepEqual(igual.grupos[0].integrantes, [samuel.id, cristina.id]);
+
+  // Con una sola persona el círculo se disuelve.
+  g = grupoSinIntegrante(g, idGrupo, cristina.id);
+  assert.equal(g.grupos.length, 0);
 });
 
 /* ============================================================

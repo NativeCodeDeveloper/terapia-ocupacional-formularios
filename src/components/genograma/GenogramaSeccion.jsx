@@ -128,6 +128,10 @@ export default function GenogramaSeccion({ valor, alCambiar, contexto = "" }) {
                   Cerrar vista
                 </button>
               </div>
+              <p className="mt-1 text-[13px] text-neutral-500">
+                Esta vista no permite mover figuras: para acomodarlas —o sacar a alguien del círculo
+                familiar— usa «Editar».
+              </p>
               <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-white p-2">
                 <DiagramaGenograma genograma={genograma} />
               </div>

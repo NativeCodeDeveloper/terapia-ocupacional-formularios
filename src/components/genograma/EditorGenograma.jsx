@@ -17,9 +17,9 @@ import {
   grupoActualizado,
   grupoAgregado,
   grupoEliminado,
+  grupoSinIntegrante,
   guardarEnBiblioteca,
   nuevoId,
-  NODO,
   normalizarGenograma,
   organizarGenograma,
   nuevaPersona,
@@ -67,9 +67,12 @@ const PASOS_GUIA = [
   ["Ubica a las personas", "arrastra cada figura (padres arriba, hijos abajo) o pulsa «Ordenar»: el editor acomoda una fila por generación con los hijos centrados bajo su pareja."],
   [
     "Conecta con vínculos",
-    "arrastra una figura sobre otra —o pulsa «Conectar» y haz clic en las dos personas— y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
+    "pulsa «Conectar» y haz clic en las dos personas, y elige: pareja (matrimonio, convivencia, separación o divorcio), «es hijo/a de», o una relación (cercana, fusión, distante, conflicto o corte). Para que un hijo quede conectado a los dos progenitores —p. ej., a José y a María— conecta con cada uno: las líneas se dibujan separadas y sin cruzarse.",
   ],
-  ["Marca la convivencia", "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno continuo que los rodea. Si alguien que no convive queda dentro, muévelo fuera del contorno."],
+  [
+    "Marca la convivencia",
+    "pulsa «Círculo familiar» y haz clic en quienes viven juntos (dos o más): se dibuja un contorno continuo que los rodea. Si alguien que no corresponde queda dentro, arrástralo fuera del contorno, o quítalo del círculo con el ✕ del panel del círculo o desde el panel de esa persona.",
+  ],
   ["Edita o corrige", "haz clic en cualquier figura o línea para editar su nombre, edad, patologías (abreviaturas y detalle) o eliminarla. Si una relación se cruza con otra línea, arrástrala para desviarla."],
   ["Guarda el resultado", "«Usar en esta evaluación» lo adjunta al informe; «Guardar en biblioteca» lo deja guardado para reutilizarlo en otros formularios."],
 ];
@@ -94,10 +97,6 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   /* Relación agarrada para desviarla: el arrastre corre la línea
      lateralmente (desvío) sin dejar de tocar las dos figuras. */
   const arrastreRelacion = useRef(null);
-  /* Figura apuntada mientras se arrastra otra: si se suelta sobre
-     ella, el arrastre se convierte en conexión (menú de vínculos). */
-  const objetivoArrastreRef = useRef(null);
-  const [objetivoArrastre, setObjetivoArrastre] = useState(null);
 
   /* Aviso bajo el lienzo: confirmaciones en verde, rechazos en rojo. */
   const avisar = (texto, error = false) => {
@@ -151,21 +150,9 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     const punto = puntoSvg(referenciaSvg.current, evento.clientX, evento.clientY);
     if (!estado.movio && Math.hypot(punto.x - estado.inicio.x, punto.y - estado.inicio.y) < 5) return;
     estado.movio = true;
-    /* Arrastrar sobre otra figura apunta la conexión: la figura de
-       destino se destaca y el arrastre queda congelado mientras
-       apunta, para no arrimarla por accidente. */
-    const objetivo = borrador.personas.find(
-      (p) =>
-        p.id !== personaClic.id &&
-        Math.abs(punto.x - p.x) <= NODO.radio + 4 &&
-        Math.abs(punto.y - p.y) <= NODO.radio + 4
-    );
-    const objetivoId = objetivo?.id ?? null;
-    if (objetivoArrastreRef.current !== objetivoId) {
-      objetivoArrastreRef.current = objetivoId;
-      setObjetivoArrastre(objetivoId);
-    }
-    if (objetivoId) return;
+    /* Arrastrar mueve la figura libremente, aunque pase por sobre
+       otras: conectar se hace con el modo «Conectar», nunca al
+       soltar, para que mover no se convierta en conexión. */
     setBorrador((prev) =>
       personaActualizada(prev, personaClic.id, {
         x: Math.min(Math.max(punto.x, 72), LIENZO_ANCHO - 72),
@@ -177,23 +164,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
   function alSoltarPersona(personaClic) {
     const estado = arrastre.current;
     arrastre.current = null;
-    const objetivoId = objetivoArrastreRef.current;
-    if (objetivoArrastreRef.current !== null) {
-      objetivoArrastreRef.current = null;
-      setObjetivoArrastre(null);
-    }
-    if (estado?.movio) {
-      if (objetivoId && objetivoId !== personaClic.id) {
-        /* Conexión dibujada a mano: la figura vuelve a su lugar y
-           el menú de vínculos se abre para ese par. */
-        setBorrador((prev) =>
-          personaActualizada(prev, personaClic.id, { x: estado.origen.x, y: estado.origen.y })
-        );
-        abrirMenu(personaClic.id, objetivoId);
-        setDesde(null);
-      }
-      return;
-    }
+    if (estado?.movio) return; // quedó acomodada donde se soltó
     if (modoCirculo) {
       setSeleccionCirculo((prev) =>
         prev.includes(personaClic.id)
@@ -299,6 +270,18 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
     if (!window.confirm(`¿Disolver el círculo «${objetivo.nombre?.trim() || "Convivencia"}»?`)) return;
     setBorrador((prev) => grupoEliminado(prev, grupoId));
     setGrupoId(null);
+  }
+
+  /* Quita a una persona del círculo de convivencia; si quedara
+     una sola, el círculo se disuelve (aviso incluido). */
+  function quitarDelCirculo(idGrupo, idPersona) {
+    const siguiente = grupoSinIntegrante(borrador, idGrupo, idPersona);
+    const sigue = siguiente.grupos.some((g) => g.id === idGrupo);
+    setBorrador(siguiente);
+    if (!sigue) {
+      setGrupoId(null);
+      avisar("El círculo se disolvió: quedaba una sola persona dentro.");
+    }
   }
 
   function elegirTipo(tipo) {
@@ -542,7 +525,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           {modoCirculo ? "● Círculo familiar…" : "Círculo familiar"}
         </button>
         <span className="ml-auto text-xs text-neutral-400">
-          {borrador.personas.length} integrantes · genograma v10
+          {borrador.personas.length} integrantes · genograma v11
         </span>
         <button
           type="button"
@@ -584,7 +567,7 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
               ancho={LIENZO_ANCHO}
               alto={LIENZO_ALTO}
               personaSeleccionada={conectando || menu || modoCirculo ? null : personaId}
-              personaActiva={conectando ? desde : objetivoArrastre}
+              personaActiva={conectando ? desde : null}
               idsActivos={modoCirculo ? seleccionCirculo : []}
               conexionSeleccionada={conexionId}
               grupoSeleccionado={grupoId}
@@ -654,13 +637,11 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
           ) : (
             <p>Haz clic en la primera persona para conectar…</p>
           )
-        ) : objetivoArrastre ? (
-          <p>Suelta sobre «{nombreDe(objetivoArrastre)}» para crear la conexión con esa persona…</p>
         ) : (
           <p>
-            Arrastra una figura sobre otra para conectarlas, o suéltala en el lienzo para acomodarla. Haz
-            clic en una figura o en una línea para editarla. Si una relación se monta sobre otra línea,
-            arrástrala para desviarla.
+            Arrastra cada figura para acomodarla donde necesites —también fuera del círculo familiar.
+            Haz clic en una figura o en una línea para editarla. Para conectar, usa «Conectar». Si una
+            relación se monta sobre otra línea, arrástrala para desviarla.
           </p>
         )}
           </div>
@@ -870,6 +851,27 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                 />
               </div>
             </div>
+            {/* Círculos de convivencia a los que pertenece: quitarla
+                del círculo sin borrarla del genograma. */}
+            {(borrador.grupos ?? [])
+              .filter((g) => g.integrantes.includes(persona.id))
+              .map((g) => (
+                <div
+                  key={g.id}
+                  className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-50 px-3 py-2 text-[13px]"
+                >
+                  <span className="text-neutral-600">
+                    Vive en «{g.nombre?.trim() || "Convivencia"}»
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => quitarDelCirculo(g.id, persona.id)}
+                    className="text-[13px] font-medium text-red-600 underline-offset-2 hover:underline"
+                  >
+                    Quitar del círculo
+                  </button>
+                </div>
+              ))}
             <button
               type="button"
               onClick={eliminarPersona}
@@ -992,9 +994,32 @@ export default function EditorGenograma({ valor, contexto = "", alGuardar, alCan
                 className={CONTROL}
               />
             </div>
-            <p className="mt-2 text-[13px] text-neutral-500">
-              Viven juntos: {grupo.integrantes.map((id) => nombreDe(id)).join(", ")}.
-            </p>
+            <div className="mt-2">
+              <p className={ETIQUETA_CAMPO}>Viven juntos</p>
+              <ul className="mt-1 flex flex-wrap gap-1.5">
+                {grupo.integrantes.map((id) => (
+                  <li
+                    key={id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 py-1 pl-2.5 pr-1.5 text-[13px] text-neutral-700"
+                  >
+                    {nombreDe(id)}
+                    <button
+                      type="button"
+                      onClick={() => quitarDelCirculo(grupoId, id)}
+                      aria-label={`Quitar a ${nombreDe(id)} del círculo`}
+                      title={`Quitar a ${nombreDe(id)} del círculo (la figura queda en el genograma)`}
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-neutral-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-xs text-neutral-400">
+                El ✕ quita del círculo a quien ya no vive ahí (la figura sigue en el genograma). Si
+                alguien que no convive quedó dentro del contorno, arrástralo fuera.
+              </p>
+            </div>
             <button
               type="button"
               onClick={disolverCirculo}

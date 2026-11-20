@@ -187,6 +187,20 @@ export function grupoActualizado(genograma, id, cambios) {
   };
 }
 
+/* Quita a una persona de un círculo de convivencia. Si quedan
+   menos de dos integrantes, el círculo se disuelve: el contorno
+   solo tiene sentido rodeando a un grupo. */
+export function grupoSinIntegrante(genograma, idGrupo, idPersona) {
+  return {
+    ...genograma,
+    grupos: (genograma.grupos ?? []).flatMap((g) => {
+      if (g.id !== idGrupo) return [g];
+      const integrantes = g.integrantes.filter((i) => i !== idPersona);
+      return integrantes.length >= 2 ? [{ ...g, integrantes }] : [];
+    }),
+  };
+}
+
 export function grupoEliminado(genograma, id) {
   return { ...genograma, grupos: (genograma.grupos ?? []).filter((g) => g.id !== id) };
 }
