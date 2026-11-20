@@ -1,12 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
 
 /* ============================================================
    MATERIAL TERAPIA OCUPACIONAL · MÓDULO PROPIO
    Módulo independiente de los formularios de evaluación:
    reúne manuales, pautas, actividades y estrategias de TO.
-   Por ahora cada material es un recuadro con su título y el
-   espacio reservado para su portada; el contenido y las
-   imágenes se incorporan cuando esté el material final.
+   Cada material muestra la portada de su manual (las imágenes
+   viven en /public/material). Los que aún no tienen portada
+   muestran el recuadro provisional hasta recibir la imagen.
    ============================================================ */
 
 /* Tienda de Esponsor del cliente: destino de cada material.
@@ -16,23 +17,54 @@ import Link from "next/link";
 const TIENDA_TO = "https://esponsor.com/teraocupame/shop/";
 
 const MATERIALES = [
-  "Actividades de 1",
-  "Actividades de 2",
-  "Actividades de 3",
-  "Estimulación cognitiva 1",
-  "Estimulación cognitiva 2",
-  "Estrategias de TO Online",
-  "Manual de ergoterapias",
-  "Manual de objetivos",
-  "Manual de órtesis",
-  "Patologías asociadas a TO",
-  "Pautas de TO",
-  "Talleres grupales",
-  "Ya soy TO y ahora, ¿qué hago?",
-  "Selectividad alimentaria",
-  "Manejo del dinero",
-  "TBA: ACE-R RUDAS",
+  { titulo: "Actividades de 1", portada: "/material/actividades-1.webp" },
+  { titulo: "Actividades de 2", portada: "/material/actividades-2.webp" },
+  { titulo: "Actividades de 3", portada: "/material/actividades-3.webp" },
+  {
+    titulo: "Estimulación cognitiva 1",
+    portada: "/material/estimulacion-cognitiva-1.webp",
+  },
+  {
+    titulo: "Estimulación cognitiva 2",
+    portada: "/material/estimulacion-cognitiva-2.webp",
+  },
+  { titulo: "Estrategias de TO Online", portada: "/material/estrategias-to-online.webp" },
+  {
+    titulo: "Evaluación Inicial Infantil",
+    portada: "/material/evaluacion-inicial-infantil.webp",
+  },
+  {
+    titulo: "Evaluación Inicial Adolescencia",
+    portada: "/material/evaluacion-inicial-adolescencia.webp",
+  },
+  {
+    titulo: "Evaluación Inicial Adulto",
+    portada: "/material/evaluacion-inicial-adulto.webp",
+  },
+  {
+    titulo: "Evaluación Inicial Persona Mayor",
+    portada: "/material/evaluacion-inicial-persona-mayor.webp",
+  },
+  { titulo: "Manual de ergoterapias", portada: "/material/manual-ergoterapias.webp" },
+  { titulo: "Manual de objetivos", portada: "/material/manual-objetivos.webp" },
+  { titulo: "Manual de órtesis", portada: "/material/manual-ortesis.webp" },
+  {
+    titulo: "Patologías asociadas a TO",
+    portada: "/material/patologias-asociadas-to.webp",
+  },
+  { titulo: "Pautas de TO", portada: "/material/pautas-to.webp" },
+  { titulo: "Talleres grupales", portada: "/material/talleres-grupales.webp" },
+  { titulo: "Ya soy TO y ahora, ¿qué hago?", portada: "/material/ya-soy-to.webp" },
+  { titulo: "Selectividad alimentaria", portada: "/material/selectividad-alimentaria.webp" },
+  { titulo: "Manejo del dinero", portada: "/material/manejo-del-dinero.webp" },
+  /* Sin portada todavía: se muestra el recuadro provisional. */
+  { titulo: "TBA: ACE-R RUDAS" },
 ];
+
+/* Dimensiones de las portadas convertidas (1200×920 px, WebP
+   con transparencia). */
+const PORTADA_ANCHO = 1200;
+const PORTADA_ALTO = 920;
 
 export const metadata = {
   title: "Material Terapia Ocupacional · Teraocupame.cl",
@@ -111,7 +143,7 @@ export default function MaterialTO() {
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {MATERIALES.map((titulo) => (
+            {MATERIALES.map(({ titulo, portada }) => (
               <a
                 key={titulo}
                 href={TIENDA_TO}
@@ -119,18 +151,32 @@ export default function MaterialTO() {
                 rel="noopener noreferrer"
                 className="group flex flex-col rounded-2xl border border-teal-100 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[0_16px_40px_-20px_rgba(13,148,136,0.35)]"
               >
-                {/* Zona reservada para la portada del material */}
-                <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-teal-200 bg-teal-50/50 text-center">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-600 shadow-sm"
-                  >
-                    📄
-                  </span>
-                  <span className="px-4 text-[11px] font-medium uppercase tracking-wider text-teal-700/70">
-                    Portada próximamente
-                  </span>
-                </div>
+                {portada ? (
+                  /* Portada oficial del material */
+                  <div className="aspect-[4/3] overflow-hidden rounded-xl border border-teal-100 bg-teal-50/50">
+                    <Image
+                      src={portada}
+                      alt={`Portada del material ${titulo}`}
+                      width={PORTADA_ANCHO}
+                      height={PORTADA_ALTO}
+                      sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  /* Zona reservada para la portada del material */
+                  <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-teal-200 bg-teal-50/50 text-center">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-600 shadow-sm"
+                    >
+                      📄
+                    </span>
+                    <span className="px-4 text-[11px] font-medium uppercase tracking-wider text-teal-700/70">
+                      Portada próximamente
+                    </span>
+                  </div>
+                )}
                 <h3 className="mt-3 text-[15px] font-bold leading-5 tracking-tight">{titulo}</h3>
                 <span className="mt-3 flex items-center justify-between border-t border-teal-100 pt-3 text-xs text-teal-700">
                   <span>Ver en la tienda de TeraOcupame</span>
