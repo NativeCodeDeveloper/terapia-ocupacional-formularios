@@ -9,6 +9,12 @@ import Link from "next/link";
    imágenes se incorporan cuando esté el material final.
    ============================================================ */
 
+/* Tienda de Esponsor del cliente: destino de cada material.
+   Por ahora todos los recuadros llevan a la tienda; cuando haya
+   enlaces por producto se reemplaza `href={TIENDA_TO}` por el
+   enlace que corresponda a cada uno. */
+const TIENDA_TO = "https://esponsor.com/teraocupame/shop/";
+
 const MATERIALES = [
   "Actividades de 1",
   "Actividades de 2",
@@ -75,12 +81,22 @@ export default function MaterialTO() {
           </h1>
           <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-600">
             Manuales, pautas, actividades y estrategias de terapia ocupacional listos para usar en la
-            práctica diaria. Este módulo es independiente de los formularios de evaluación: aquí
-            encontrarás los recursos organizados por tema.
+            práctica diaria. Este módulo es independiente de los formularios de evaluación: cada
+            material se ve y se obtiene en la tienda oficial de TeraOcupame.
           </p>
-          <p className="mt-6 text-[13px] text-neutral-500">
-            {MATERIALES.length} materiales disponibles en este módulo
-          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <a
+              href={TIENDA_TO}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center rounded-xl bg-teal-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
+            >
+              Visitar la tienda ↗
+            </a>
+            <p className="text-[13px] text-neutral-500">
+              {MATERIALES.length} materiales disponibles en este módulo
+            </p>
+          </div>
         </section>
 
         {/* Recuadros de materiales */}
@@ -90,15 +106,18 @@ export default function MaterialTO() {
               Materiales disponibles
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              Cada recuadro corresponde a un material de terapia ocupacional. Pronto cada uno tendrá
-              su portada y su descarga directa.
+              Cada recuadro corresponde a un material de terapia ocupacional y te lleva a la tienda de
+              TeraOcupame, donde puedes verlo y obtenerlo.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {MATERIALES.map((titulo) => (
-              <article
+              <a
                 key={titulo}
-                className="flex flex-col rounded-2xl border border-teal-100 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06)]"
+                href={TIENDA_TO}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-2xl border border-teal-100 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[0_16px_40px_-20px_rgba(13,148,136,0.35)]"
               >
                 {/* Zona reservada para la portada del material */}
                 <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-teal-200 bg-teal-50/50 text-center">
@@ -113,7 +132,16 @@ export default function MaterialTO() {
                   </span>
                 </div>
                 <h3 className="mt-3 text-[15px] font-bold leading-5 tracking-tight">{titulo}</h3>
-              </article>
+                <span className="mt-3 flex items-center justify-between border-t border-teal-100 pt-3 text-xs text-teal-700">
+                  <span>Ver en la tienda de TeraOcupame</span>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-teal-600 transition-transform group-hover:translate-x-0.5"
+                  >
+                    ↗
+                  </span>
+                </span>
+              </a>
             ))}
           </div>
         </section>
