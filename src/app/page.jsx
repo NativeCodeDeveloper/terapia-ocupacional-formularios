@@ -125,8 +125,27 @@ export default function Home() {
           id="inicio"
           className="relative scroll-mt-16 overflow-hidden border-b border-neutral-100 bg-[#d9eaf6] lg:min-h-[88svh]"
         >
-          {/* Contenido (primero en móvil; el video pasa abajo) */}
-          <div className="relative flex min-h-[88svh] items-center px-5 pb-4 pt-32 sm:pt-36 lg:pb-0 lg:pl-[54%] lg:pr-16 lg:pt-0 xl:pr-28">
+          {/* Video con bordes diagonales: arriba y a sangre completa en móvil,
+              a la izquierda en escritorio */}
+          <div
+            aria-hidden="true"
+            className="relative h-[88vw] max-h-[560px] w-full overflow-hidden [clip-path:polygon(0_0,100%_0,100%_100%,0_84%)] lg:absolute lg:inset-y-0 lg:bottom-0 lg:left-0 lg:h-auto lg:max-h-none lg:w-[52%] lg:[clip-path:polygon(0_0,86%_0,100%_100%,0_100%)]"
+          >
+            <video
+              className="absolute inset-0 h-full w-full object-cover object-[53%_50%]"
+              src="/videos/hero-superheroe.mp4"
+              poster="/videos/hero-superheroe.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              tabIndex={-1}
+            />
+          </div>
+
+          {/* Contenido: en móvil va bajo el video; centrado en escritorio */}
+          <div className="relative flex items-center px-5 pb-16 pt-2 sm:pb-20 lg:min-h-[88svh] lg:pb-0 lg:pl-[54%] lg:pr-16 lg:pt-0 xl:pr-28">
             <div className="lg:mt-20">
               <h1 className="text-[2.35rem] font-extrabold uppercase leading-[1.06] tracking-tight text-indigo-950 sm:text-5xl xl:text-[3.5rem]">
                 <span className="block">Menos tiempo preparando.</span>
@@ -186,23 +205,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Video a sangre completa con borde diagonal (escritorio) */}
-          <div
-            aria-hidden="true"
-            className="relative mx-5 mb-16 h-[62vw] max-h-[430px] overflow-hidden rounded-[2rem] lg:absolute lg:inset-y-0 lg:bottom-0 lg:left-0 lg:mx-0 lg:mb-0 lg:h-auto lg:max-h-none lg:w-[52%] lg:rounded-none lg:[clip-path:polygon(0_0,86%_0,100%_100%,0_100%)]"
-          >
-            <video
-              className="absolute inset-0 h-full w-full object-cover object-[53%_50%]"
-              src="/videos/hero-superheroe.mp4"
-              poster="/videos/hero-superheroe.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              tabIndex={-1}
-            />
-          </div>
         </section>
 
         {/* Lo que encontrarás: tarjetas con las tres líneas de recursos */}
