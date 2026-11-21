@@ -1,157 +1,80 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import VideoGenograma from "@/components/VideoGenograma";
+import Footer from "@/components/Footer";
+import HaloReel from "@/components/ui/halo-reel";
+import { MATERIALES } from "@/lib/materiales";
 
-const FORMULARIOS = [
+/* Portadas para el carrusel del módulo Material TO. */
+const REEL_MATERIAL = MATERIALES.map((m) =>
+  m.portada
+    ? { src: m.portada, alt: `Portada de ${m.titulo}` }
+    : { title: m.titulo, subtitle: "Próximamente" },
+);
+
+
+/* Tarjetas del módulo "Lo que encontrarás". El enlace de cursos
+   queda pendiente hasta que exista la sección correspondiente. */
+const ENCONTRARAS = [
   {
-    href: "/formulario1",
-    instrumento: "SPM-2 HOGAR",
-    titulo: "Niños 2 - 5 años",
-    descripcion: "Responde el padre, madre o cuidador sobre la conducta del niño.",
-    informes: "PDF y Word",
-    preguntas: 80,
+    titulo: "Evaluaciones automatizadas",
+    texto: "Optimiza tus evaluaciones y ahorra tiempo en la aplicación, puntuación e informe.",
+    href: "/formularios",
+    icono: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-6 w-6"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    ),
   },
   {
-    href: "/formulario7",
-    instrumento: "SPM-2 ESCOLAR",
-    titulo: "Preescolar 2 - 5 años",
-    descripcion: "Responde el educador o la educadora de preescolar o guardería sobre la conducta del niño.",
-    informes: "PDF y Word",
-    preguntas: 80,
+    titulo: "Manuales digitales",
+    texto: "Material de consulta y apoyo para tus intervenciones.",
+    href: "#material",
+    icono: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-6 w-6"
+        aria-hidden="true"
+      >
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+      </svg>
+    ),
   },
   {
-    href: "/formulario2",
-    instrumento: "SPM-2 HOGAR",
-    titulo: "Niños 5 - 12 años",
-    descripcion: "Responde el padre, madre o cuidador sobre la conducta del niño.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario9",
-    instrumento: "SPM-2 ESCOLAR",
-    titulo: "Niños 5 - 12 años",
-    descripcion: "Responde un docente o evaluador del establecimiento sobre el o la estudiante.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario10",
-    instrumento: "PERFIL SENSORIAL 2 INFANT",
-    titulo: "Bebés 0 - 6 meses",
-    descripcion: "Cuestionario para padres o tutores sobre la conducta sensorial del bebé.",
-    informes: "PDF",
-    preguntas: 25,
-  },
-  {
-    href: "/formulario11",
-    instrumento: "PERFIL SENSORIAL 2 TODDLER",
-    titulo: "Niños 7 - 35 meses",
-    descripcion: "Cuestionario para padres o tutores sobre la conducta sensorial del niño.",
-    informes: "PDF",
-    preguntas: 54,
-  },
-  {
-    href: "/formulario12",
-    instrumento: "PERFIL SENSORIAL 2 BREVE",
-    titulo: "Niños 3:0 - 14:11 años",
-    descripcion: "Cuestionario breve para los padres o el cuidador sobre la conducta sensorial del niño.",
-    informes: "PDF",
-    preguntas: 34,
-  },
-  {
-    href: "/formulario13",
-    instrumento: "PERFIL SENSORIAL 2 NIÑO",
-    titulo: "Niños 3:0 - 14:11 años",
-    descripcion: "Cuestionario completo para los padres o el cuidador sobre la conducta sensorial del niño.",
-    informes: "PDF",
-    preguntas: 86,
-  },
-  {
-    href: "/formulario15",
-    instrumento: "PERFIL SENSORIAL 2 ESCOLAR",
-    titulo: "Alumnos 3:0 - 14:11 años",
-    descripcion: "Cuestionario para el profesor sobre la conducta sensorial del alumno en la escuela.",
-    informes: "PDF",
-    preguntas: 44,
-  },
-  {
-    href: "/formulario14",
-    instrumento: "PERFIL SENSORIAL ADOLESCENTES Y ADULTOS",
-    titulo: "Autoinforme 11 años en adelante",
-    descripcion: "Auto cuestionario sobre la frecuencia de las respuestas sensoriales propias.",
-    informes: "PDF",
-    preguntas: 60,
-  },
-  {
-    href: "/formulario3",
-    instrumento: "SPM-2 HOGAR",
-    titulo: "Adolescente 12 - 21",
-    descripcion: "Responde un evaluador o cuidador sobre el usuario.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario8",
-    instrumento: "SPM-2 ESCOLAR",
-    titulo: "Adolescente 12 - 21",
-    descripcion: "Responde un docente o evaluador del establecimiento sobre el o la estudiante.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario4",
-    instrumento: "SPM-2 AUTOINFORME",
-    titulo: "Adolescente 12 - 21",
-    descripcion: "Lo responde el propio adolescente.",
-    informes: "PDF y Word",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario5",
-    instrumento: "SPM-2",
-    titulo: "Adulto (Evaluador) 21 - 87",
-    descripcion: "Responde un evaluador o cuidador sobre el usuario.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario6",
-    instrumento: "SPM-2",
-    titulo: "Adulto (Autoinforme) 21 - 87",
-    descripcion: "Lo responde el propio adulto.",
-    informes: "PDF",
-    preguntas: 80,
-  },
-  {
-    href: "/formulario16",
-    instrumento: "EVALUACIÓN INICIAL · INFANTIL",
-    titulo: "Niño · entrevista inicial",
-    descripcion: "Ficha de primera atención de terapia ocupacional que completa el tutor o cuidador junto al terapeuta.",
-    informes: "PDF y Word",
-    preguntas: 104,
-  },
-  {
-    href: "/formulario17",
-    instrumento: "EVALUACIÓN INICIAL · ADOLESCENCIA",
-    titulo: "Adolescente · entrevista inicial",
-    descripcion: "Ficha de primera atención con el tutor o el propio adolescente, con área académica e independencia funcional.",
-    informes: "PDF y Word",
-    preguntas: 103,
-  },
-  {
-    href: "/formulario18",
-    instrumento: "EVALUACIÓN INICIAL · ADULTO",
-    titulo: "Adulto · entrevista inicial",
-    descripcion: "Ficha de primera atención con independencia funcional básica e instrumental, área física y salud mental.",
-    informes: "PDF y Word",
-    preguntas: 125,
-  },
-  {
-    href: "/formulario19",
-    instrumento: "EVALUACIÓN INICIAL · PERSONA MAYOR",
-    titulo: "Persona mayor · entrevista inicial",
-    descripcion: "Ficha de primera atención con síndromes geriátricos, entorno y adaptaciones, área física y salud mental.",
-    informes: "PDF y Word",
-    preguntas: 136,
+    titulo: "Cursos online",
+    texto: "Aprende a tu ritmo y fortalece tus conocimientos profesionales.",
+    href: "#",
+    icono: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-6 w-6"
+        aria-hidden="true"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
   },
 ];
 
@@ -170,6 +93,13 @@ const VENTAJAS = [
   },
 ];
 
+/* Sellos breves bajo los botones del hero. */
+const CONFIANZA = [
+  "Puntuación automática",
+  "Descarga inmediata",
+  "Material TO descargable",
+];
+
 /* Vista previa del módulo Material TO (la lista completa vive
    en /material). */
 const MATERIALES_DESTACADOS = [
@@ -185,109 +115,212 @@ const MATERIALES_DESTACADOS = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-geist-sans)] text-neutral-900">
-      <header className="sticky top-0 z-20 border-b border-neutral-200/80 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 lg:px-0">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-[15px] font-bold text-white"
-            >
-              T
-            </span>
-            <div>
-              <p className="text-[15px] font-bold leading-4 tracking-tight">
-                Teraocupame<span className="text-indigo-600">.cl</span>
-              </p>
-              <p className="text-[11px] leading-4 text-neutral-500">
-                Instrumentos de evaluación en salud mental
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href="#formularios"
-              className="hidden h-9 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 sm:inline-flex"
-            >
-              Ver formularios
-            </a>
-            <Link
-              href="/material"
-              className="hidden h-9 items-center rounded-xl border border-teal-600 px-4 text-[13px] font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:inline-flex"
-            >
-              Material TO
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="mx-auto max-w-6xl px-5 lg:px-0">
-        {/* Portada */}
-        <section className="border-b border-neutral-100 py-14 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">
-            Perfil Sensorial 2 · SPM-2
-          </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-            Formularios e informes del SPM-2, listos para aplicar.
-          </h1>
-          <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-600">
-            Completar en línea los formularios oficiales del Perfil Sensorial 2 con puntuación
-            automática según las tablas normativas y descarga inmediata del informe para la ficha
-            clínica.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <a
-              href="#formularios"
-              className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
-            >
-              Comenzar ahora
-            </a>
-            <p className="text-[13px] text-neutral-500">
-              19 formularios · Escalas de frecuencia (SPM-2 y Perfil Sensorial 2) y fichas de Evaluación Inicial
-            </p>
-          </div>
-        </section>
-
-        {/* Formularios disponibles */}
-        <section id="formularios" aria-labelledby="titulo-formularios" className="scroll-mt-24 py-12 sm:py-16">
-          <div className="mb-8">
-            <h2 id="titulo-formularios" className="text-2xl font-bold tracking-tight">
-              Formularios disponibles
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              Selecciona el formulario que necesitas completar. Al terminar podrás revisar un
-              resumen y descargar el informe con la puntuación interpretada.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FORMULARIOS.map((f) => (
-              <Link
-                key={f.href}
-                href={f.href}
-                className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-[0_16px_40px_-20px_rgba(79,70,229,0.35)]"
-              >
-                <span className="w-fit rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
-                  {f.instrumento}
-                </span>
-                <span className="mt-3 text-[15px] font-bold tracking-tight">{f.titulo}</span>
-                <span className="mt-1 text-[13px] leading-5 text-neutral-600">
-                  {f.descripcion}
-                </span>
-                <span className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-400">
-                  <span>{f.preguntas} preguntas · Informe {f.informes}</span>
+      <main>
+        {/* Portada con la distribución de la referencia: video a sangre
+            completa a la izquierda con corte diagonal, mensaje a la derecha
+            sobre panel celeste y navbar transparente por encima. */}
+        <section
+          id="inicio"
+          className="relative scroll-mt-16 overflow-hidden border-b border-neutral-100 bg-[#d9eaf6] lg:min-h-[88svh]"
+        >
+          {/* Contenido (primero en móvil; el video pasa abajo) */}
+          <div className="relative flex min-h-[88svh] items-center px-5 pb-4 pt-32 sm:pt-36 lg:pb-0 lg:pl-[54%] lg:pr-16 lg:pt-0 xl:pr-28">
+            <div className="lg:mt-20">
+              <h1 className="text-[2.35rem] font-extrabold uppercase leading-[1.06] tracking-tight text-indigo-950 sm:text-5xl xl:text-[3.5rem]">
+                <span className="block">Menos tiempo preparando.</span>
+                <span className="block text-teal-700">Más tiempo transformando vidas</span>
+              </h1>
+              <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-700">
+                Descubre evaluaciones automatizadas, materiales descargables y cursos
+                especializados para facilitar tu práctica profesional y acompañar cada proceso
+                terapéutico.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <a
+                  href="/formularios"
+                  className="group inline-flex h-12 items-center gap-2 rounded-xl bg-teal-600 px-7 text-sm font-semibold text-white shadow-lg shadow-teal-600/30 transition-colors hover:bg-teal-700"
+                >
+                  Explorar recursos
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition-transform group-hover:translate-x-0.5"
+                    className="transition-transform group-hover:translate-x-0.5"
                   >
                     →
                   </span>
-                </span>
-              </Link>
-            ))}
+                </a>
+                <a
+                  href="#sobre"
+                  className="inline-flex h-12 items-center rounded-xl border border-white/70 bg-white/60 px-7 text-sm font-semibold text-neutral-800 transition-colors hover:bg-white hover:text-teal-700"
+                >
+                  Saber más
+                </a>
+              </div>
+              <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2.5">
+                {CONFIANZA.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-center gap-2 text-[13px] font-medium text-neutral-700"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-teal-700"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <path d="m5 13 4 4L19 7" />
+                      </svg>
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Video a sangre completa con borde diagonal (escritorio) */}
+          <div
+            aria-hidden="true"
+            className="relative mx-5 mb-16 h-[62vw] max-h-[430px] overflow-hidden rounded-[2rem] lg:absolute lg:inset-y-0 lg:bottom-0 lg:left-0 lg:mx-0 lg:mb-0 lg:h-auto lg:max-h-none lg:w-[52%] lg:rounded-none lg:[clip-path:polygon(0_0,86%_0,100%_100%,0_100%)]"
+          >
+            <video
+              className="absolute inset-0 h-full w-full object-cover object-[53%_50%]"
+              src="/videos/hero-superheroe.mp4"
+              poster="/videos/hero-superheroe.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              tabIndex={-1}
+            />
           </div>
         </section>
 
-        {/* Material Terapia Ocupacional: módulo separado de los
-            formularios, con identidad propia (verde azulado). */}
+        {/* Lo que encontrarás: tarjetas con las tres líneas de recursos */}
+        <section aria-labelledby="titulo-encontraras" className="bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5 lg:px-0">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
+              Lo que encontrarás
+            </p>
+            <h2
+              id="titulo-encontraras"
+              className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
+            >
+              Herramientas que facilitan{" "}
+              <span className="text-teal-700">tu trabajo</span>
+            </h2>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              {ENCONTRARAS.map((tarjeta) => (
+                <a
+                  key={tarjeta.titulo}
+                  href={tarjeta.href}
+                  className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-7 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-1 hover:border-teal-200 hover:shadow-[0_28px_60px_-28px_rgba(13,148,136,0.45)]"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
+                    {tarjeta.icono}
+                  </span>
+                  <span className="mt-5 text-lg font-bold tracking-tight text-indigo-950">
+                    {tarjeta.titulo}
+                  </span>
+                  <span className="mt-2 text-sm leading-6 text-neutral-600">
+                    {tarjeta.texto}
+                  </span>
+                  <span className="mt-auto flex pt-6">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition-colors group-hover:bg-teal-600 group-hover:text-white"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                      >
+                        <path d="M5 12h14m-6-6 6 6-6 6" />
+                      </svg>
+                    </span>
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Genograma familiar: demostración en video (sin audio) */}
+        <section aria-labelledby="titulo-genograma" className="bg-white pb-16 sm:pb-20">
+          <div className="mx-auto max-w-6xl px-5 lg:px-0">
+            <h2
+              id="titulo-genograma"
+              className="max-w-3xl text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
+            >
+              Genograma familiar{" "}
+              <span className="text-teal-700">completo de tus pacientes</span>
+            </h2>
+            <figure className="mt-10 overflow-hidden rounded-[2rem] bg-white shadow-[0_45px_90px_-45px_rgba(13,148,136,0.45)] ring-1 ring-neutral-200/80">
+              <VideoGenograma />
+            </figure>
+          </div>
+        </section>
+
+        {/* Material TO: carrusel elíptico con todas las portadas del módulo */}
+        <section
+          aria-labelledby="titulo-material-reel"
+          className="bg-white pb-16 sm:pb-20"
+        >
+          <div className="mx-auto max-w-6xl px-5 lg:px-0">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
+              Material TO
+            </p>
+            <h2
+              id="titulo-material-reel"
+              className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
+            >
+              Material <span className="text-teal-700">Terapia Ocupacional</span>
+            </h2>
+          </div>
+          <HaloReel
+            aria-label="Portadas del material de terapia ocupacional"
+            items={REEL_MATERIAL}
+            cardWidth={260}
+            cardHeight={200}
+            holdDuration={1600}
+            stepDuration={800}
+            className="mt-4 h-[440px] sm:h-[560px]"
+            centerLabel={
+              <div className="hidden max-w-sm text-center sm:block">
+                <p className="text-2xl font-extrabold uppercase tracking-tight text-indigo-950">
+                  Todo el material{" "}
+                  <span className="text-teal-700">listo para descargar</span>
+                </p>
+                <p className="mt-2 text-sm leading-6 text-neutral-600">
+                  Manuales, pautas y evaluaciones para usar en tu práctica diaria.
+                </p>
+                <Link
+                  href="/material"
+                  className="mt-5 inline-flex h-11 items-center rounded-xl bg-teal-600 px-6 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-colors hover:bg-teal-700"
+                >
+                  Ir al material TO →
+                </Link>
+              </div>
+            }
+          />
+        </section>
+
+        <div className="mx-auto max-w-6xl px-5 lg:px-0">
+          {/* Material Terapia Ocupacional: módulo separado de los
+              formularios, con identidad propia (verde azulado). */}
         <section
           id="material"
           aria-labelledby="titulo-material"
@@ -327,7 +360,11 @@ export default function Home() {
         </section>
 
         {/* Cómo se puntúa */}
-        <section aria-labelledby="titulo-puntuacion" className="scroll-mt-24 pb-16 sm:pb-20">
+        <section
+          id="sobre"
+          aria-labelledby="titulo-puntuacion"
+          className="scroll-mt-24 pb-16 sm:pb-20"
+        >
           <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 p-6 sm:p-10">
             <h2 id="titulo-puntuacion" className="text-2xl font-bold tracking-tight">
               Puntuación e informe automáticos
@@ -354,14 +391,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+        </div>
       </main>
 
-      <footer className="border-t border-neutral-200/80 py-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-neutral-400 lg:px-0">
-          <p>© 2026 Teraocupame.cl — Instrumentos de evaluación en salud mental</p>
-          <p>SPM-2 © Western Psychological Services · Fichas de Evaluación Inicial y Material TO TeraOcupame · Uso profesional</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

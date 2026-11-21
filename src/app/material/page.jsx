@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MATERIALES, TIENDA_TO } from "@/lib/materiales";
 
 /* ============================================================
    MATERIAL TERAPIA OCUPACIONAL · MÓDULO PROPIO
@@ -9,57 +10,6 @@ import Link from "next/link";
    viven en /public/material). Los que aún no tienen portada
    muestran el recuadro provisional hasta recibir la imagen.
    ============================================================ */
-
-/* Tienda de Esponsor del cliente: destino de cada material.
-   Por ahora todos los recuadros llevan a la tienda; cuando haya
-   enlaces por producto se reemplaza `href={TIENDA_TO}` por el
-   enlace que corresponda a cada uno. */
-const TIENDA_TO = "https://esponsor.com/teraocupame/shop/";
-
-const MATERIALES = [
-  { titulo: "Actividades de 1", portada: "/material/actividades-1.webp" },
-  { titulo: "Actividades de 2", portada: "/material/actividades-2.webp" },
-  { titulo: "Actividades de 3", portada: "/material/actividades-3.webp" },
-  {
-    titulo: "Estimulación cognitiva 1",
-    portada: "/material/estimulacion-cognitiva-1.webp",
-  },
-  {
-    titulo: "Estimulación cognitiva 2",
-    portada: "/material/estimulacion-cognitiva-2.webp",
-  },
-  { titulo: "Estrategias de TO Online", portada: "/material/estrategias-to-online.webp" },
-  {
-    titulo: "Evaluación Inicial Infantil",
-    portada: "/material/evaluacion-inicial-infantil.webp",
-  },
-  {
-    titulo: "Evaluación Inicial Adolescencia",
-    portada: "/material/evaluacion-inicial-adolescencia.webp",
-  },
-  {
-    titulo: "Evaluación Inicial Adulto",
-    portada: "/material/evaluacion-inicial-adulto.webp",
-  },
-  {
-    titulo: "Evaluación Inicial Persona Mayor",
-    portada: "/material/evaluacion-inicial-persona-mayor.webp",
-  },
-  { titulo: "Manual de ergoterapias", portada: "/material/manual-ergoterapias.webp" },
-  { titulo: "Manual de objetivos", portada: "/material/manual-objetivos.webp" },
-  { titulo: "Manual de órtesis", portada: "/material/manual-ortesis.webp" },
-  {
-    titulo: "Patologías asociadas a TO",
-    portada: "/material/patologias-asociadas-to.webp",
-  },
-  { titulo: "Pautas de TO", portada: "/material/pautas-to.webp" },
-  { titulo: "Talleres grupales", portada: "/material/talleres-grupales.webp" },
-  { titulo: "Ya soy TO y ahora, ¿qué hago?", portada: "/material/ya-soy-to.webp" },
-  { titulo: "Selectividad alimentaria", portada: "/material/selectividad-alimentaria.webp" },
-  { titulo: "Manejo del dinero", portada: "/material/manejo-del-dinero.webp" },
-  /* Sin portada todavía: se muestra el recuadro provisional. */
-  { titulo: "TBA: ACE-R RUDAS" },
-];
 
 /* Dimensiones de las portadas convertidas (1200×920 px, WebP
    con transparencia). */
@@ -143,10 +93,10 @@ export default function MaterialTO() {
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {MATERIALES.map(({ titulo, portada }) => (
+            {MATERIALES.map(({ titulo, portada, tienda }) => (
               <a
                 key={titulo}
-                href={TIENDA_TO}
+                href={tienda ?? TIENDA_TO}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex flex-col rounded-2xl border border-teal-100 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[0_16px_40px_-20px_rgba(13,148,136,0.35)]"
