@@ -75,6 +75,11 @@ export function HaloReel({
   const radiusX = size.w * radiusXRatio;
   const radiusY = size.h * radiusYRatio;
 
+  /* En pantallas chicas el anillo se centra; en escritorio respeta
+     centerXRatio (anclado a la izquierda con el rótulo al costado). */
+  const ratioCentro =
+    size.w === 0 ? centerXRatio : size.w < 640 ? 0.5 : centerXRatio;
+
   // The ring is sized by the stage and *filled* by repeating the items — the
   // one way a wide ring and close cards can both be true. Neighbours sit
   // `radius × step` apart at the widest point of each axis, so the tighter
@@ -157,7 +162,7 @@ export function HaloReel({
     // flat side turns the ring by the same amount as one along its tall side.
     return Math.atan2(
       (e.clientY - top - size.h / 2) / (radiusY || 1),
-      (e.clientX - left - size.w * centerXRatio) / (radiusX || 1),
+      (e.clientX - left - size.w * ratioCentro) / (radiusX || 1),
     );
   };
 
@@ -244,7 +249,7 @@ export function HaloReel({
           // Parked in whatever space the ring leaves rather than at a fixed
           // spot, so it can never end up underneath the cards at any width.
           style={{
-            left: size.w * centerXRatio + radiusX + cardW / 2,
+            left: size.w * ratioCentro + radiusX + cardW / 2,
             right: 0,
           }}
         >
@@ -265,7 +270,7 @@ export function HaloReel({
           rotation={rotation}
           radiusX={radiusX}
           radiusY={radiusY}
-          centerXRatio={centerXRatio}
+          centerXRatio={ratioCentro}
           minScale={minScale}
           width={cardW}
           height={cardH}
