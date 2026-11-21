@@ -72,13 +72,16 @@ export function HaloReel({
     return () => observer.disconnect();
   }, []);
 
-  const radiusX = size.w * radiusXRatio;
-  const radiusY = size.h * radiusYRatio;
+  /* En pantallas chicas el anillo se muestra «a media pantalla»:
+     anclado al borde izquierdo y con radio amplio, para que solo la
+     mitad cercana del aro cruce el ancho en arco. En escritorio se
+     respetan centerXRatio y radiusXRatio originales. */
+  const esChica = size.w !== 0 && size.w < 640;
+  const ratioCentro = esChica ? 0 : centerXRatio;
+  const radioXEfectivo = esChica ? 0.85 : radiusXRatio;
 
-  /* En pantallas chicas el anillo se centra; en escritorio respeta
-     centerXRatio (anclado a la izquierda con el rótulo al costado). */
-  const ratioCentro =
-    size.w === 0 ? centerXRatio : size.w < 640 ? 0.5 : centerXRatio;
+  const radiusX = size.w * radioXEfectivo;
+  const radiusY = size.h * radiusYRatio;
 
   // The ring is sized by the stage and *filled* by repeating the items — the
   // one way a wide ring and close cards can both be true. Neighbours sit
