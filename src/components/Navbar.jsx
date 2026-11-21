@@ -52,7 +52,7 @@ const LINKS = [
   { href: "/#inicio", label: "Inicio" },
   { href: "/#sobre", label: "Sobre Tera Ocúpame" },
   { href: "/formularios", label: "Programas" },
-  { href: "/#material", label: "Material TO" },
+  { href: "/material", label: "Material TO" },
 ];
 
 export default function Navbar() {

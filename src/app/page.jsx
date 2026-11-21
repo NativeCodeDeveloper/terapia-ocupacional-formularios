@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import VideoHero from "@/components/VideoHero";
 import VideoGenograma from "@/components/VideoGenograma";
 import Footer from "@/components/Footer";
 import HaloReel from "@/components/ui/halo-reel";
-import { MATERIALES } from "@/lib/materiales";
+import { MATERIALES, TIENDA_TO } from "@/lib/materiales";
 
 /* Portadas para el carrusel del módulo Material TO. */
 const REEL_MATERIAL = MATERIALES.map((m) =>
@@ -39,7 +41,7 @@ const ENCONTRARAS = [
   {
     titulo: "Manuales digitales",
     texto: "Material de consulta y apoyo para tus intervenciones.",
-    href: "#material",
+    href: "/material",
     icono: (
       <svg
         viewBox="0 0 24 24"
@@ -100,17 +102,9 @@ const CONFIANZA = [
   "Material TO descargable",
 ];
 
-/* Vista previa del módulo Material TO (la lista completa vive
-   en /material). */
-const MATERIALES_DESTACADOS = [
-  "Manual de ergoterapias",
-  "Manual de objetivos",
-  "Manual de órtesis",
-  "Estimulación cognitiva",
-  "Talleres grupales",
-  "Pautas de TO",
-  "Patologías asociadas a TO",
-];
+/* Material destacado: enlace a su producto en la tienda. */
+const SELECTIVIDAD = MATERIALES.find((m) => m.titulo === "Selectividad alimentaria");
+const TIENDA_SELECTIVIDAD = SELECTIVIDAD?.tienda ?? TIENDA_TO;
 
 export default function Home() {
   return (
@@ -131,17 +125,7 @@ export default function Home() {
             aria-hidden="true"
             className="relative h-[88vw] max-h-[560px] w-full overflow-hidden [clip-path:polygon(0_0,100%_0,100%_100%,0_84%)] lg:absolute lg:inset-y-0 lg:bottom-0 lg:left-0 lg:h-auto lg:max-h-none lg:w-[52%] lg:[clip-path:polygon(0_0,86%_0,100%_100%,0_100%)]"
           >
-            <video
-              className="absolute inset-0 h-full w-full object-cover object-[53%_50%]"
-              src="/videos/hero-superheroe.mp4"
-              poster="/videos/hero-superheroe.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              tabIndex={-1}
-            />
+            <VideoHero />
           </div>
 
           {/* Contenido: en móvil va bajo el video; centrado en escritorio */}
@@ -320,46 +304,57 @@ export default function Home() {
           />
         </section>
 
-        <div className="mx-auto max-w-6xl px-5 lg:px-0">
-          {/* Material Terapia Ocupacional: módulo separado de los
-              formularios, con identidad propia (verde azulado). */}
+        {/* Selectividad alimentaria: material destacado con enlace a la tienda */}
         <section
-          id="material"
-          aria-labelledby="titulo-material"
-          className="scroll-mt-24 pb-4 sm:pb-6"
+          aria-labelledby="titulo-selectividad"
+          className="bg-white pb-16 sm:pb-20"
         >
-          <div className="rounded-3xl border border-teal-200 bg-teal-50/50 p-6 sm:p-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-600">
-              Nuevo módulo
-            </p>
-            <h2 id="titulo-material" className="mt-2 text-2xl font-bold tracking-tight">
-              Material Terapia Ocupacional
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              Manuales, pautas, actividades y estrategias de TO para la práctica diaria. Un módulo
-              aparte de los formularios de evaluación, con descargas organizadas por tema.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {MATERIALES_DESTACADOS.map((m) => (
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-16 lg:px-0">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
+                Para padres y estudiantes
+              </p>
+              <h2
+                id="titulo-selectividad"
+                className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
+              >
+                Estrategias para la{" "}
+                <span className="text-teal-700">selectividad alimentaria</span>
+              </h2>
+              <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-700">
+                Encontrarás herramientas claras para ampliar la tolerancia y transformar la hora
+                de comer en un momento menos tenso y más positivo.
+              </p>
+              <a
+                href={TIENDA_SELECTIVIDAD}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-teal-600 px-7 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-colors hover:bg-teal-700"
+              >
+                Conseguir este material
                 <span
-                  key={m}
-                  className="rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-medium text-teal-800"
+                  aria-hidden="true"
+                  className="transition-transform group-hover:translate-x-0.5"
                 >
-                  {m}
+                  →
                 </span>
-              ))}
-              <span className="rounded-full px-3 py-1 text-xs font-medium text-teal-700/70">
-                y más…
-              </span>
+              </a>
             </div>
-            <Link
-              href="/material"
-              className="mt-7 inline-flex h-11 items-center rounded-xl bg-teal-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700"
-            >
-              Ir al material TO →
-            </Link>
+            <figure className="relative overflow-hidden rounded-[2rem] shadow-[0_45px_90px_-45px_rgba(190,24,93,0.35)] ring-1 ring-neutral-200/80">
+              <Image
+                src="/images/selectividad-alimentaria.webp"
+                alt="Manual Estrategias para la selectividad alimentaria, para padres y estudiantes"
+                width={2560}
+                height={2560}
+                sizes="(min-width: 1024px) 560px, 100vw"
+                className="h-auto w-full"
+              />
+            </figure>
           </div>
         </section>
+
+        <div className="mx-auto max-w-6xl px-5 lg:px-0">
+          {/* Cómo se puntúa */}
 
         {/* Cómo se puntúa */}
         <section
