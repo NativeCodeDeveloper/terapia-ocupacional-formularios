@@ -92,11 +92,11 @@ const RECURSOS = [
   { href: "/#sobre", label: "Sobre Tera Ocúpame" },
 ];
 
-/* Footer del sitio: blanco con acentos verde agua, siguiendo
-   el patrón de colores de la página. */
+/* Footer del sitio: fondo lavanda con texto oscuro, siguiendo el
+   patrón de la tienda de referencia. */
 export default function Footer() {
   return (
-    <footer className="border-t border-neutral-200/80 bg-white text-neutral-600">
+    <footer className="bg-marca-lavanda text-neutral-700">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:px-0">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* Marca y redes */}
@@ -108,18 +108,21 @@ export default function Footer() {
               height={295}
               className="h-16 w-auto"
             />
-            <p className="mt-4 max-w-xs text-sm leading-6 text-neutral-500">
+            <p className="mt-4 max-w-xs text-sm leading-6 text-neutral-600">
               Evaluaciones automatizadas, material descargable y recursos para
               acompañar cada proceso terapéutico.
             </p>
-            <div className="mt-5 flex gap-2">
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-neutral-800">
+              Síguenos
+            </p>
+            <div className="mt-3 flex gap-2">
               {REDES.map((red) => (
                 <a
                   key={red.nombre}
                   href={red.href}
                   aria-label={red.nombre}
                   title={red.nombre}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100 transition-colors hover:bg-teal-600 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-600 shadow-sm transition-colors hover:bg-teal-500 hover:text-white"
                 >
                   {red.icono}
                 </a>
@@ -129,15 +132,13 @@ export default function Footer() {
 
           {/* Recursos */}
           <nav aria-label="Recursos del sitio">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
-              Recursos
-            </p>
+            <p className="text-sm font-bold text-neutral-900">Recursos</p>
             <ul className="mt-4 space-y-2.5 text-sm">
               {RECURSOS.map((recurso) => (
                 <li key={recurso.label}>
                   <Link
                     href={recurso.href}
-                    className="transition-colors hover:text-teal-700"
+                    className="transition-colors hover:text-teal-600"
                   >
                     {recurso.label}
                   </Link>
@@ -148,14 +149,12 @@ export default function Footer() {
 
           {/* Contacto */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
-              Contacto
-            </p>
+            <p className="text-sm font-bold text-neutral-900">Contacto</p>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
                 <a
                   href={TELEFONO_LINK}
-                  className="flex items-center gap-2.5 transition-colors hover:text-teal-700"
+                  className="flex items-center gap-2.5 transition-colors hover:text-teal-600"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -175,7 +174,7 @@ export default function Footer() {
               <li>
                 <a
                   href={`mailto:${CORREO}`}
-                  className="flex items-center gap-2.5 transition-colors hover:text-teal-700"
+                  className="flex items-center gap-2.5 transition-colors hover:text-teal-600"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -193,7 +192,7 @@ export default function Footer() {
                   {CORREO}
                 </a>
               </li>
-              <li className="flex items-center gap-2.5 text-neutral-500">
+              <li className="flex items-center gap-2.5 text-neutral-600">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -213,7 +212,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-neutral-200/80 pt-6 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-2 border-t border-neutral-900/10 pt-6 text-xs text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 Teraocupame.cl — Instrumentos de evaluación en salud mental</p>
           <p>SPM-2 © Western Psychological Services · Uso profesional</p>
         </div>

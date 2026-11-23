@@ -5,6 +5,30 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Paleta de marca inspirada en rehabilita.shop: menta como acento
+   principal, rosa de relieve, navy para títulos y lavanda para el
+   footer. Se sobreescriben las escalas teal/indigo para que todos
+   los módulos existentes hereden los tonos de la referencia. */
+@theme {
+  --color-teal-50: #edf8f4;
+  --color-teal-100: #d6efe7;
+  --color-teal-200: #b0e3d4;
+  --color-teal-300: #83d4bd;
+  --color-teal-400: #5ec7a8;
+  --color-teal-500: #4ec0a6;
+  --color-teal-600: #35a184;
+  --color-teal-700: #2c8a70;
+  --color-teal-800: #2a725e;
+  --color-teal-900: #265d4d;
+  --color-teal-950: #123b30;
+
+  --color-marca-rosa: #f43187;
+  --color-marca-rosa-suave: #fdeaf3;
+  --color-marca-lavanda: #e8e0f8;
+  --color-marca-amarillo: #ffd93b;
+  --color-marca-navy: #233a72;
+}
+
 /* La aplicación se presenta siempre en claro: fondo blanco y
    controles oscuros, independiente de la preferencia del sistema. */
 :root {
@@ -13,4 +37,21 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Título tipo sticker de los banners de la referencia: relleno navy
+   con contorno blanco. Se usa sombra en 8 direcciones porque el
+   contorno por -webkit-text-stroke cubre el relleno en navegadores
+   sin paint-order para texto HTML. */
+.texto-sticker {
+  text-shadow:
+    -3px -3px 0 #fff,
+    3px -3px 0 #fff,
+    -3px 3px 0 #fff,
+    3px 3px 0 #fff,
+    -3px 0 0 #fff,
+    3px 0 0 #fff,
+    0 -3px 0 #fff,
+    0 3px 0 #fff,
+    0 12px 28px rgb(35 58 114 / 0.22);
 }

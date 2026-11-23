@@ -75,6 +75,10 @@ export default function Navbar() {
           : "border-b border-transparent bg-transparent"
       }`}
     >
+      {/* Barra de aviso rosa, como la de la tienda de referencia */}
+      <p className="bg-marca-rosa px-5 py-2 text-center text-[12px] font-semibold tracking-wide text-white">
+        ✦ Tu material se descarga al instante ✦
+      </p>
       <nav
         aria-label="Navegación principal"
         className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 lg:px-0"
@@ -105,10 +109,10 @@ export default function Navbar() {
                 <Link
                   href={enlace.href}
                   aria-current={activo ? "page" : undefined}
-                  className={`text-[12px] font-bold uppercase tracking-[0.14em] transition-colors hover:text-teal-700 ${
+                  className={`text-[12px] font-bold uppercase tracking-[0.14em] transition-colors hover:text-teal-600 ${
                     activo
-                      ? "text-teal-700 underline decoration-teal-300 decoration-2 underline-offset-[6px]"
-                      : "text-neutral-600"
+                      ? "text-marca-navy underline decoration-marca-rosa decoration-2 underline-offset-[6px]"
+                      : "text-neutral-800"
                   }`}
                 >
                   {enlace.label}
@@ -134,7 +138,7 @@ export default function Navbar() {
           </div>
           <Link
             href="/formularios"
-            className="ml-2 hidden h-10 items-center rounded-xl bg-teal-600 px-5 text-[13px] font-semibold text-white shadow-lg shadow-teal-600/25 transition-colors hover:bg-teal-700 sm:inline-flex"
+            className="ml-2 hidden h-10 items-center rounded-full bg-teal-500 px-6 text-[13px] font-semibold text-white shadow-md shadow-teal-500/30 transition-colors hover:bg-teal-600 sm:inline-flex"
           >
             Explorar recursos
           </Link>
@@ -197,7 +201,7 @@ export default function Navbar() {
             <Link
               href="/formularios"
               onClick={() => setAbierto(false)}
-              className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-teal-600 px-5 text-[13px] font-semibold text-white shadow-lg shadow-teal-600/25"
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-full bg-teal-500 px-5 text-[13px] font-semibold text-white shadow-md shadow-teal-500/30"
             >
               Explorar recursos
             </Link>

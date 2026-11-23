@@ -106,44 +106,94 @@ const CONFIANZA = [
 const SELECTIVIDAD = MATERIALES.find((m) => m.titulo === "Selectividad alimentaria");
 const TIENDA_SELECTIVIDAD = SELECTIVIDAD?.tienda ?? TIENDA_TO;
 
+/* Estrella de cuatro puntas, como los destellos de los banners de
+   la tienda de referencia. */
+function Chispa({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 1.5 14.3 9.7 22.5 12 14.3 14.3 12 22.5 9.7 14.3 1.5 12 9.7 9.7Z" />
+    </svg>
+  );
+}
+
+/* Encabezado de sección al estilo de la referencia: etiqueta rosa,
+   título navy y subrayado corto oscuro, todo centrado. */
+function TituloSeccion({ id, etiqueta, children }) {
+  return (
+    <div className="mx-auto max-w-2xl text-center">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
+        {etiqueta}
+      </p>
+      <h2
+        id={id}
+        className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-marca-navy sm:text-4xl"
+      >
+        {children}
+      </h2>
+      <span
+        aria-hidden="true"
+        className="mx-auto mt-5 block h-1.5 w-16 rounded-full bg-neutral-800"
+      />
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white font-[family-name:var(--font-geist-sans)] text-neutral-900">
       <Navbar />
 
       <main>
-        {/* Portada con la distribución de la referencia: video a sangre
-            completa a la izquierda con corte diagonal, mensaje a la derecha
-            sobre panel celeste y navbar transparente por encima. */}
+        {/* Portada tipo banner de la referencia: fondo pastel, video en
+            tarjeta blanca redondeada con destellos y mensaje con título
+            estilo sticker. */}
         <section
           id="inicio"
-          className="relative scroll-mt-16 overflow-hidden border-b border-neutral-100 bg-[#d9eaf6] lg:min-h-[88svh]"
+          className="relative scroll-mt-28 overflow-hidden bg-gradient-to-br from-[#d9e4f8] via-[#e7eef9] to-[#e3f2ec] lg:min-h-[86svh]"
         >
-          {/* Video con bordes diagonales: arriba y a sangre completa en móvil,
-              a la izquierda en escritorio */}
-          <div
-            aria-hidden="true"
-            className="relative h-[88vw] max-h-[560px] w-full overflow-hidden [clip-path:polygon(0_0,100%_0,100%_100%,0_84%)] lg:absolute lg:inset-y-0 lg:bottom-0 lg:left-0 lg:h-auto lg:max-h-none lg:w-[52%] lg:[clip-path:polygon(0_0,86%_0,100%_100%,0_100%)]"
-          >
-            <VideoHero />
+          {/* Manchas y destellos pastel de fondo */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-marca-lavanda/70 blur-2xl" />
+            <div className="absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-teal-100/70 blur-2xl" />
+            <Chispa className="absolute right-[8%] top-28 hidden h-9 w-9 text-marca-amarillo lg:block" />
+            <Chispa className="absolute left-[46%] top-[16%] hidden h-6 w-6 text-white lg:block" />
+            <Chispa className="absolute bottom-[14%] left-[6%] hidden h-7 w-7 text-marca-rosa/50 lg:block" />
           </div>
 
-          {/* Contenido: en móvil va bajo el video; centrado en escritorio */}
-          <div className="relative flex items-center px-5 pb-16 pt-2 sm:pb-20 lg:min-h-[88svh] lg:pb-0 lg:pl-[54%] lg:pr-16 lg:pt-0 xl:pr-28">
-            <div className="lg:mt-20">
-              <h1 className="text-[2.35rem] font-extrabold uppercase leading-[1.06] tracking-tight text-indigo-950 sm:text-5xl xl:text-[3.5rem]">
+          <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-32 sm:pt-36 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-24 lg:pt-32 xl:gap-20">
+            {/* Video en tarjeta blanca, levemente inclinada como un sticker */}
+            <figure className="relative mx-auto w-full min-w-0 max-w-xl">
+              <div className="relative aspect-[4/3] -rotate-1 overflow-hidden rounded-[2.5rem] shadow-[0_40px_80px_-40px_rgba(35,58,114,0.5)] ring-8 ring-white/70">
+                <VideoHero />
+              </div>
+              <Chispa className="absolute -right-3 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
+              <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-white" />
+            </figure>
+
+            <div className="min-w-0 text-center lg:text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
+                Terapia ocupacional · Tera Ocupame
+              </p>
+              <h1 className="mt-4 text-[1.95rem] font-extrabold uppercase leading-[1.12] tracking-tight text-marca-navy sm:text-5xl xl:text-[3.4rem]">
                 <span className="block">Menos tiempo preparando.</span>
-                <span className="block text-teal-700">Más tiempo transformando vidas</span>
+                <span className="texto-sticker mt-2 block">
+                  Más tiempo transformando vidas
+                </span>
               </h1>
-              <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-700">
+              <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-neutral-700 lg:mx-0">
                 Descubre evaluaciones automatizadas, materiales descargables y cursos
                 especializados para facilitar tu práctica profesional y acompañar cada proceso
                 terapéutico.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                 <a
                   href="/formularios"
-                  className="group inline-flex h-12 items-center gap-2 rounded-xl bg-teal-600 px-7 text-sm font-semibold text-white shadow-lg shadow-teal-600/30 transition-colors hover:bg-teal-700"
+                  className="group inline-flex h-12 items-center gap-2 rounded-full bg-teal-500 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-500/35 transition-colors hover:bg-teal-600"
                 >
                   Explorar recursos
                   <span
@@ -155,20 +205,20 @@ export default function Home() {
                 </a>
                 <a
                   href="#sobre"
-                  className="inline-flex h-12 items-center rounded-xl border border-white/70 bg-white/60 px-7 text-sm font-semibold text-neutral-800 transition-colors hover:bg-white hover:text-teal-700"
+                  className="inline-flex h-12 items-center rounded-full border-2 border-marca-navy/15 bg-white/80 px-8 text-sm font-semibold text-marca-navy transition-colors hover:border-teal-300 hover:bg-white"
                 >
                   Saber más
                 </a>
               </div>
-              <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2.5">
+              <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5 lg:justify-start">
                 {CONFIANZA.map((item) => (
                   <li
                     key={item}
-                    className="flex items-center gap-2 text-[13px] font-medium text-neutral-700"
+                    className="flex items-center gap-2 rounded-full bg-white/70 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-navy"
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-teal-700"
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -188,33 +238,28 @@ export default function Home() {
               </ul>
             </div>
           </div>
-
         </section>
 
         {/* Lo que encontrarás: tarjetas con las tres líneas de recursos */}
         <section aria-labelledby="titulo-encontraras" className="bg-white py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-5 lg:px-0">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
-              Lo que encontrarás
-            </p>
-            <h2
-              id="titulo-encontraras"
-              className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
-            >
+            <TituloSeccion id="titulo-encontraras" etiqueta="Lo que encontrarás">
               Herramientas que facilitan{" "}
-              <span className="text-teal-700">tu trabajo</span>
-            </h2>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              <span className="[background-image:linear-gradient(transparent_62%,#b0e3d4_62%)] text-teal-700">
+                tu trabajo
+              </span>
+            </TituloSeccion>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {ENCONTRARAS.map((tarjeta) => (
                 <a
                   key={tarjeta.titulo}
                   href={tarjeta.href}
-                  className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-7 shadow-[0_1px_2px_rgba(16,24,40,0.06)] transition-all hover:-translate-y-1 hover:border-teal-200 hover:shadow-[0_28px_60px_-28px_rgba(13,148,136,0.45)]"
+                  className="group flex flex-col rounded-[1.75rem] border border-neutral-200/80 bg-white p-7 transition-all hover:-translate-y-1 hover:border-teal-200 hover:shadow-[0_0_20px_rgba(0,0,0,0.1)]"
                 >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-700">
                     {tarjeta.icono}
                   </span>
-                  <span className="mt-5 text-lg font-bold tracking-tight text-indigo-950">
+                  <span className="mt-5 text-lg font-bold tracking-tight text-marca-navy">
                     {tarjeta.titulo}
                   </span>
                   <span className="mt-2 text-sm leading-6 text-neutral-600">
@@ -223,7 +268,7 @@ export default function Home() {
                   <span className="mt-auto flex pt-6">
                     <span
                       aria-hidden="true"
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition-colors group-hover:bg-teal-600 group-hover:text-white"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-teal-700 transition-colors group-hover:bg-teal-500 group-hover:text-white"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -247,15 +292,17 @@ export default function Home() {
         {/* Genograma familiar: demostración en video (sin audio) */}
         <section aria-labelledby="titulo-genograma" className="bg-white pb-16 sm:pb-20">
           <div className="mx-auto max-w-6xl px-5 lg:px-0">
-            <h2
-              id="titulo-genograma"
-              className="max-w-3xl text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
-            >
+            <TituloSeccion id="titulo-genograma" etiqueta="Evaluación familiar">
               Genograma familiar{" "}
-              <span className="text-teal-700">completo de tus pacientes</span>
-            </h2>
-            <figure className="mt-10 overflow-hidden rounded-[2rem] bg-white shadow-[0_45px_90px_-45px_rgba(13,148,136,0.45)] ring-1 ring-neutral-200/80">
-              <VideoGenograma />
+              <span className="[background-image:linear-gradient(transparent_62%,#fbc4de_62%)]">
+                completo de tus pacientes
+              </span>
+            </TituloSeccion>
+            <figure className="relative mx-auto mt-12 max-w-4xl">
+              <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_40px_80px_-45px_rgba(35,58,114,0.45)] ring-8 ring-white/70">
+                <VideoGenograma />
+              </div>
+              <Chispa className="absolute -right-4 -top-4 h-9 w-9 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
             </figure>
           </div>
         </section>
@@ -266,15 +313,10 @@ export default function Home() {
           className="bg-white pb-16 sm:pb-20"
         >
           <div className="mx-auto max-w-6xl px-5 lg:px-0">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
-              Material TO
-            </p>
-            <h2
-              id="titulo-material-reel"
-              className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
-            >
-              Material <span className="text-teal-700">Terapia Ocupacional</span>
-            </h2>
+            <TituloSeccion id="titulo-material-reel" etiqueta="Material TO">
+              Material{" "}
+              <span className="text-teal-600">Terapia Ocupacional</span>
+            </TituloSeccion>
           </div>
           <HaloReel
             aria-label="Portadas del material de terapia ocupacional"
@@ -286,16 +328,16 @@ export default function Home() {
             className="mt-4 h-[440px] sm:h-[560px]"
             centerLabel={
               <div className="hidden max-w-sm text-center sm:block">
-                <p className="text-2xl font-extrabold uppercase tracking-tight text-indigo-950">
+                <p className="text-2xl font-extrabold uppercase tracking-tight text-marca-navy">
                   Todo el material{" "}
-                  <span className="text-teal-700">listo para descargar</span>
+                  <span className="text-teal-600">listo para descargar</span>
                 </p>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">
                   Manuales, pautas y evaluaciones para usar en tu práctica diaria.
                 </p>
                 <Link
                   href="/material"
-                  className="mt-5 inline-flex h-11 items-center rounded-xl bg-teal-600 px-6 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-colors hover:bg-teal-700"
+                  className="mt-5 inline-flex h-11 items-center rounded-full bg-teal-500 px-7 text-sm font-semibold text-white shadow-md shadow-teal-500/30 transition-colors hover:bg-teal-600"
                 >
                   Ir al material TO →
                 </Link>
@@ -307,19 +349,25 @@ export default function Home() {
         {/* Selectividad alimentaria: material destacado con enlace a la tienda */}
         <section
           aria-labelledby="titulo-selectividad"
-          className="bg-white pb-16 sm:pb-20"
+          className="relative overflow-hidden bg-marca-rosa-suave py-16 sm:py-20"
         >
+          <Chispa
+            aria-hidden="true"
+            className="absolute right-[6%] top-10 hidden h-8 w-8 text-marca-rosa/40 lg:block"
+          />
           <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-16 lg:px-0">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-700">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
                 Para padres y estudiantes
               </p>
               <h2
                 id="titulo-selectividad"
-                className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-indigo-950 sm:text-4xl"
+                className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-marca-navy sm:text-4xl"
               >
                 Estrategias para la{" "}
-                <span className="text-teal-700">selectividad alimentaria</span>
+                <span className="[background-image:linear-gradient(transparent_62%,#fbc4de_62%)]">
+                  selectividad alimentaria
+                </span>
               </h2>
               <p className="mt-5 max-w-xl text-[15px] leading-7 text-neutral-700">
                 Encontrarás herramientas claras para ampliar la tolerancia y transformar la hora
@@ -329,7 +377,7 @@ export default function Home() {
                 href={TIENDA_SELECTIVIDAD}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-teal-600 px-7 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-colors hover:bg-teal-700"
+                className="group mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-marca-rosa px-8 text-sm font-semibold text-white shadow-lg shadow-marca-rosa/35 transition-colors hover:bg-[#d92273]"
               >
                 Conseguir este material
                 <span
@@ -340,55 +388,59 @@ export default function Home() {
                 </span>
               </a>
             </div>
-            <figure className="relative overflow-hidden rounded-[2rem] shadow-[0_45px_90px_-45px_rgba(190,24,93,0.35)] ring-1 ring-neutral-200/80">
-              <Image
-                src="/images/selectividad-alimentaria.webp"
-                alt="Manual Estrategias para la selectividad alimentaria, para padres y estudiantes"
-                width={2560}
-                height={2560}
-                sizes="(min-width: 1024px) 560px, 100vw"
-                className="h-auto w-full"
-              />
+            <figure className="relative mx-auto w-full max-w-lg rotate-1">
+              <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_40px_80px_-40px_rgba(244,49,135,0.45)] ring-8 ring-white/80">
+                <Image
+                  src="/images/selectividad-alimentaria.webp"
+                  alt="Manual Estrategias para la selectividad alimentaria, para padres y estudiantes"
+                  width={2560}
+                  height={2560}
+                  sizes="(min-width: 1024px) 480px, 100vw"
+                  className="h-auto w-full"
+                />
+              </div>
+              <Chispa className="absolute -left-4 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
             </figure>
           </div>
         </section>
-
-        <div className="mx-auto max-w-6xl px-5 lg:px-0">
-          {/* Cómo se puntúa */}
 
         {/* Cómo se puntúa */}
         <section
           id="sobre"
           aria-labelledby="titulo-puntuacion"
-          className="scroll-mt-24 pb-16 sm:pb-20"
+          className="scroll-mt-32 bg-white pb-16 sm:pb-20"
         >
-          <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 p-6 sm:p-10">
-            <h2 id="titulo-puntuacion" className="text-2xl font-bold tracking-tight">
-              Puntuación e informe automáticos
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              Cada cuestionario aplica el criterio oficial del SPM-2 al momento de enviar las
-              respuestas.
-            </p>
-            <div className="mt-8 grid gap-6 sm:grid-cols-3">
-              {VENTAJAS.map((v) => (
-                <div key={v.titulo}>
-                  <p className="flex items-center gap-2 text-sm font-semibold">
-                    <span
-                      aria-hidden="true"
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] text-white"
-                    >
-                      ✓
-                    </span>
-                    {v.titulo}
-                  </p>
-                  <p className="mt-2 text-[13px] leading-5 text-neutral-600">{v.texto}</p>
-                </div>
-              ))}
+          <div className="mx-auto max-w-6xl px-5 pt-16 sm:pt-20 lg:px-0">
+            <div className="rounded-[2rem] border border-teal-100 bg-teal-50/70 p-6 sm:p-10">
+              <h2
+                id="titulo-puntuacion"
+                className="text-2xl font-extrabold uppercase tracking-tight text-marca-navy"
+              >
+                Puntuación e informe automáticos
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+                Cada cuestionario aplica el criterio oficial del SPM-2 al momento de enviar las
+                respuestas.
+              </p>
+              <div className="mt-8 grid gap-6 sm:grid-cols-3">
+                {VENTAJAS.map((v) => (
+                  <div key={v.titulo}>
+                    <p className="flex items-center gap-2 text-sm font-semibold text-marca-navy">
+                      <span
+                        aria-hidden="true"
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-[11px] text-white"
+                      >
+                        ✓
+                      </span>
+                      {v.titulo}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-5 text-neutral-600">{v.texto}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
-        </div>
       </main>
 
       <Footer />

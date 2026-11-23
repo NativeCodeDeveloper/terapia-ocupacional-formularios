@@ -162,7 +162,7 @@ export default function Formularios() {
     <section
       id="formularios"
       aria-labelledby="titulo-formularios"
-      className="bg-[#d9eaf6] pt-28 pb-16 sm:pt-32 sm:pb-24"
+      className="bg-[#d9eaf6] pt-36 pb-16 sm:pt-40 sm:pb-24"
     >
       <div className="mx-auto max-w-6xl px-5 lg:px-0">
         <div className="mb-10 max-w-2xl">
