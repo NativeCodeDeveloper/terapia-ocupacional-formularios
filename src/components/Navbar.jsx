@@ -277,7 +277,7 @@ export default function Navbar() {
                 <li key={item.label} className="group relative">
                   <button
                     type="button"
-                    className={`flex items-center gap-1.5 py-3 text-[12px] font-bold uppercase tracking-[0.14em] transition-colors group-hover:text-teal-600 ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap py-3 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors group-hover:text-teal-600 ${
                       activo ? "text-teal-700" : "text-neutral-800"
                     }`}
                   >
@@ -305,9 +305,9 @@ export default function Navbar() {
                 <Link
                   href={item.href}
                   aria-current={activo ? "page" : undefined}
-                  className={`inline-flex items-center py-3 text-[12px] font-bold uppercase tracking-[0.14em] transition-colors hover:text-teal-600 ${
+                  className={`inline-flex items-center whitespace-nowrap py-3 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:text-teal-600 ${
                     item.destacado
-                      ? "rounded-full bg-teal-500 px-4 text-white shadow-md shadow-teal-500/30 hover:text-white"
+                      ? "rounded-full bg-teal-500 px-5 text-white shadow-md shadow-teal-500/30 hover:text-white"
                       : activo
                         ? "text-teal-700 underline decoration-teal-400 decoration-2 underline-offset-[6px]"
                         : "text-neutral-800"
