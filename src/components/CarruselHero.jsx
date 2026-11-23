@@ -31,90 +31,74 @@ function Chispa({ className }) {
   );
 }
 
-/* Diapositiva 1: portada con mensaje principal (fotograma fijo,
-   sin video por ahora). */
+/* Diapositiva 1: portada con el mensaje principal centrado.
+   Pendiente: devolver el video de portada cuando el cliente lo
+   confirme; por ahora la diapositiva va sin imagen. */
 function DiapositivaPortada() {
   return (
-    <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-[1.05fr_1fr] lg:gap-14 xl:gap-20">
-      <figure className="relative mx-auto w-full min-w-0 max-w-xl">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-[0_36px_72px_-36px_rgba(48,87,98,0.45)] ring-1 ring-marca-100">
-          <Image
-            src="/videos/hero-superheroe.jpg"
-            alt="Terapeuta ocupacional superheroína lista para acompañar a sus usuarios"
-            fill
-            sizes="(min-width: 1024px) 576px, 100vw"
-            className="object-cover object-[53%_50%]"
-            priority
-          />
-        </div>
-        <Chispa className="absolute -right-3 -top-5 h-9 w-9 text-marca-300" />
-        <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-marca-200" />
-      </figure>
-
-      <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
-          Terapia ocupacional · Tera Ocupame
-        </p>
-        <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.1] tracking-tight text-marca-800 sm:text-5xl xl:text-[3.4rem]">
-          <span className="block">Menos tiempo preparando.</span>
-          <span className="mt-2 block">
-            Más tiempo{" "}
-            <span className="bg-gradient-to-r from-marca-600 to-marca-400 bg-clip-text text-transparent">
-              transformando vidas
-            </span>
+    <div className="mx-auto w-full max-w-3xl px-5 text-center">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
+        Terapia ocupacional · Tera Ocupame
+      </p>
+      <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.1] tracking-tight text-marca-800 sm:text-5xl xl:text-[3.4rem]">
+        <span className="block">Menos tiempo preparando.</span>
+        <span className="mt-2 block">
+          Más tiempo{" "}
+          <span className="bg-gradient-to-r from-marca-600 to-marca-400 bg-clip-text text-transparent">
+            transformando vidas
           </span>
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-marca-900/75 lg:mx-0">
-          Descubre evaluaciones automatizadas, materiales descargables y cursos
-          especializados para facilitar tu práctica profesional y acompañar cada proceso
-          terapéutico.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-          <a
-            href="/formularios"
-            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
-          >
-            Explorar recursos
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
-              →
-            </span>
-          </a>
-          <a
-            href="#sobre"
-            className="inline-flex h-12 items-center rounded-xl border border-marca-600 bg-white px-7 text-sm font-semibold text-marca-600 transition-colors hover:bg-marca-50"
-          >
-            Saber más
-          </a>
-        </div>
-        <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5 lg:justify-start">
-          {["Puntuación automática", "Descarga inmediata", "Material TO descargable"].map(
-            (item) => (
-              <li
-                key={item}
-                className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3"
-                  >
-                    <path d="m5 13 4 4L19 7" />
-                  </svg>
-                </span>
-                {item}
-              </li>
-            ),
-          )}
-        </ul>
+        </span>
+      </h1>
+      <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-marca-900/75">
+        Descubre evaluaciones automatizadas, materiales descargables y cursos
+        especializados para facilitar tu práctica profesional y acompañar cada proceso
+        terapéutico.
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a
+          href="/formularios"
+          className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
+        >
+          Explorar recursos
+          <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+            →
+          </span>
+        </a>
+        <a
+          href="#sobre"
+          className="inline-flex h-12 items-center rounded-xl border border-marca-600 bg-white px-7 text-sm font-semibold text-marca-600 transition-colors hover:bg-marca-50"
+        >
+          Saber más
+        </a>
       </div>
+      <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5">
+        {["Puntuación automática", "Descarga inmediata", "Material TO descargable"].map(
+          (item) => (
+            <li
+              key={item}
+              className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3"
+                >
+                  <path d="m5 13 4 4L19 7" />
+                </svg>
+              </span>
+              {item}
+            </li>
+          ),
+        )}
+      </ul>
     </div>
   );
 }
