@@ -92,11 +92,11 @@ const RECURSOS = [
   { href: "/#sobre", label: "Sobre Tera Ocúpame" },
 ];
 
-/* Footer del sitio: tinte verde agua suave con texto oscuro,
+/* Footer del sitio: tinte celeste suave con texto oscuro,
    siguiendo el patrón de las tiendas de referencia. */
 export default function Footer() {
   return (
-    <footer className="bg-teal-50 text-neutral-700">
+    <footer className="bg-marca-50 text-neutral-700">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:px-0">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* Marca y redes */}
@@ -122,7 +122,7 @@ export default function Footer() {
                   href={red.href}
                   aria-label={red.nombre}
                   title={red.nombre}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-teal-600 shadow-sm transition-colors hover:bg-teal-500 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-marca-600 shadow-sm transition-colors hover:bg-marca-600 hover:text-white"
                 >
                   {red.icono}
                 </a>
@@ -138,7 +138,7 @@ export default function Footer() {
                 <li key={recurso.label}>
                   <Link
                     href={recurso.href}
-                    className="transition-colors hover:text-teal-600"
+                    className="transition-colors hover:text-marca-600"
                   >
                     {recurso.label}
                   </Link>
@@ -154,7 +154,7 @@ export default function Footer() {
               <li>
                 <a
                   href={TELEFONO_LINK}
-                  className="flex items-center gap-2.5 transition-colors hover:text-teal-600"
+                  className="flex items-center gap-2.5 transition-colors hover:text-marca-600"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -163,7 +163,7 @@ export default function Footer() {
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="h-4 w-4 text-teal-600"
+                    className="h-4 w-4 text-marca-600"
                     aria-hidden="true"
                   >
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -174,7 +174,7 @@ export default function Footer() {
               <li>
                 <a
                   href={`mailto:${CORREO}`}
-                  className="flex items-center gap-2.5 transition-colors hover:text-teal-600"
+                  className="flex items-center gap-2.5 transition-colors hover:text-marca-600"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -183,7 +183,7 @@ export default function Footer() {
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="h-4 w-4 text-teal-600"
+                    className="h-4 w-4 text-marca-600"
                     aria-hidden="true"
                   >
                     <rect width="20" height="16" x="2" y="4" rx="2" />
@@ -200,7 +200,7 @@ export default function Footer() {
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-4 w-4 text-teal-600"
+                  className="h-4 w-4 text-marca-600"
                   aria-hidden="true"
                 >
                   <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />

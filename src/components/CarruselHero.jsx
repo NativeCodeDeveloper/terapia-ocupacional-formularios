@@ -21,8 +21,8 @@ const EVALUACIONES = [
   "Evaluación inicial por etapa vital",
 ];
 
-/* Destello de cuatro puntas, como en los banners de tiendas de
-   referencia. */
+/* Destello de cuatro puntas; en la nueva identidad va en tonos
+   turquesa y celeste, muy discreto sobre el fondo blanco. */
 function Chispa({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
@@ -37,7 +37,7 @@ function DiapositivaPortada() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-[1.05fr_1fr] lg:gap-14 xl:gap-20">
       <figure className="relative mx-auto w-full min-w-0 max-w-xl">
-        <div className="relative aspect-[4/3] -rotate-1 overflow-hidden rounded-[2.5rem] shadow-[0_40px_80px_-40px_rgba(35,58,114,0.5)] ring-8 ring-white/70">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-[0_36px_72px_-36px_rgba(48,87,98,0.45)] ring-1 ring-marca-100">
           <Image
             src="/videos/hero-superheroe.jpg"
             alt="Terapeuta ocupacional superheroína lista para acompañar a sus usuarios"
@@ -47,19 +47,24 @@ function DiapositivaPortada() {
             priority
           />
         </div>
-        <Chispa className="absolute -right-3 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
-        <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-white" />
+        <Chispa className="absolute -right-3 -top-5 h-9 w-9 text-marca-300" />
+        <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-marca-200" />
       </figure>
 
       <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
           Terapia ocupacional · Tera Ocupame
         </p>
-        <h1 className="mt-4 text-[1.95rem] font-extrabold uppercase leading-[1.12] tracking-tight text-marca-navy sm:text-5xl xl:text-[3.4rem]">
+        <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.1] tracking-tight text-marca-800 sm:text-5xl xl:text-[3.4rem]">
           <span className="block">Menos tiempo preparando.</span>
-          <span className="texto-sticker mt-2 block">Más tiempo transformando vidas</span>
+          <span className="mt-2 block">
+            Más tiempo{" "}
+            <span className="bg-gradient-to-r from-marca-600 to-marca-400 bg-clip-text text-transparent">
+              transformando vidas
+            </span>
+          </span>
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-neutral-700 lg:mx-0">
+        <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-marca-900/75 lg:mx-0">
           Descubre evaluaciones automatizadas, materiales descargables y cursos
           especializados para facilitar tu práctica profesional y acompañar cada proceso
           terapéutico.
@@ -67,7 +72,7 @@ function DiapositivaPortada() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
           <a
             href="/formularios"
-            className="group inline-flex h-12 items-center gap-2 rounded-full bg-teal-500 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-500/35 transition-colors hover:bg-teal-600"
+            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
             Explorar recursos
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
@@ -76,7 +81,7 @@ function DiapositivaPortada() {
           </a>
           <a
             href="#sobre"
-            className="inline-flex h-12 items-center rounded-full border-2 border-marca-navy/15 bg-white/80 px-8 text-sm font-semibold text-marca-navy transition-colors hover:border-teal-300 hover:bg-white"
+            className="inline-flex h-12 items-center rounded-xl border border-marca-600 bg-white px-7 text-sm font-semibold text-marca-600 transition-colors hover:bg-marca-50"
           >
             Saber más
           </a>
@@ -86,11 +91,11 @@ function DiapositivaPortada() {
             (item) => (
               <li
                 key={item}
-                className="flex items-center gap-2 rounded-full bg-white/70 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-navy"
+                className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white"
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -119,21 +124,21 @@ function DiapositivaMaterial() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-14">
       <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
           Material TO
         </p>
-        <p className="mt-4 text-[1.9rem] font-extrabold uppercase leading-[1.14] tracking-tight text-marca-navy sm:text-4xl">
+        <p className="mt-4 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-4xl">
           Todo el material{" "}
-          <span className="texto-sticker">listo para descargar</span>
+          <span className="text-marca-600">listo para descargar</span>
         </p>
-        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-neutral-700 lg:mx-0">
+        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
           Manuales, pautas, actividades y estrategias de terapia ocupacional para usar en la
           práctica diaria con tus usuarios.
         </p>
         <div className="mt-7 flex justify-center lg:justify-start">
           <Link
             href="/material"
-            className="group inline-flex h-12 items-center gap-2 rounded-full bg-teal-600 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-600/30 transition-colors hover:bg-teal-700"
+            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
             Ver todo el material TO
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
@@ -147,7 +152,7 @@ function DiapositivaMaterial() {
         {COLLAGE_MATERIAL.map((item, i) => (
           <div
             key={item.src}
-            className={`absolute overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_60px_-30px_rgba(35,58,114,0.45)] ring-4 ring-white ${
+            className={`absolute overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_60px_-30px_rgba(48,87,98,0.4)] ring-1 ring-marca-100 ${
               ["left-0 top-8 w-40 -rotate-3 sm:w-48", "right-0 top-12 w-36 rotate-2 sm:w-44", "left-1/2 top-0 w-44 -translate-x-1/2 rotate-1 sm:w-52"][i]
             }`}
           >
@@ -161,8 +166,8 @@ function DiapositivaMaterial() {
             />
           </div>
         ))}
-        <Chispa className="absolute -top-3 right-10 h-9 w-9 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
-        <Chispa className="absolute bottom-2 left-4 h-6 w-6 text-white" />
+        <Chispa className="absolute -top-3 right-10 h-8 w-8 text-marca-300" />
+        <Chispa className="absolute bottom-2 left-4 h-6 w-6 text-marca-200" />
       </div>
     </div>
   );
@@ -173,22 +178,22 @@ function DiapositivaEvaluaciones() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-14">
       <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
           Evaluaciones automatizadas
         </p>
-        <p className="mt-4 text-[1.9rem] font-extrabold uppercase leading-[1.14] tracking-tight text-marca-navy sm:text-4xl">
+        <p className="mt-4 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-4xl">
           Puntuación e informe{" "}
-          <span className="texto-sticker">al instante</span>
+          <span className="text-marca-600">al instante</span>
         </p>
         <ul className="mx-auto mt-6 flex max-w-md flex-col items-start gap-2.5 text-left lg:mx-0">
           {EVALUACIONES.map((item) => (
             <li
               key={item}
-              className="flex items-center gap-2.5 rounded-full bg-white/70 py-1.5 pl-2 pr-5 text-[13px] font-semibold text-marca-navy"
+              className="flex items-center gap-2.5 rounded-full bg-marca-50 py-1.5 pl-2 pr-5 text-[13px] font-semibold text-marca-800"
             >
               <span
                 aria-hidden="true"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-500 text-white"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-marca-600 text-white"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -209,7 +214,7 @@ function DiapositivaEvaluaciones() {
         <div className="mt-7 flex justify-center lg:justify-start">
           <Link
             href="/formularios"
-            className="group inline-flex h-12 items-center gap-2 rounded-full bg-teal-600 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-600/30 transition-colors hover:bg-teal-700"
+            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
             Explorar evaluaciones
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
@@ -220,20 +225,23 @@ function DiapositivaEvaluaciones() {
       </div>
 
       <div className="relative mx-auto w-full max-w-sm">
-        <div className="rotate-1 rounded-[2.5rem] bg-white px-8 py-10 text-center shadow-[0_40px_80px_-40px_rgba(35,58,114,0.5)] ring-8 ring-white/70">
-          <p className="texto-sticker text-6xl font-extrabold uppercase tracking-tight text-marca-navy">
+        <div className="rounded-[2rem] bg-white px-8 py-10 text-center shadow-[0_40px_80px_-40px_rgba(48,87,98,0.45)] ring-1 ring-marca-100">
+          <p className="text-6xl font-extrabold uppercase tracking-tight text-marca-800">
             SPM-2
           </p>
-          <span aria-hidden="true" className="mx-auto my-5 block h-1.5 w-14 rounded-full bg-teal-300" />
-          <p className="text-2xl font-extrabold uppercase tracking-tight text-teal-700">
+          <span
+            aria-hidden="true"
+            className="mx-auto my-5 block h-1.5 w-14 rounded-full bg-gradient-to-r from-marca-600 to-marca-400"
+          />
+          <p className="text-2xl font-extrabold tracking-tight text-marca-600">
             Perfil Sensorial 2
           </p>
-          <p className="mt-4 text-sm font-semibold text-neutral-500">
+          <p className="mt-4 text-sm font-semibold text-marca-900/60">
             Puntaje T, percentil e informe PDF al instante
           </p>
         </div>
-        <Chispa className="absolute -right-4 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
-        <Chispa className="absolute -bottom-3 -left-3 h-6 w-6 text-white" />
+        <Chispa className="absolute -right-4 -top-5 h-9 w-9 text-marca-300" />
+        <Chispa className="absolute -bottom-3 -left-3 h-6 w-6 text-marca-200" />
       </div>
     </div>
   );
@@ -247,8 +255,8 @@ const DIAPOSITIVAS = [
 
 const INTERVALO_MS = 6500;
 
-/* Carrusel de la portada al estilo de las tiendas de referencia:
-   banners a sangre completa con autoplay, flechas y puntos. */
+/* Carrusel de la portada: banners a sangre completa sobre fondo
+   blanco, con autoplay, flechas y puntos. */
 export default function CarruselHero() {
   const [activo, setActivo] = useState(0);
   const [pausado, setPausado] = useState(false);
@@ -299,7 +307,7 @@ export default function CarruselHero() {
               aria-label={`${i + 1} de ${DIAPOSITIVAS.length}: ${d.etiqueta}`}
               aria-hidden={i !== activo}
               inert={i !== activo}
-              className="grow-0 basis-full shrink-0 pb-16 pt-28 lg:pb-20 lg:pt-52"
+              className="grow-0 basis-full shrink-0 pb-16 pt-28 lg:pb-24 lg:pt-44"
             >
               {d.contenido}
             </div>
@@ -312,7 +320,7 @@ export default function CarruselHero() {
         type="button"
         onClick={() => mover(-1)}
         aria-label="Diapositiva anterior"
-        className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-marca-navy shadow-lg ring-1 ring-neutral-200/70 backdrop-blur transition-colors hover:bg-white lg:flex"
+        className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-marca-800 shadow-md ring-1 ring-marca-100 transition-colors hover:bg-marca-50 hover:text-marca-600 lg:flex"
       >
         <svg
           viewBox="0 0 24 24"
@@ -331,7 +339,7 @@ export default function CarruselHero() {
         type="button"
         onClick={() => mover(1)}
         aria-label="Diapositiva siguiente"
-        className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-marca-navy shadow-lg ring-1 ring-neutral-200/70 backdrop-blur transition-colors hover:bg-white lg:flex"
+        className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-marca-800 shadow-md ring-1 ring-marca-100 transition-colors hover:bg-marca-50 hover:text-marca-600 lg:flex"
       >
         <svg
           viewBox="0 0 24 24"
@@ -357,7 +365,7 @@ export default function CarruselHero() {
             aria-label={`Ir a la diapositiva ${i + 1}: ${d.etiqueta}`}
             aria-current={i === activo}
             className={`h-2.5 rounded-full transition-all ${
-              i === activo ? "w-7 bg-teal-600" : "w-2.5 bg-teal-300 hover:bg-teal-400"
+              i === activo ? "w-7 bg-marca-600" : "w-2.5 bg-marca-200 hover:bg-marca-300"
             }`}
           />
         ))}

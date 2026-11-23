@@ -68,7 +68,7 @@ const ACCIONES_CUENTA = [
   },
 ];
 
-/* Fila de utilidades sobre el logo, según el croquis del cliente. */
+/* Utilidades de la cinta superior, según el croquis del cliente. */
 const UTILES = [
   { href: "/#genograma", label: "Tutoriales de uso" },
   { href: "/#sobre", label: "¿Qué es “¿Quién soy?”?" },
@@ -76,7 +76,8 @@ const UTILES = [
   { href: "#redes", label: "Redes sociales" },
 ];
 
-/* Menú principal con desplegables, según el croquis del cliente. */
+/* Menú principal con desplegables, según el croquis del cliente.
+   El ítem destacado se representa como el botón principal del navbar. */
 const MENU = [
   { label: "Inicio", href: "/", activoEn: (ruta) => ruta === "/" },
   {
@@ -126,17 +127,17 @@ function Chevron({ className }) {
   );
 }
 
-/* Cinta continua en verde agua; se duplica el contenido para que el
-   desplazamiento de 50% quede perfectamente enlazado. */
+/* Cinta continua sobre celeste claro; se duplica el contenido para
+   que el desplazamiento de 50% quede perfectamente enlazado. */
 function Marquesina() {
   return (
-    <div className="overflow-hidden bg-teal-500 py-1.5 text-white">
+    <div className="overflow-hidden py-1.5">
       <div className="animacion-marquesina flex w-max">
         {[0, 1].map((mitad) => (
           <div
             key={mitad}
             aria-hidden={mitad === 1}
-            className="flex shrink-0 items-center whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.18em]"
+            className="flex shrink-0 items-center whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.18em] text-marca-700"
           >
             {[0, 1, 2].map((r) => (
               <span key={r} className="flex items-center">
@@ -145,7 +146,7 @@ function Marquesina() {
                     {frase}
                   </span>
                 ))}
-                <span aria-hidden="true" className="px-3 text-teal-100">
+                <span aria-hidden="true" className="px-3 text-marca-400">
                   ✦
                 </span>
               </span>
@@ -169,22 +170,25 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", alDesplazar);
   }, []);
 
+  const cta = MENU.find((item) => item.destacado);
+
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 bg-white transition-shadow duration-300 ${
-        conSombra ? "shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)]" : ""
+      className={`fixed inset-x-0 top-0 z-50 border-b border-marca-100/70 bg-white transition-shadow duration-300 ${
+        conSombra ? "shadow-[0_12px_32px_-20px_rgba(38,50,56,0.28)]" : ""
       }`}
     >
-      <Marquesina />
-
-      {/* Utilidades sobre el logo (solo escritorio) */}
-      <div className="hidden border-b border-neutral-100 lg:block">
-        <div className="mx-auto flex max-w-6xl items-center justify-end gap-6 px-5 py-1.5 lg:px-0">
+      {/* Cinta de avisos y utilidades sobre la navegación */}
+      <div className="flex items-stretch bg-marca-50">
+        <div className="min-w-0 flex-1">
+          <Marquesina />
+        </div>
+        <div className="hidden shrink-0 items-center gap-5 border-l border-marca-100/70 px-5 lg:flex xl:px-8">
           {UTILES.map((util) => (
             <a
               key={util.label}
               href={util.href}
-              className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 transition-colors hover:text-teal-600"
+              className="whitespace-nowrap text-[11px] font-semibold text-marca-800/70 transition-colors hover:text-marca-600"
             >
               {util.label}
             </a>
@@ -194,44 +198,9 @@ export default function Navbar() {
 
       <nav
         aria-label="Navegación principal"
-        className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-5 lg:h-14 lg:px-0"
+        className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-5 lg:h-[72px] lg:px-0"
       >
-        {/* Menú móvil a la izquierda; buscador a la izquierda en escritorio */}
-        <div className="flex flex-1 items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setAbierto((v) => !v)}
-            aria-expanded={abierto}
-            aria-controls="menu-movil"
-            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-700 transition-colors hover:bg-teal-50 lg:hidden"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              {abierto ? <path d="M18 6 6 18M6 6l12 12" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-            </svg>
-          </button>
-          {ACCIONES_CUENTA.filter((a) => a.etiqueta === "Buscar").map((accion) => (
-            <a
-              key={accion.etiqueta}
-              href={accion.href}
-              aria-label={accion.etiqueta}
-              title={accion.etiqueta}
-              className="hidden h-10 w-10 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-teal-50 hover:text-neutral-900 lg:flex"
-            >
-              {accion.icono}
-            </a>
-          ))}
-        </div>
-
-        {/* Logo centrado, como en la referencia */}
+        {/* Logo alineado a la izquierda */}
         <Link
           href="/#inicio"
           className="flex shrink-0 items-center"
@@ -244,53 +213,33 @@ export default function Navbar() {
             width={620}
             height={295}
             priority
-            className="h-11 w-auto lg:h-12"
+            className="h-10 w-auto lg:h-12"
           />
         </Link>
 
-        {/* Cuenta y carrito a la derecha */}
-        <div className="flex flex-1 items-center justify-end gap-1">
-          {ACCIONES_CUENTA.filter((a) => a.etiqueta !== "Buscar").map((accion) => (
-            <a
-              key={accion.etiqueta}
-              href={accion.href}
-              aria-label={accion.etiqueta}
-              title={accion.etiqueta}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-teal-50 hover:text-neutral-900"
-            >
-              {accion.icono}
-            </a>
-          ))}
-        </div>
-      </nav>
-
-      {/* Menú principal con desplegables (escritorio) */}
-      <nav
-        aria-label="Secciones"
-        className="hidden border-t border-neutral-100 lg:block"
-      >
-        <ul className="mx-auto flex max-w-6xl items-center justify-center gap-7 px-5 lg:px-0">
-          {MENU.map((item) => {
+        {/* Menú principal con desplegables (escritorio) */}
+        <ul className="hidden flex-1 items-center justify-center gap-6 lg:flex xl:gap-8">
+          {MENU.filter((item) => !item.destacado).map((item) => {
             const activo = item.activoEn?.(ruta) ?? false;
             if (item.submenu) {
               return (
                 <li key={item.label} className="group relative">
                   <button
                     type="button"
-                    className={`flex items-center gap-1.5 whitespace-nowrap py-3 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors group-hover:text-teal-600 ${
-                      activo ? "text-teal-700" : "text-neutral-800"
+                    className={`flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold transition-colors group-hover:text-marca-600 ${
+                      activo ? "text-marca-600" : "text-marca-800"
                     }`}
                   >
                     {item.label}
-                    <Chevron className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
+                    <Chevron className="h-3.5 w-3.5 text-marca-azul-medio transition-transform group-hover:rotate-180" />
                   </button>
-                  <div className="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-1 opacity-0 transition-all duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                    <div className="min-w-60 rounded-2xl border border-neutral-100 bg-white p-2 shadow-[0_24px_50px_-24px_rgba(15,23,42,0.3)]">
+                  <div className="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 transition-all duration-200 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    <div className="min-w-60 rounded-2xl border border-marca-100 bg-white p-2 shadow-[0_24px_50px_-24px_rgba(38,50,56,0.25)]">
                       {item.submenu.map((sub) => (
                         <Link
                           key={sub.label}
                           href={sub.href}
-                          className="block rounded-xl px-4 py-2.5 text-[13px] font-semibold text-neutral-700 transition-colors hover:bg-teal-50 hover:text-teal-700"
+                          className="block rounded-xl px-4 py-2.5 text-[13px] font-medium text-marca-800 transition-colors hover:bg-marca-50 hover:text-marca-600"
                         >
                           {sub.label}
                         </Link>
@@ -305,12 +254,10 @@ export default function Navbar() {
                 <Link
                   href={item.href}
                   aria-current={activo ? "page" : undefined}
-                  className={`inline-flex items-center whitespace-nowrap py-3 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:text-teal-600 ${
-                    item.destacado
-                      ? "rounded-full bg-teal-500 px-5 text-white shadow-md shadow-teal-500/30 hover:text-white"
-                      : activo
-                        ? "text-teal-700 underline decoration-teal-400 decoration-2 underline-offset-[6px]"
-                        : "text-neutral-800"
+                  className={`inline-flex items-center whitespace-nowrap text-[13px] font-semibold transition-colors hover:text-marca-600 ${
+                    activo
+                      ? "text-marca-600 underline decoration-marca-600 decoration-2 underline-offset-8"
+                      : "text-marca-800"
                   }`}
                 >
                   {item.label}
@@ -319,19 +266,64 @@ export default function Navbar() {
             );
           })}
         </ul>
+
+        {/* Búsqueda, cuenta, carrito y acceso destacado a la derecha */}
+        <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
+          {ACCIONES_CUENTA.map((accion) => (
+            <a
+              key={accion.etiqueta}
+              href={accion.href}
+              aria-label={accion.etiqueta}
+              title={accion.etiqueta}
+              className={`flex h-10 w-10 items-center justify-center rounded-xl text-marca-800/70 transition-colors hover:bg-marca-50 hover:text-marca-600 ${
+                accion.etiqueta === "Buscar" ? "hidden lg:flex" : ""
+              }`}
+            >
+              {accion.icono}
+            </a>
+          ))}
+          <button
+            type="button"
+            onClick={() => setAbierto((v) => !v)}
+            aria-expanded={abierto}
+            aria-controls="menu-movil"
+            aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-marca-800 transition-colors hover:bg-marca-50 lg:hidden"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              {abierto ? <path d="M18 6 6 18M6 6l12 12" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+          </button>
+          {cta && (
+            <Link
+              href={cta.href}
+              className="ml-1 hidden h-10 items-center rounded-xl bg-marca-600 px-5 text-[13px] font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700 lg:inline-flex"
+            >
+              {cta.label}
+            </Link>
+          )}
+        </div>
       </nav>
 
       {/* Menú móvil */}
       {abierto && (
         <div
           id="menu-movil"
-          className="max-h-[calc(100svh-96px)] overflow-y-auto border-t border-neutral-100 bg-white px-5 pb-6 pt-2 lg:hidden"
+          className="max-h-[calc(100svh-96px)] overflow-y-auto border-t border-marca-100/70 bg-white px-5 pb-6 pt-2 lg:hidden"
         >
           <ul className="flex flex-col">
             {MENU.map((item) =>
               item.submenu ? (
-                <li key={item.label} className="border-b border-neutral-100 py-2">
-                  <p className="py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                <li key={item.label} className="border-b border-marca-100/70 py-2">
+                  <p className="py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-marca-800/50">
                     {item.label}
                   </p>
                   <ul>
@@ -340,7 +332,7 @@ export default function Navbar() {
                         <Link
                           href={sub.href}
                           onClick={() => setAbierto(false)}
-                          className="block rounded-xl px-3 py-2 text-[13px] font-semibold text-neutral-700 transition-colors hover:bg-teal-50 hover:text-teal-700"
+                          className="block rounded-xl px-3 py-2 text-sm font-medium text-marca-800 transition-colors hover:bg-marca-50 hover:text-marca-600"
                         >
                           {sub.label}
                         </Link>
@@ -349,13 +341,18 @@ export default function Navbar() {
                   </ul>
                 </li>
               ) : (
-                <li key={item.label} className="border-b border-neutral-100">
+                <li
+                  key={item.label}
+                  className={item.destacado ? "py-3" : "border-b border-marca-100/70"}
+                >
                   <Link
                     href={item.href}
                     onClick={() => setAbierto(false)}
-                    className={`block py-3 text-[13px] font-bold uppercase tracking-[0.12em] transition-colors hover:text-teal-700 ${
-                      item.destacado ? "text-teal-600" : "text-neutral-700"
-                    }`}
+                    className={
+                      item.destacado
+                        ? "flex w-full items-center justify-center rounded-xl bg-marca-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
+                        : "block py-3 text-sm font-semibold text-marca-800 transition-colors hover:text-marca-600"
+                    }
                   >
                     {item.label}
                   </Link>
@@ -369,7 +366,7 @@ export default function Navbar() {
                 key={util.label}
                 href={util.href}
                 onClick={() => setAbierto(false)}
-                className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500"
+                className="text-[11px] font-semibold uppercase tracking-[0.12em] text-marca-800/60"
               >
                 {util.label}
               </a>

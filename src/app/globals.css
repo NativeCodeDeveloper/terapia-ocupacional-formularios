@@ -5,11 +5,31 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Paleta de marca: verde agua como acento principal, navy para
-   títulos y amarillo solo para los destellos decorativos. Se
-   sobreescriben las escalas teal/indigo para que todos los módulos
-   existentes hereden los tonos de la marca. */
+/* Paleta de marca: verde petróleo #069494 como color principal,
+   turquesa #00ACC1 para acentos y degradados, azul petróleo oscuro
+   #305762 para títulos y celeste claro #EAF7FA para fondos
+   secundarios; la escala cierra en el gris oscuro #263238 de los
+   textos generales. La escala teal anterior se conserva para los
+   módulos que aún no migran (formularios, material). */
 @theme {
+  --color-marca-50: #eaf7fa;
+  --color-marca-100: #d3eff4;
+  --color-marca-200: #a9e0ea;
+  --color-marca-300: #7bccd9;
+  --color-marca-400: #00acc1;
+  --color-marca-500: #03a1ab;
+  --color-marca-600: #069494;
+  --color-marca-700: #057878;
+  --color-marca-800: #305762;
+  --color-marca-900: #263238;
+  --color-marca-950: #182124;
+
+  /* Azules de apoyo para componentes secundarios y contrastes. */
+  --color-marca-azul-medio: #6099b5;
+  --color-marca-azul-profundo: #476789;
+
+  /* Escala previa (verde agua): la siguen los cuestionarios y el
+     módulo Material TO hasta migrar a la nueva identidad. */
   --color-teal-50: #edf8f4;
   --color-teal-100: #d6efe7;
   --color-teal-200: #b0e3d4;
@@ -21,9 +41,6 @@
   --color-teal-800: #2a725e;
   --color-teal-900: #265d4d;
   --color-teal-950: #123b30;
-
-  --color-marca-amarillo: #ffd93b;
-  --color-marca-navy: #233a72;
 }
 
 /* La aplicación se presenta siempre en claro: fondo blanco y
@@ -34,23 +51,6 @@
 
 html {
   scroll-behavior: smooth;
-}
-
-/* Título tipo sticker de los banners de la referencia: relleno navy
-   con contorno blanco. Se usa sombra en 8 direcciones porque el
-   contorno por -webkit-text-stroke cubre el relleno en navegadores
-   sin paint-order para texto HTML. */
-.texto-sticker {
-  text-shadow:
-    -3px -3px 0 #fff,
-    3px -3px 0 #fff,
-    -3px 3px 0 #fff,
-    3px 3px 0 #fff,
-    -3px 0 0 #fff,
-    3px 0 0 #fff,
-    0 -3px 0 #fff,
-    0 3px 0 #fff,
-    0 12px 28px rgb(35 58 114 / 0.22);
 }
 
 /* Cinta de avisos (Black Friday): la pista se desplaza de forma
