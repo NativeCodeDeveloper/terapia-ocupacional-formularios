@@ -5,10 +5,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Paleta de marca inspirada en rehabilita.shop: menta como acento
-   principal, rosa de relieve, navy para títulos y lavanda para el
-   footer. Se sobreescriben las escalas teal/indigo para que todos
-   los módulos existentes hereden los tonos de la referencia. */
+/* Paleta de marca: verde agua como acento principal, navy para
+   títulos y amarillo solo para los destellos decorativos. Se
+   sobreescriben las escalas teal/indigo para que todos los módulos
+   existentes hereden los tonos de la marca. */
 @theme {
   --color-teal-50: #edf8f4;
   --color-teal-100: #d6efe7;
@@ -22,9 +22,6 @@
   --color-teal-900: #265d4d;
   --color-teal-950: #123b30;
 
-  --color-marca-rosa: #f43187;
-  --color-marca-rosa-suave: #fdeaf3;
-  --color-marca-lavanda: #e8e0f8;
   --color-marca-amarillo: #ffd93b;
   --color-marca-navy: #233a72;
 }
@@ -54,4 +51,22 @@ html {
     0 -3px 0 #fff,
     0 3px 0 #fff,
     0 12px 28px rgb(35 58 114 / 0.22);
+}
+
+/* Cinta de avisos (Black Friday): la pista se desplaza de forma
+   continua; con preferencia de movimiento reducido queda quieta. */
+@keyframes marquesina {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animacion-marquesina {
+  animation: marquesina 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animacion-marquesina {
+    animation: none;
+  }
 }

@@ -92,15 +92,15 @@ const RECURSOS = [
   { href: "/#sobre", label: "Sobre Tera Ocúpame" },
 ];
 
-/* Footer del sitio: fondo lavanda con texto oscuro, siguiendo el
-   patrón de la tienda de referencia. */
+/* Footer del sitio: tinte verde agua suave con texto oscuro,
+   siguiendo el patrón de las tiendas de referencia. */
 export default function Footer() {
   return (
-    <footer className="bg-marca-lavanda text-neutral-700">
+    <footer className="bg-teal-50 text-neutral-700">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:px-0">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* Marca y redes */}
-          <div>
+          <div id="redes" className="scroll-mt-48">
             <Image
               src="/images/logo-teraocupame.png"
               alt="Tera Ocupame"

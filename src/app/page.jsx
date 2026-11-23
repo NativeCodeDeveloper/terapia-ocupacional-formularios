@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import VideoHero from "@/components/VideoHero";
+import CarruselHero from "@/components/CarruselHero";
 import VideoGenograma from "@/components/VideoGenograma";
 import Footer from "@/components/Footer";
 import HaloReel from "@/components/ui/halo-reel";
@@ -95,40 +95,25 @@ const VENTAJAS = [
   },
 ];
 
-/* Sellos breves bajo los botones del hero. */
-const CONFIANZA = [
-  "Puntuación automática",
-  "Descarga inmediata",
-  "Material TO descargable",
-];
-
 /* Material destacado: enlace a su producto en la tienda. */
 const SELECTIVIDAD = MATERIALES.find((m) => m.titulo === "Selectividad alimentaria");
 const TIENDA_SELECTIVIDAD = SELECTIVIDAD?.tienda ?? TIENDA_TO;
 
-/* Estrella de cuatro puntas, como los destellos de los banners de
-   la tienda de referencia. */
+/* Destello de cuatro puntas, como los de los banners de referencia. */
 function Chispa({ className }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
       <path d="M12 1.5 14.3 9.7 22.5 12 14.3 14.3 12 22.5 9.7 14.3 1.5 12 9.7 9.7Z" />
     </svg>
   );
 }
 
-/* Encabezado de sección al estilo de la referencia: etiqueta rosa,
+/* Encabezado de sección al estilo tienda: etiqueta verde agua,
    título navy y subrayado corto oscuro, todo centrado. */
 function TituloSeccion({ id, etiqueta, children }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
-        {etiqueta}
-      </p>
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">{etiqueta}</p>
       <h2
         id={id}
         className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-marca-navy sm:text-4xl"
@@ -149,95 +134,21 @@ export default function Home() {
       <Navbar />
 
       <main>
-        {/* Portada tipo banner de la referencia: fondo pastel, video en
-            tarjeta blanca redondeada con destellos y mensaje con título
-            estilo sticker. */}
+        {/* Portada con carrusel de banners: fondo pastel verde agua,
+            manchas y destellos de fondo, tres diapositivas rotativas. */}
         <section
           id="inicio"
-          className="relative scroll-mt-28 overflow-hidden bg-gradient-to-br from-[#d9e4f8] via-[#e7eef9] to-[#e3f2ec] lg:min-h-[86svh]"
+          className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-[#e4f4ee] via-[#eef8f4] to-[#dcefe7]"
         >
           {/* Manchas y destellos pastel de fondo */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-marca-lavanda/70 blur-2xl" />
-            <div className="absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-teal-100/70 blur-2xl" />
-            <Chispa className="absolute right-[8%] top-28 hidden h-9 w-9 text-marca-amarillo lg:block" />
-            <Chispa className="absolute left-[46%] top-[16%] hidden h-6 w-6 text-white lg:block" />
-            <Chispa className="absolute bottom-[14%] left-[6%] hidden h-7 w-7 text-marca-rosa/50 lg:block" />
+            <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-teal-100/80 blur-2xl" />
+            <div className="absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-teal-100/60 blur-2xl" />
+            <Chispa className="absolute right-[8%] top-32 hidden h-9 w-9 text-marca-amarillo lg:block" />
+            <Chispa className="absolute bottom-[16%] left-[5%] hidden h-7 w-7 text-teal-300/70 lg:block" />
           </div>
 
-          <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-32 sm:pt-36 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-24 lg:pt-32 xl:gap-20">
-            {/* Video en tarjeta blanca, levemente inclinada como un sticker */}
-            <figure className="relative mx-auto w-full min-w-0 max-w-xl">
-              <div className="relative aspect-[4/3] -rotate-1 overflow-hidden rounded-[2.5rem] shadow-[0_40px_80px_-40px_rgba(35,58,114,0.5)] ring-8 ring-white/70">
-                <VideoHero />
-              </div>
-              <Chispa className="absolute -right-3 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
-              <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-white" />
-            </figure>
-
-            <div className="min-w-0 text-center lg:text-left">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
-                Terapia ocupacional · Tera Ocupame
-              </p>
-              <h1 className="mt-4 text-[1.95rem] font-extrabold uppercase leading-[1.12] tracking-tight text-marca-navy sm:text-5xl xl:text-[3.4rem]">
-                <span className="block">Menos tiempo preparando.</span>
-                <span className="texto-sticker mt-2 block">
-                  Más tiempo transformando vidas
-                </span>
-              </h1>
-              <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-neutral-700 lg:mx-0">
-                Descubre evaluaciones automatizadas, materiales descargables y cursos
-                especializados para facilitar tu práctica profesional y acompañar cada proceso
-                terapéutico.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                <a
-                  href="/formularios"
-                  className="group inline-flex h-12 items-center gap-2 rounded-full bg-teal-500 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-500/35 transition-colors hover:bg-teal-600"
-                >
-                  Explorar recursos
-                  <span
-                    aria-hidden="true"
-                    className="transition-transform group-hover:translate-x-0.5"
-                  >
-                    →
-                  </span>
-                </a>
-                <a
-                  href="#sobre"
-                  className="inline-flex h-12 items-center rounded-full border-2 border-marca-navy/15 bg-white/80 px-8 text-sm font-semibold text-marca-navy transition-colors hover:border-teal-300 hover:bg-white"
-                >
-                  Saber más
-                </a>
-              </div>
-              <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5 lg:justify-start">
-                {CONFIANZA.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-2 rounded-full bg-white/70 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-navy"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <path d="m5 13 4 4L19 7" />
-                      </svg>
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <CarruselHero />
         </section>
 
         {/* Lo que encontrarás: tarjetas con las tres líneas de recursos */}
@@ -290,11 +201,15 @@ export default function Home() {
         </section>
 
         {/* Genograma familiar: demostración en video (sin audio) */}
-        <section aria-labelledby="titulo-genograma" className="bg-white pb-16 sm:pb-20">
+        <section
+          id="genograma"
+          aria-labelledby="titulo-genograma"
+          className="scroll-mt-40 bg-white pb-16 sm:pb-20"
+        >
           <div className="mx-auto max-w-6xl px-5 lg:px-0">
             <TituloSeccion id="titulo-genograma" etiqueta="Evaluación familiar">
               Genograma familiar{" "}
-              <span className="[background-image:linear-gradient(transparent_62%,#fbc4de_62%)]">
+              <span className="[background-image:linear-gradient(transparent_62%,#b0e3d4_62%)]">
                 completo de tus pacientes
               </span>
             </TituloSeccion>
@@ -349,15 +264,15 @@ export default function Home() {
         {/* Selectividad alimentaria: material destacado con enlace a la tienda */}
         <section
           aria-labelledby="titulo-selectividad"
-          className="relative overflow-hidden bg-marca-rosa-suave py-16 sm:py-20"
+          className="relative overflow-hidden bg-teal-50 py-16 sm:py-20"
         >
           <Chispa
             aria-hidden="true"
-            className="absolute right-[6%] top-10 hidden h-8 w-8 text-marca-rosa/40 lg:block"
+            className="absolute right-[6%] top-10 hidden h-8 w-8 text-teal-300/70 lg:block"
           />
           <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-16 lg:px-0">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-rosa">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-600">
                 Para padres y estudiantes
               </p>
               <h2
@@ -365,7 +280,7 @@ export default function Home() {
                 className="mt-3 text-3xl font-extrabold uppercase tracking-tight text-marca-navy sm:text-4xl"
               >
                 Estrategias para la{" "}
-                <span className="[background-image:linear-gradient(transparent_62%,#fbc4de_62%)]">
+                <span className="[background-image:linear-gradient(transparent_62%,#b0e3d4_62%)]">
                   selectividad alimentaria
                 </span>
               </h2>
@@ -377,19 +292,16 @@ export default function Home() {
                 href={TIENDA_SELECTIVIDAD}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-marca-rosa px-8 text-sm font-semibold text-white shadow-lg shadow-marca-rosa/35 transition-colors hover:bg-[#d92273]"
+                className="group mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-teal-600 px-8 text-sm font-semibold text-white shadow-lg shadow-teal-600/30 transition-colors hover:bg-teal-700"
               >
                 Conseguir este material
-                <span
-                  aria-hidden="true"
-                  className="transition-transform group-hover:translate-x-0.5"
-                >
+                <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
                   →
                 </span>
               </a>
             </div>
             <figure className="relative mx-auto w-full max-w-lg rotate-1">
-              <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_40px_80px_-40px_rgba(244,49,135,0.45)] ring-8 ring-white/80">
+              <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-[0_40px_80px_-40px_rgba(35,58,114,0.4)] ring-8 ring-white/80">
                 <Image
                   src="/images/selectividad-alimentaria.webp"
                   alt="Manual Estrategias para la selectividad alimentaria, para padres y estudiantes"
@@ -408,7 +320,7 @@ export default function Home() {
         <section
           id="sobre"
           aria-labelledby="titulo-puntuacion"
-          className="scroll-mt-32 bg-white pb-16 sm:pb-20"
+          className="scroll-mt-40 bg-white pb-16 sm:pb-20"
         >
           <div className="mx-auto max-w-6xl px-5 pt-16 sm:pt-20 lg:px-0">
             <div className="rounded-[2rem] border border-teal-100 bg-teal-50/70 p-6 sm:p-10">
