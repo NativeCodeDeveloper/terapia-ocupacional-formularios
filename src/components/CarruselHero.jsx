@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import VideoHero from "@/components/VideoHero";
+
+/* Pendiente: devolver el video de portada cuando el cliente lo
+   confirme; por ahora la diapositiva usa un fotograma fijo. */
 
 /* Collage del carrusel: portadas del módulo Material TO. */
 const COLLAGE_MATERIAL = [
@@ -29,13 +31,21 @@ function Chispa({ className }) {
   );
 }
 
-/* Diapositiva 1: video de portada y mensaje principal. */
-function DiapositivaVideo() {
+/* Diapositiva 1: portada con mensaje principal (fotograma fijo,
+   sin video por ahora). */
+function DiapositivaPortada() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-[1.05fr_1fr] lg:gap-14 xl:gap-20">
       <figure className="relative mx-auto w-full min-w-0 max-w-xl">
         <div className="relative aspect-[4/3] -rotate-1 overflow-hidden rounded-[2.5rem] shadow-[0_40px_80px_-40px_rgba(35,58,114,0.5)] ring-8 ring-white/70">
-          <VideoHero />
+          <Image
+            src="/videos/hero-superheroe.jpg"
+            alt="Terapeuta ocupacional superheroína lista para acompañar a sus usuarios"
+            fill
+            sizes="(min-width: 1024px) 576px, 100vw"
+            className="object-cover object-[53%_50%]"
+            priority
+          />
         </div>
         <Chispa className="absolute -right-3 -top-5 h-10 w-10 text-marca-amarillo drop-shadow-[0_4px_8px_rgba(35,58,114,0.18)]" />
         <Chispa className="absolute -bottom-4 -left-4 h-6 w-6 text-white" />
@@ -230,7 +240,7 @@ function DiapositivaEvaluaciones() {
 }
 
 const DIAPOSITIVAS = [
-  { contenido: <DiapositivaVideo />, etiqueta: "Portada" },
+  { contenido: <DiapositivaPortada />, etiqueta: "Portada" },
   { contenido: <DiapositivaMaterial />, etiqueta: "Material TO" },
   { contenido: <DiapositivaEvaluaciones />, etiqueta: "Evaluaciones" },
 ];
