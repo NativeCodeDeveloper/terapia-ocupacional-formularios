@@ -7,11 +7,69 @@ import Link from "next/link";
 /* Pendiente: devolver el video de portada cuando el cliente lo
    confirme; por ahora la diapositiva usa un fotograma fijo. */
 
-/* Collage del carrusel: portadas del módulo Material TO. */
-const COLLAGE_MATERIAL = [
-  { src: "/material/estimulacion-cognitiva-1.webp", alt: "Material de estimulación cognitiva" },
-  { src: "/material/actividades-1.webp", alt: "Cuaderno de actividades de terapia ocupacional" },
-  { src: "/material/manual-ortesis.webp", alt: "Manual de ortesis" },
+/* Íconos de los sellos de la diapositiva Material TO. */
+function IconoDescarga({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 3v12" />
+      <path d="m7 11 5 5 5-5" />
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
+
+function IconoEscudo({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function IconoUsuarios({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
+      <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+    </svg>
+  );
+}
+
+/* Sellos bajo el titular de la diapositiva Material TO. */
+const SELLOS_MATERIAL = [
+  { Icono: IconoDescarga, lineas: ["Recursos", "listos para usar"] },
+  { Icono: IconoEscudo, lineas: ["Material", "validado"] },
+  { Icono: IconoUsuarios, lineas: ["Para niños,", "jóvenes y adultos"] },
 ];
 
 /* Verificaciones de la diapositiva de evaluaciones. */
@@ -25,7 +83,12 @@ const EVALUACIONES = [
    turquesa y celeste, muy discreto sobre el fondo blanco. */
 function Chispa({ className }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
       <path d="M12 1.5 14.3 9.7 22.5 12 14.3 14.3 12 22.5 9.7 14.3 1.5 12 9.7 9.7Z" />
     </svg>
   );
@@ -51,8 +114,8 @@ function DiapositivaPortada() {
       </h1>
       <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-marca-900/75">
         Descubre evaluaciones automatizadas, materiales descargables y cursos
-        especializados para facilitar tu práctica profesional y acompañar cada proceso
-        terapéutico.
+        especializados para facilitar tu práctica profesional y acompañar cada
+        proceso terapéutico.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <a
@@ -60,7 +123,10 @@ function DiapositivaPortada() {
           className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
         >
           Explorar recursos
-          <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+          <span
+            aria-hidden="true"
+            className="transition-transform group-hover:translate-x-0.5"
+          >
             →
           </span>
         </a>
@@ -72,86 +138,167 @@ function DiapositivaPortada() {
         </a>
       </div>
       <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5">
-        {["Puntuación automática", "Descarga inmediata", "Material TO descargable"].map(
-          (item) => (
-            <li
-              key={item}
-              className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
+        {[
+          "Puntuación automática",
+          "Descarga inmediata",
+          "Material TO descargable",
+        ].map((item) => (
+          <li
+            key={item}
+            className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
             >
-              <span
-                aria-hidden="true"
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3 w-3"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3"
-                >
-                  <path d="m5 13 4 4L19 7" />
-                </svg>
-              </span>
-              {item}
-            </li>
-          ),
-        )}
+                <path d="m5 13 4 4L19 7" />
+              </svg>
+            </span>
+            {item}
+          </li>
+        ))}
       </ul>
     </div>
   );
 }
 
-/* Diapositiva 2: collage con portadas del módulo Material TO. */
+/* Diapositiva 2: módulo Material TO con sellos y portadas sobre
+   un podio, según el diseño de referencia del cliente. */
 function DiapositivaMaterial() {
   return (
-    <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-14">
+    <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 lg:grid-cols-2 lg:gap-10">
       <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
+        <span className="inline-flex items-center rounded-full bg-marca-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-marca-700 ring-1 ring-marca-100">
           Material TO
-        </p>
-        <p className="mt-4 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-4xl">
-          Todo el material{" "}
-          <span className="text-marca-600">listo para descargar</span>
+        </span>
+        <p className="mt-5 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-[2.6rem]">
+          Todo el material listo para{" "}
+          <span className="whitespace-nowrap text-marca-600">descargar y</span>{" "}
+          <span className="relative inline-block whitespace-nowrap text-marca-600">
+            usar
+            <svg
+              viewBox="0 0 100 14"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              className="absolute -bottom-1.5 left-0 h-2.5 w-full text-marca-500"
+            >
+              <path
+                d="M6 10C36 4 66 3 94 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
         </p>
         <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
-          Manuales, pautas, actividades y estrategias de terapia ocupacional para usar en la
-          práctica diaria con tus usuarios.
+          Manuales, pautas, actividades y estrategias de terapia ocupacional
+          para la práctica diaria con tus usuarios.
         </p>
-        <div className="mt-7 flex justify-center lg:justify-start">
+
+        <ul className="mx-auto mt-8 flex max-w-md flex-wrap items-center justify-center gap-y-4 text-left lg:mx-0 lg:max-w-none lg:justify-start lg:divide-x lg:divide-marca-100">
+          {SELLOS_MATERIAL.map(({ Icono, lineas }) => (
+            <li
+              key={lineas[0]}
+              className="flex items-center gap-3 px-4 first:pl-0 last:pr-0"
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-marca-50 text-marca-600 ring-1 ring-marca-100"
+              >
+                <Icono className="h-5 w-5" />
+              </span>
+              <span className="text-[13px] font-semibold leading-[1.3] text-marca-800">
+                {lineas[0]}
+                <span className="block">{lineas[1]}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-9 flex justify-center lg:justify-start">
           <Link
             href="/material"
-            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
+            className="group inline-flex h-12 items-center gap-2.5 rounded-xl bg-marca-600 px-6 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
+            <IconoDescarga className="h-[18px] w-[18px]" />
             Ver todo el material TO
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
               →
             </span>
           </Link>
         </div>
       </div>
 
-      <div className="relative mx-auto h-72 w-full max-w-md sm:h-80">
-        {COLLAGE_MATERIAL.map((item, i) => (
-          <div
-            key={item.src}
-            className={`absolute overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_60px_-30px_rgba(48,87,98,0.4)] ring-1 ring-marca-100 ${
-              ["left-0 top-8 w-40 -rotate-3 sm:w-48", "right-0 top-12 w-36 rotate-2 sm:w-44", "left-1/2 top-0 w-44 -translate-x-1/2 rotate-1 sm:w-52"][i]
-            }`}
-          >
-            <Image
-              src={item.src}
-              alt={item.alt}
-              width={1200}
-              height={920}
-              sizes="(min-width: 1024px) 200px, 45vw"
-              className="h-auto w-full"
-            />
-          </div>
-        ))}
-        <Chispa className="absolute -top-3 right-10 h-8 w-8 text-marca-300" />
-        <Chispa className="absolute bottom-2 left-4 h-6 w-6 text-marca-200" />
+      {/* Portadas de pie sobre un podio, con mancha de fondo */}
+      <div className="relative mx-auto h-72 w-full max-w-md sm:h-[21rem] lg:h-[24rem] lg:max-w-none">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-2 bottom-8 rounded-[62%_38%_56%_44%/48%_60%_40%_52%] bg-gradient-to-br from-marca-50 via-marca-100/60 to-marca-100/80"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 left-1/2 h-12 w-[86%] -translate-x-1/2 rounded-[50%] bg-gradient-to-b from-marca-100 to-marca-200/50 sm:h-14"
+        />
+        <Image
+          src="/material/estimulacion-cognitiva-1.webp"
+          alt="Material de estimulación cognitiva"
+          width={1200}
+          height={920}
+          sizes="(min-width: 1024px) 260px, 48vw"
+          className="absolute bottom-4 left-[7%] z-10 w-[48%] lg:w-[52%]"
+        />
+        <Image
+          src="/material/manual-ortesis.webp"
+          alt="Manual de ortesis"
+          width={1200}
+          height={920}
+          sizes="(min-width: 1024px) 340px, 60vw"
+          className="absolute bottom-[1.15rem] left-1/2 z-20 w-[58%] -translate-x-1/2 lg:w-[64%]"
+        />
+        <Image
+          src="/material/actividades-1.webp"
+          alt="Cuaderno de actividades de terapia ocupacional"
+          width={1200}
+          height={920}
+          sizes="(min-width: 1024px) 260px, 48vw"
+          className="absolute bottom-4 right-[7%] z-10 w-[48%] lg:w-[52%]"
+        />
+
+        {/* Ráfaga superior izquierda */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 56 30"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          className="absolute left-[12%] top-0 h-5 w-9 text-marca-400"
+        >
+          <path d="M6 26 10 14" strokeWidth="5" />
+          <path d="M24 22 26 8" strokeWidth="5" />
+          <path d="M42 24 50 14" strokeWidth="5" />
+        </svg>
+
+        {/* Ícono de descarga superior derecha */}
+        <span
+          aria-hidden="true"
+          className="absolute right-[6%] top-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-marca-400 to-marca-600 text-white shadow-lg shadow-marca-600/25 sm:h-14 sm:w-14"
+        >
+          <IconoDescarga className="h-6 w-6" />
+        </span>
       </div>
     </div>
   );
@@ -201,7 +348,10 @@ function DiapositivaEvaluaciones() {
             className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
             Explorar evaluaciones
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
               →
             </span>
           </Link>
@@ -349,7 +499,9 @@ export default function CarruselHero() {
             aria-label={`Ir a la diapositiva ${i + 1}: ${d.etiqueta}`}
             aria-current={i === activo}
             className={`h-2.5 rounded-full transition-all ${
-              i === activo ? "w-7 bg-marca-600" : "w-2.5 bg-marca-200 hover:bg-marca-300"
+              i === activo
+                ? "w-7 bg-marca-600"
+                : "w-2.5 bg-marca-200 hover:bg-marca-300"
             }`}
           />
         ))}
