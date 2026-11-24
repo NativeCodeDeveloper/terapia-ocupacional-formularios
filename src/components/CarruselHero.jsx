@@ -65,6 +65,82 @@ function IconoUsuarios({ className }) {
   );
 }
 
+function IconoRayo({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+    </svg>
+  );
+}
+
+function IconoDocumento({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v5h5" />
+      <path d="M10 9H8" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+    </svg>
+  );
+}
+
+function IconoGrafico({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="M18 17V9" />
+      <path d="M13 17V5" />
+      <path d="M8 17v-3" />
+    </svg>
+  );
+}
+
+function IconoCasa({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m3 10.5 9-7.5 9 7.5" />
+      <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10" />
+    </svg>
+  );
+}
+
 /* Sellos bajo el titular de la diapositiva Material TO. */
 const SELLOS_MATERIAL = [
   { Icono: IconoDescarga, lineas: ["Recursos", "listos para usar"] },
@@ -72,24 +148,77 @@ const SELLOS_MATERIAL = [
   { Icono: IconoUsuarios, lineas: ["Para niños,", "jóvenes y adultos"] },
 ];
 
-/* Verificaciones de la diapositiva de evaluaciones. */
-const EVALUACIONES = [
-  "SPM-2 Hogar y Escolar",
-  "Perfil Sensorial 2",
-  "Evaluación inicial por etapa vital",
+/* Sellos bajo el titular de la diapositiva de evaluaciones. */
+const SELLOS_EVALUACIONES = [
+  { Icono: IconoRayo, lineas: ["Corrección", "automática"] },
+  { Icono: IconoDocumento, lineas: ["Informe PDF", "al instante"] },
+  { Icono: IconoGrafico, lineas: ["Resultados", "confiables"] },
 ];
 
-/* Destello de cuatro puntas; en la nueva identidad va en tonos
-   turquesa y celeste, muy discreto sobre el fondo blanco. */
-function Chispa({ className }) {
+/* Fila de sellos con ícono y divisores, compartida por las
+   diapositivas de Material TO y Evaluaciones. */
+function Sellos({ items }) {
+  return (
+    <ul className="mx-auto mt-8 flex max-w-md flex-wrap items-center justify-center gap-y-4 text-left lg:mx-0 lg:max-w-none lg:justify-start lg:divide-x lg:divide-marca-100">
+      {items.map(({ Icono, lineas }) => (
+        <li
+          key={lineas[0]}
+          className="flex items-center gap-3 px-4 first:pl-0 last:pr-0"
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-marca-50 text-marca-600 ring-1 ring-marca-100"
+          >
+            <Icono className="h-5 w-5" />
+          </span>
+          <span className="text-[13px] font-semibold leading-[1.3] text-marca-800">
+            {lineas[0]}
+            <span className="block">{lineas[1]}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/* Palabra en verde con subrayado curvo, como en el diseño de
+   referencia del cliente. */
+function PalabraSubrayada({ children }) {
+  return (
+    <span className="relative inline-block whitespace-nowrap text-marca-600">
+      {children}
+      <svg
+        viewBox="0 0 100 14"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        className="absolute -bottom-1.5 left-0 h-2.5 w-full text-marca-500"
+      >
+        <path
+          d="M6 10C36 4 66 3 94 7"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+/* Ráfaga de tres trazos sobre las composiciones ilustradas. */
+function Rafaga({ className }) {
   return (
     <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
       aria-hidden="true"
+      viewBox="0 0 56 30"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
       className={className}
     >
-      <path d="M12 1.5 14.3 9.7 22.5 12 14.3 14.3 12 22.5 9.7 14.3 1.5 12 9.7 9.7Z" />
+      <path d="M6 26 10 14" strokeWidth="5" />
+      <path d="M24 22 26 8" strokeWidth="5" />
+      <path d="M42 24 50 14" strokeWidth="5" />
     </svg>
   );
 }
@@ -183,48 +312,14 @@ function DiapositivaMaterial() {
         <p className="mt-5 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-[2.6rem]">
           Todo el material listo para{" "}
           <span className="whitespace-nowrap text-marca-600">descargar y</span>{" "}
-          <span className="relative inline-block whitespace-nowrap text-marca-600">
-            usar
-            <svg
-              viewBox="0 0 100 14"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              className="absolute -bottom-1.5 left-0 h-2.5 w-full text-marca-500"
-            >
-              <path
-                d="M6 10C36 4 66 3 94 7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
+          <PalabraSubrayada>usar</PalabraSubrayada>
         </p>
         <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
           Manuales, pautas, actividades y estrategias de terapia ocupacional
           para la práctica diaria con tus usuarios.
         </p>
 
-        <ul className="mx-auto mt-8 flex max-w-md flex-wrap items-center justify-center gap-y-4 text-left lg:mx-0 lg:max-w-none lg:justify-start lg:divide-x lg:divide-marca-100">
-          {SELLOS_MATERIAL.map(({ Icono, lineas }) => (
-            <li
-              key={lineas[0]}
-              className="flex items-center gap-3 px-4 first:pl-0 last:pr-0"
-            >
-              <span
-                aria-hidden="true"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-marca-50 text-marca-600 ring-1 ring-marca-100"
-              >
-                <Icono className="h-5 w-5" />
-              </span>
-              <span className="text-[13px] font-semibold leading-[1.3] text-marca-800">
-                {lineas[0]}
-                <span className="block">{lineas[1]}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <Sellos items={SELLOS_MATERIAL} />
 
         <div className="mt-9 flex justify-center lg:justify-start">
           <Link
@@ -279,18 +374,7 @@ function DiapositivaMaterial() {
         />
 
         {/* Ráfaga superior izquierda */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 56 30"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          className="absolute left-[12%] top-0 h-5 w-9 text-marca-400"
-        >
-          <path d="M6 26 10 14" strokeWidth="5" />
-          <path d="M24 22 26 8" strokeWidth="5" />
-          <path d="M42 24 50 14" strokeWidth="5" />
-        </svg>
+        <Rafaga className="absolute left-[12%] top-0 h-5 w-9 text-marca-400" />
 
         {/* Ícono de descarga superior derecha */}
         <span
@@ -304,48 +388,32 @@ function DiapositivaMaterial() {
   );
 }
 
-/* Diapositiva 3: evaluaciones con puntuación automática. */
+/* Diapositiva 3: evaluaciones con puntuación automática, según el
+   diseño de referencia del cliente. */
 function DiapositivaEvaluaciones() {
   return (
-    <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-2 lg:gap-14">
+    <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 lg:grid-cols-2 lg:gap-10">
       <div className="min-w-0 text-center lg:text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
+        <span className="inline-flex items-center rounded-full bg-marca-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-marca-700 ring-1 ring-marca-100">
           Evaluaciones automatizadas
+        </span>
+        <p className="mt-5 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-[2.6rem]">
+          <span className="block">Puntuación e informe</span>
+          <span className="block">
+            al <PalabraSubrayada>instante</PalabraSubrayada>
+          </span>
         </p>
-        <p className="mt-4 text-[1.9rem] font-extrabold leading-[1.14] tracking-tight text-marca-800 sm:text-4xl">
-          Puntuación e informe{" "}
-          <span className="text-marca-600">al instante</span>
+        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
+          Aplicación, corrección y generación de informes automáticos de las
+          principales evaluaciones en Terapia Ocupacional.
         </p>
-        <ul className="mx-auto mt-6 flex max-w-md flex-col items-start gap-2.5 text-left lg:mx-0">
-          {EVALUACIONES.map((item) => (
-            <li
-              key={item}
-              className="flex items-center gap-2.5 rounded-full bg-marca-50 py-1.5 pl-2 pr-5 text-[13px] font-semibold text-marca-800"
-            >
-              <span
-                aria-hidden="true"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-marca-600 text-white"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3"
-                >
-                  <path d="m5 13 4 4L19 7" />
-                </svg>
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <div className="mt-7 flex justify-center lg:justify-start">
+
+        <Sellos items={SELLOS_EVALUACIONES} />
+
+        <div className="mt-9 flex justify-center lg:justify-start">
           <Link
             href="/formularios"
-            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
+            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-6 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
             Explorar evaluaciones
             <span
@@ -358,24 +426,99 @@ function DiapositivaEvaluaciones() {
         </div>
       </div>
 
-      <div className="relative mx-auto w-full max-w-sm">
-        <div className="rounded-[2rem] bg-white px-8 py-10 text-center shadow-[0_40px_80px_-40px_rgba(48,87,98,0.45)] ring-1 ring-marca-100">
-          <p className="text-6xl font-extrabold uppercase tracking-tight text-marca-800">
+      {/* Tarjeta SPM-2 al centro, flanqueada por dos informes */}
+      <div className="relative mx-auto h-72 w-full max-w-md sm:h-[21rem] lg:h-[24rem] lg:max-w-none">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-4 bottom-6 rounded-[58%_42%_48%_52%/52%_56%_44%_48%] bg-gradient-to-br from-marca-100/70 via-marca-200/40 to-marca-100/80"
+        />
+
+        {/* Informe Hogar y Escolar (izquierda) */}
+        <div className="absolute left-0 top-[20%] z-10 w-[34%] -rotate-6 rounded-3xl bg-white py-4 pl-4 pr-7 text-center shadow-[0_30px_60px_-30px_rgba(48,87,98,0.35)] ring-1 ring-marca-100 sm:py-5 sm:pl-5 sm:pr-10">
+          <IconoCasa className="mx-auto h-8 w-8 text-marca-600" />
+          <p className="mt-2 text-lg font-extrabold tracking-tight text-marca-800">
             SPM-2
           </p>
-          <span
-            aria-hidden="true"
-            className="mx-auto my-5 block h-1.5 w-14 rounded-full bg-gradient-to-r from-marca-600 to-marca-400"
-          />
-          <p className="text-2xl font-extrabold tracking-tight text-marca-600">
+          <p className="text-[13px] font-semibold text-marca-600">
+            Hogar y Escolar
+          </p>
+          <div aria-hidden="true" className="mx-auto mt-3 w-4/5 space-y-1.5">
+            <div className="h-1.5 rounded-full bg-neutral-200" />
+            <div className="h-1.5 rounded-full bg-neutral-200/80" />
+            <div className="h-1.5 w-2/3 rounded-full bg-neutral-200/60" />
+          </div>
+        </div>
+
+        {/* Informe Perfil Sensorial 2 (derecha) */}
+        <div className="absolute right-0 top-[28%] z-10 w-[34%] rotate-6 rounded-3xl bg-white py-4 pl-7 pr-4 text-center shadow-[0_30px_60px_-30px_rgba(48,87,98,0.35)] ring-1 ring-marca-100 sm:py-5 sm:pl-10 sm:pr-5">
+          <IconoUsuarios className="mx-auto h-8 w-8 text-marca-600" />
+          <p className="mt-2 text-lg font-extrabold leading-tight tracking-tight text-marca-800">
             Perfil Sensorial 2
           </p>
-          <p className="mt-4 text-sm font-semibold text-marca-900/60">
-            Puntaje T, percentil e informe PDF al instante
-          </p>
+          <div aria-hidden="true" className="mx-auto mt-3 w-4/5 space-y-1.5">
+            <div className="h-1.5 rounded-full bg-neutral-200" />
+            <div className="h-1.5 rounded-full bg-neutral-200/80" />
+            <div className="h-1.5 w-2/3 rounded-full bg-neutral-200/60" />
+          </div>
         </div>
-        <Chispa className="absolute -right-4 -top-5 h-9 w-9 text-marca-300" />
-        <Chispa className="absolute -bottom-3 -left-3 h-6 w-6 text-marca-200" />
+
+        {/* Tarjeta principal con el resultado */}
+        <div className="absolute left-1/2 top-1/2 z-20 w-[46%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] bg-gradient-to-b from-white to-marca-50 p-5 text-left shadow-[0_40px_80px_-40px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:p-6">
+          <p className="text-4xl font-extrabold tracking-tight text-marca-800 sm:text-5xl">
+            SPM-2
+          </p>
+          <p className="mt-1 text-lg font-bold tracking-tight text-marca-600 sm:text-xl">
+            Perfil Sensorial 2
+          </p>
+          <ul className="mt-5 space-y-3">
+            {["Puntuación T", "Percentil", "Informe PDF"].map((item) => (
+              <li
+                key={item}
+                className="flex items-center gap-2.5 text-[13px] font-semibold text-marca-800"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-marca-600 text-white"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-2.5 w-2.5"
+                  >
+                    <path d="m5 13 4 4L19 7" />
+                  </svg>
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          {/* Documento PDF */}
+          <div
+            aria-hidden="true"
+            className="absolute -right-2 bottom-10 h-20 w-16 rotate-3 sm:-right-3"
+          >
+            <div className="absolute inset-0 rounded-lg bg-white shadow-md ring-1 ring-marca-100">
+              <div className="absolute right-0 top-0 h-4 w-4 bg-marca-50 [clip-path:polygon(0_0,100%_0,100%_100%)]" />
+              <div className="absolute right-0 top-0 h-4 w-4 bg-marca-100 [clip-path:polygon(0_0,100%_100%,0_100%)]" />
+              <div className="space-y-1.5 px-2.5 pt-3">
+                <div className="h-1 rounded-full bg-neutral-200" />
+                <div className="h-1 rounded-full bg-neutral-200" />
+                <div className="h-1 w-2/3 rounded-full bg-neutral-200/80" />
+              </div>
+              <span className="absolute bottom-2 left-2 rounded-[4px] bg-red-500 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-white">
+                PDF
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ráfaga superior derecha */}
+        <Rafaga className="absolute right-[4%] top-0 h-6 w-11 text-marca-400" />
       </div>
     </div>
   );
