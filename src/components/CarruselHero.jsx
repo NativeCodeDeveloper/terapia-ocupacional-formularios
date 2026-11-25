@@ -366,8 +366,8 @@ function Pilares() {
 
 /* Sellos bajo el titular de la diapositiva de evaluaciones. */
 const SELLOS_EVALUACIONES = [
-  { Icono: IconoRayo, lineas: ["Corrección", "automática"] },
-  { Icono: IconoDocumento, lineas: ["Informe PDF", "al instante"] },
+  { Icono: IconoRayo, lineas: ["Tabulación automática", "en 1 segundo"] },
+  { Icono: IconoDocumento, lineas: ["Informe PDF y Word", "al instante"] },
   { Icono: IconoGrafico, lineas: ["Resultados", "confiables"] },
 ];
 
@@ -621,8 +621,9 @@ function DiapositivaEvaluaciones() {
           </span>
         </p>
         <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
-          Aplicación, corrección y generación de informes automáticos de las
-          principales evaluaciones en Terapia Ocupacional.
+          Envía el enlace al usuario para que lo responda por WhatsApp y, en un
+          segundo, tienes el informe en Word y PDF en tu correo. Sin Excel ni
+          tabulación manual.
         </p>
 
         <Sellos items={SELLOS_EVALUACIONES} />
@@ -643,21 +644,22 @@ function DiapositivaEvaluaciones() {
         </div>
       </div>
 
-      {/* Tarjeta SPM-2 al centro, flanqueada por dos informes */}
+      {/* Perfil Sensorial 2 al centro, flanqueado por SPM-2 Hogar y
+          SPM-2 Escolar */}
       <div className="relative mx-auto h-72 w-full max-w-md sm:h-[21rem] lg:h-[24rem] lg:max-w-none">
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-4 bottom-6 rounded-[58%_42%_48%_52%/52%_56%_44%_48%] bg-gradient-to-br from-marca-100/70 via-marca-200/40 to-marca-100/80"
         />
 
-        {/* Informe Hogar y Escolar (izquierda) */}
+        {/* SPM-2 Hogar (izquierda) */}
         <div className="absolute left-0 top-[20%] z-10 w-[34%] -rotate-6 rounded-3xl bg-white py-4 pl-4 pr-7 text-center shadow-[0_30px_60px_-30px_rgba(48,87,98,0.35)] ring-1 ring-marca-100 sm:py-5 sm:pl-5 sm:pr-10">
           <IconoCasa className="mx-auto h-8 w-8 text-marca-600" />
           <p className="mt-2 text-lg font-extrabold tracking-tight text-marca-800">
             SPM-2
           </p>
           <p className="text-[13px] font-semibold text-marca-600">
-            Hogar y Escolar
+            Hogar
           </p>
           <div aria-hidden="true" className="mx-auto mt-3 w-4/5 space-y-1.5">
             <div className="h-1.5 rounded-full bg-neutral-200" />
@@ -666,11 +668,14 @@ function DiapositivaEvaluaciones() {
           </div>
         </div>
 
-        {/* Informe Perfil Sensorial 2 (derecha) */}
+        {/* SPM-2 Escolar (derecha) */}
         <div className="absolute right-0 top-[28%] z-10 w-[34%] rotate-6 rounded-3xl bg-white py-4 pl-7 pr-4 text-center shadow-[0_30px_60px_-30px_rgba(48,87,98,0.35)] ring-1 ring-marca-100 sm:py-5 sm:pl-10 sm:pr-5">
-          <IconoUsuarios className="mx-auto h-8 w-8 text-marca-600" />
-          <p className="mt-2 text-lg font-extrabold leading-tight tracking-tight text-marca-800">
-            Perfil Sensorial 2
+          <IconoGraduacion className="mx-auto h-8 w-8 text-marca-600" />
+          <p className="mt-2 text-lg font-extrabold tracking-tight text-marca-800">
+            SPM-2
+          </p>
+          <p className="text-[13px] font-semibold text-marca-600">
+            Escolar
           </p>
           <div aria-hidden="true" className="mx-auto mt-3 w-4/5 space-y-1.5">
             <div className="h-1.5 rounded-full bg-neutral-200" />
@@ -681,21 +686,25 @@ function DiapositivaEvaluaciones() {
 
         {/* Tarjeta principal con el resultado */}
         <div className="absolute left-1/2 top-1/2 z-20 w-[46%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] bg-gradient-to-b from-white to-marca-50 p-5 text-left shadow-[0_40px_80px_-40px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:p-6">
-          <p className="text-4xl font-extrabold tracking-tight text-marca-800 sm:text-5xl">
-            SPM-2
-          </p>
-          <p className="mt-1 text-lg font-bold tracking-tight text-marca-600 sm:text-xl">
+          <p className="text-[1.7rem] font-extrabold leading-[1.1] tracking-tight text-marca-800 sm:text-4xl">
             Perfil Sensorial 2
           </p>
-          <ul className="mt-5 space-y-3">
-            {["Puntuación T", "Percentil", "Informe PDF"].map((item) => (
+          <p className="mt-1 text-base font-bold tracking-tight text-marca-600 sm:text-lg">
+            Hogar y Escolar
+          </p>
+          <ul className="mt-4 space-y-2.5 sm:space-y-3">
+            {[
+              "Informe PDF y Word al instante",
+              "Tabla de resultados",
+              "Descripción de cada ítem",
+            ].map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-2.5 text-[13px] font-semibold text-marca-800"
+                className="flex items-start gap-2.5 text-[13px] font-semibold leading-snug text-marca-800"
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-marca-600 text-white"
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-marca-600 text-white"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -713,6 +722,30 @@ function DiapositivaEvaluaciones() {
               </li>
             ))}
           </ul>
+
+          {/* Sello SIN EXCEL */}
+          <span className="absolute -left-2 -top-3 z-10 -rotate-6 rounded-full bg-marca-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white shadow-md shadow-marca-600/30 sm:-left-4 sm:text-[11px]">
+            Sin Excel
+          </span>
+
+          {/* Documento Word */}
+          <div
+            aria-hidden="true"
+            className="absolute -left-3 bottom-12 h-16 w-12 -rotate-6 sm:-left-4"
+          >
+            <div className="absolute inset-0 rounded-lg bg-white shadow-md ring-1 ring-marca-100">
+              <div className="absolute right-0 top-0 h-3 w-3 bg-marca-50 [clip-path:polygon(0_0,100%_0,100%_100%)]" />
+              <div className="absolute right-0 top-0 h-3 w-3 bg-marca-100 [clip-path:polygon(0_0,100%_100%,0_100%)]" />
+              <div className="space-y-1 px-2 pt-2.5">
+                <div className="h-1 rounded-full bg-neutral-200" />
+                <div className="h-1 rounded-full bg-neutral-200" />
+                <div className="h-1 w-2/3 rounded-full bg-neutral-200/80" />
+              </div>
+              <span className="absolute bottom-1.5 left-1.5 rounded-[4px] bg-[#2b579a] px-1 py-0.5 text-[8px] font-bold tracking-wide text-white">
+                WORD
+              </span>
+            </div>
+          </div>
 
           {/* Documento PDF */}
           <div

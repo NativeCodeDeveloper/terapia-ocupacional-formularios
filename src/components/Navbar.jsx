@@ -203,7 +203,7 @@ export default function Navbar() {
         {/* Logo alineado a la izquierda */}
         <Link
           href="/#inicio"
-          className="flex shrink-0 items-center"
+          className="flex shrink-0 items-center lg:items-start lg:self-start lg:pt-0.5"
           aria-label="Tera Ocupame — ir al inicio"
           onClick={() => setAbierto(false)}
         >
@@ -213,7 +213,7 @@ export default function Navbar() {
             width={1234}
             height={1244}
             priority
-            className="h-12 w-auto lg:h-16"
+            className="h-14 w-auto lg:h-[78px]"
           />
         </Link>
 
