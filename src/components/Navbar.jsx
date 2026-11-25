@@ -4,69 +4,26 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import BotonBrillante from "@/components/ui/boton-brillante";
 
-/* Pendiente: conectar con autenticación, buscador y carrito cuando
-   existan. */
-const ACCIONES_CUENTA = [
-  {
-    href: "#",
-    etiqueta: "Buscar",
-    icono: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-        aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-    ),
-  },
-  {
-    href: "#",
-    etiqueta: "Iniciar sesión",
-    icono: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-        aria-hidden="true"
-      >
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    href: "#",
-    etiqueta: "Carrito de compras",
-    icono: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-        aria-hidden="true"
-      >
-        <circle cx="9" cy="21" r="1" />
-        <circle cx="20" cy="21" r="1" />
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-      </svg>
-    ),
-  },
-];
+/* Pendiente: conectar con autenticación cuando exista. */
+function IconoCuenta({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
 
 /* Utilidades de la cinta superior, según el croquis del cliente. */
 const UTILES = [
@@ -104,7 +61,7 @@ const MENU = [
     label: "Cursos",
     submenu: [{ label: "SPM-2", href: "#" }],
   },
-  { label: "Recursos Gratis", href: "#", destacado: true },
+  { label: "Solicitar acceso", href: "#", destacado: true },
 ];
 
 /* Frases de la cinta superior de Black Friday. */
@@ -207,14 +164,19 @@ export default function Navbar() {
           aria-label="Tera Ocupame — ir al inicio"
           onClick={() => setAbierto(false)}
         >
-          <Image
-            src="/images/logo-teraocupame-superheroe.png"
-            alt="Tera Ocupame"
-            width={1234}
-            height={1244}
-            priority
-            className="h-14 w-auto lg:h-[78px]"
-          />
+          <span
+            aria-hidden="true"
+            className="block h-14 overflow-hidden lg:h-[72px]"
+          >
+            <Image
+              src="/images/logo-teraocupame-superheroe.png"
+              alt="Tera Ocupame"
+              width={1234}
+              height={1244}
+              priority
+              className="h-14 w-auto lg:h-[78px]"
+            />
+          </span>
         </Link>
 
         {/* Menú principal con desplegables (escritorio) */}
@@ -267,21 +229,23 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Búsqueda, cuenta, carrito y acceso destacado a la derecha */}
+        {/* Cuenta y acceso destacado a la derecha */}
         <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
-          {ACCIONES_CUENTA.map((accion) => (
-            <a
-              key={accion.etiqueta}
-              href={accion.href}
-              aria-label={accion.etiqueta}
-              title={accion.etiqueta}
-              className={`flex h-10 w-10 items-center justify-center rounded-xl text-marca-800/70 transition-colors hover:bg-marca-50 hover:text-marca-600 ${
-                accion.etiqueta === "Buscar" ? "hidden lg:flex" : ""
-              }`}
-            >
-              {accion.icono}
-            </a>
-          ))}
+          <a
+            href="#"
+            aria-label="Acceder a mi cuenta"
+            title="Acceder a mi cuenta"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-marca-800/70 transition-colors hover:bg-marca-50 hover:text-marca-600 lg:hidden"
+          >
+            <IconoCuenta className="h-5 w-5" />
+          </a>
+          <a
+            href="#"
+            className="hidden items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-[13px] font-semibold text-marca-800 transition-colors hover:text-marca-600 lg:inline-flex"
+          >
+            <IconoCuenta className="h-5 w-5" />
+            Acceder a mi cuenta
+          </a>
           <button
             type="button"
             onClick={() => setAbierto((v) => !v)}
@@ -303,12 +267,11 @@ export default function Navbar() {
             </svg>
           </button>
           {cta && (
-            <Link
+            <BotonBrillante
               href={cta.href}
-              className="ml-1 hidden h-10 items-center rounded-xl bg-marca-600 px-5 text-[13px] font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700 lg:inline-flex"
-            >
-              {cta.label}
-            </Link>
+              label={cta.label}
+              className="ml-1 hidden h-10 items-center px-5 text-[13px] font-semibold lg:inline-flex"
+            />
           )}
         </div>
       </nav>
