@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
-/* Pendiente: devolver el video de portada cuando el cliente lo
-   confirme; por ahora la diapositiva usa un fotograma fijo. */
+import VideoPortada from "@/components/VideoPortada";
 
 /* Íconos de los sellos de la diapositiva Material TO. */
 function IconoDescarga({ className }) {
@@ -141,12 +139,230 @@ function IconoCasa({ className }) {
   );
 }
 
+/* Íconos de la diapositiva de portada: badge, botones, pilares y
+   tarjetas flotantes junto al video del superhéroe. */
+function IconoBrote({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M7 20h10" />
+      <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+      <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" />
+      <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />
+    </svg>
+  );
+}
+
+function IconoCohete({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </svg>
+  );
+}
+
+function IconoPlay({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M7 4.8a1 1 0 0 1 1.53-.85l11.2 7.2a1 1 0 0 1 0 1.7l-11.2 7.2A1 1 0 0 1 7 19.2z" />
+    </svg>
+  );
+}
+
+function IconoCalendario({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+      <path d="m9 16 2 2 4-4" />
+    </svg>
+  );
+}
+
+function IconoRed({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 13.5 6.8 4" />
+      <path d="m15.4 6.5-6.8 4" />
+    </svg>
+  );
+}
+
+function IconoCapas({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.75l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.75Z" />
+      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+    </svg>
+  );
+}
+
+function IconoGraduacion({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+      <path d="M22 10v6" />
+      <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+    </svg>
+  );
+}
+
+function IconoPortapapeles({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <path d="M9 12h.01" />
+      <path d="M12 12h5" />
+      <path d="M9 16h.01" />
+      <path d="M12 16h5" />
+    </svg>
+  );
+}
+
+function IconoLibros({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="m16 6 4 14" />
+      <path d="M12 6v14" />
+      <path d="M8 8v12" />
+      <path d="M4 4v16" />
+    </svg>
+  );
+}
+
+function IconoLaptop({ className }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9" />
+      <path d="M2 19h20" />
+      <path d="M8 12v-1.5" />
+      <path d="M12 12V9" />
+      <path d="M16 12v-2.5" />
+    </svg>
+  );
+}
+
 /* Sellos bajo el titular de la diapositiva Material TO. */
 const SELLOS_MATERIAL = [
   { Icono: IconoDescarga, lineas: ["Recursos", "listos para usar"] },
   { Icono: IconoEscudo, lineas: ["Material", "validado"] },
   { Icono: IconoUsuarios, lineas: ["Para niños,", "jóvenes y adultos"] },
 ];
+
+/* Pilares del titular de portada, con divisores finos como en el
+   diseño de referencia del cliente. */
+const PILARES = [
+  { Icono: IconoCalendario, lineas: ["Evaluaciones", "automatizadas"] },
+  { Icono: IconoRed, lineas: ["Genograma", "digital"] },
+  { Icono: IconoCapas, lineas: ["Material", "especializado"] },
+  { Icono: IconoGraduacion, lineas: ["Cursos y", "formación"] },
+];
+
+function Pilares() {
+  return (
+    <ul className="mx-auto mt-9 flex max-w-md flex-wrap items-center justify-center gap-y-4 text-left lg:mx-0 lg:max-w-none lg:justify-start lg:divide-x lg:divide-marca-100">
+      {PILARES.map(({ Icono, lineas }) => (
+        <li key={lineas[0]} className="flex items-center gap-2.5 px-3.5 first:pl-0 last:pr-0">
+          <Icono className="h-6 w-6 shrink-0 text-marca-600" />
+          <span className="text-[12px] font-semibold leading-[1.3] text-marca-800">
+            {lineas[0]}
+            <span className="block">{lineas[1]}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /* Sellos bajo el titular de la diapositiva de evaluaciones. */
 const SELLOS_EVALUACIONES = [
@@ -223,79 +439,80 @@ function Rafaga({ className }) {
   );
 }
 
-/* Diapositiva 1: portada con el mensaje principal centrado.
-   Pendiente: devolver el video de portada cuando el cliente lo
-   confirme; por ahora la diapositiva va sin imagen. */
+/* Diapositiva 1: portada con el mensaje principal a la izquierda y el
+   video del superhéroe a la derecha, sobre una mancha celeste con
+   tarjetas de íconos flotantes, según el diseño de referencia. */
 function DiapositivaPortada() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 text-center">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-marca-700">
-        Terapia ocupacional · Tera Ocupame
-      </p>
-      <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.1] tracking-tight text-marca-800 sm:text-5xl xl:text-[3.4rem]">
-        <span className="block">Menos tiempo preparando.</span>
-        <span className="mt-2 block">
-          Más tiempo{" "}
-          <span className="bg-gradient-to-r from-marca-600 to-marca-400 bg-clip-text text-transparent">
-            transformando vidas
-          </span>
+    <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
+      <div className="min-w-0 text-center lg:text-left">
+        <span className="inline-flex items-center gap-2 rounded-full bg-marca-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-marca-700 ring-1 ring-marca-100">
+          <IconoBrote className="h-4 w-4" />
+          Tecnología para terapeutas ocupacionales
         </span>
-      </h1>
-      <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-marca-900/75">
-        Descubre evaluaciones automatizadas, materiales descargables y cursos
-        especializados para facilitar tu práctica profesional y acompañar cada
-        proceso terapéutico.
-      </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <a
-          href="/formularios"
-          className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-7 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
-        >
-          Explorar recursos
-          <span
-            aria-hidden="true"
-            className="transition-transform group-hover:translate-x-0.5"
-          >
-            →
+        <h1 className="mt-5 text-[2rem] font-extrabold leading-[1.08] tracking-tight text-marca-800 sm:text-[2.6rem] xl:text-[3.1rem]">
+          <span className="block">Tu superpoder es</span>
+          <span className="block">transformar vidas.</span>
+          <span className="mt-2 block text-marca-600">
+            Nosotros simplificamos <PalabraSubrayada>tu trabajo</PalabraSubrayada>.
           </span>
-        </a>
-        <a
-          href="#sobre"
-          className="inline-flex h-12 items-center rounded-xl border border-marca-600 bg-white px-7 text-sm font-semibold text-marca-600 transition-colors hover:bg-marca-50"
-        >
-          Saber más
-        </a>
-      </div>
-      <ul className="mt-8 flex flex-wrap justify-center gap-x-3 gap-y-2.5">
-        {[
-          "Puntuación automática",
-          "Descarga inmediata",
-          "Material TO descargable",
-        ].map((item) => (
-          <li
-            key={item}
-            className="flex items-center gap-2 rounded-full bg-marca-50 py-1.5 pl-2 pr-4 text-[13px] font-semibold text-marca-800"
+        </h1>
+        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-marca-900/75 lg:mx-0">
+          Descubre herramientas digitales, evaluaciones automatizadas y
+          recursos diseñados para potenciar tu práctica profesional.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+          <a
+            href="/formularios"
+            className="group inline-flex h-12 items-center gap-2 rounded-xl bg-marca-600 px-6 text-sm font-semibold text-white shadow-md shadow-marca-600/25 transition-colors hover:bg-marca-700"
           >
+            <IconoCohete className="h-[18px] w-[18px]" />
+            Explorar herramientas
             <span
               aria-hidden="true"
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-marca-600 text-white"
+              className="transition-transform group-hover:translate-x-0.5"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3 w-3"
-              >
-                <path d="m5 13 4 4L19 7" />
-              </svg>
+              →
             </span>
-            {item}
-          </li>
-        ))}
-      </ul>
+          </a>
+          <a
+            href="#sobre"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-marca-600 bg-white px-6 text-sm font-semibold text-marca-600 transition-colors hover:bg-marca-50"
+          >
+            <IconoPlay className="h-3.5 w-3.5" />
+            Conocer más
+          </a>
+        </div>
+
+        <Pilares />
+      </div>
+
+      {/* Video del superhéroe: el fondo blanco se funde con la mancha
+          celeste vía mix-blend-multiply; las tarjetas flotan por encima. */}
+      <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none">
+        <div
+          aria-hidden="true"
+          className="absolute left-[6%] top-[2%] h-[94%] w-[74%] rounded-[62%_38%_56%_44%/48%_60%_40%_52%] bg-gradient-to-br from-marca-100 via-marca-50 to-marca-100/70"
+        />
+
+        <VideoPortada className="relative z-10 w-full mix-blend-multiply" />
+
+        <Rafaga className="absolute left-[46%] top-1 z-20 h-6 w-11 text-marca-400" />
+
+        {/* Tarjetas flotantes con íconos */}
+        <span className="absolute left-[1%] top-[8%] z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-[0_16px_32px_-18px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:h-14 sm:w-14">
+          <IconoPortapapeles className="h-5 w-5 text-marca-600 sm:h-6 sm:w-6" />
+        </span>
+        <span className="absolute right-[4%] top-[2%] z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-[0_16px_32px_-18px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:h-14 sm:w-14">
+          <IconoRed className="h-5 w-5 text-marca-600 sm:h-6 sm:w-6" />
+        </span>
+        <span className="absolute -left-2 top-[52%] z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-[0_16px_32px_-18px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:h-14 sm:w-14 lg:-left-4">
+          <IconoLaptop className="h-5 w-5 text-marca-600 sm:h-6 sm:w-6" />
+        </span>
+        <span className="absolute -right-2 top-[58%] z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-[0_16px_32px_-18px_rgba(48,87,98,0.45)] ring-1 ring-marca-100 sm:h-14 sm:w-14 lg:-right-4">
+          <IconoLibros className="h-5 w-5 text-marca-600 sm:h-6 sm:w-6" />
+        </span>
+      </div>
     </div>
   );
 }
@@ -584,7 +801,7 @@ export default function CarruselHero() {
               aria-label={`${i + 1} de ${DIAPOSITIVAS.length}: ${d.etiqueta}`}
               aria-hidden={i !== activo}
               inert={i !== activo}
-              className="grow-0 basis-full shrink-0 pb-16 pt-12 lg:pb-24 lg:pt-16"
+              className="grow-0 basis-full shrink-0 pb-16 pt-28 lg:pb-24 lg:pt-44"
             >
               {d.contenido}
             </div>

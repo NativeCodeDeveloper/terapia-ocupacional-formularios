@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-/* Video de portada (superhéroe) entre el navbar y el carrusel: siempre
-   en reproducción, en loop infinito y sin audio en ningún caso — el
+/* Video del superhéroe de la diapositiva de portada: siempre en
+   reproducción, en loop infinito y sin audio en ningún caso — el
    archivo se exporta sin pista de audio y además se fuerza el silencio.
    Si iOS bloquea el autoplay, se reintenta al primer toque o al volver
-   a la pestaña. */
-export default function VideoPortada() {
+   a la pestaña. El fondo blanco se funde con la página usando
+   mix-blend-multiply desde el contenedor. */
+export default function VideoPortada({ className = "" }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function VideoPortada() {
   return (
     <video
       ref={ref}
-      className="mx-auto w-full max-w-4xl"
+      className={className}
       src="/videos/portada-superheroe.mp4"
       poster="/videos/portada-superheroe.jpg"
       autoPlay

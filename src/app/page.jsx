@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import CarruselHero from "@/components/CarruselHero";
-import VideoPortada from "@/components/VideoPortada";
 import VideoGenograma from "@/components/VideoGenograma";
 import Footer from "@/components/Footer";
 import HaloReel from "@/components/ui/halo-reel";
@@ -133,12 +132,6 @@ export default function Home() {
       <Navbar />
 
       <main>
-        {/* Video de portada: superhéroe en loop infinito y sin sonido,
-            entre el navbar y el carrusel de banners. */}
-        <div aria-hidden="true" className="bg-white pb-3 pt-28 lg:pb-4 lg:pt-32">
-          <VideoPortada />
-        </div>
-
         {/* Portada con carrusel de banners: fondo blanco con brillos
             celeste muy suaves y tres diapositivas rotativas. */}
         <section id="inicio" className="relative scroll-mt-28 overflow-hidden bg-white">
