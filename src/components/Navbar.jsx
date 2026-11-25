@@ -160,14 +160,11 @@ export default function Navbar() {
         {/* Logo alineado a la izquierda */}
         <Link
           href="/#inicio"
-          className="flex shrink-0 items-center lg:items-start lg:self-start lg:pt-0.5"
+          className="flex shrink-0 items-center lg:items-start lg:self-start"
           aria-label="Tera Ocupame — ir al inicio"
           onClick={() => setAbierto(false)}
         >
-          <span
-            aria-hidden="true"
-            className="block h-14 overflow-hidden lg:h-[72px]"
-          >
+          <span className="block h-14 overflow-hidden lg:h-[71px]">
             <Image
               src="/images/logo-teraocupame-superheroe.png"
               alt="Tera Ocupame"
