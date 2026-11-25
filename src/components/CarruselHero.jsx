@@ -584,7 +584,7 @@ export default function CarruselHero() {
               aria-label={`${i + 1} de ${DIAPOSITIVAS.length}: ${d.etiqueta}`}
               aria-hidden={i !== activo}
               inert={i !== activo}
-              className="grow-0 basis-full shrink-0 pb-16 pt-28 lg:pb-24 lg:pt-44"
+              className="grow-0 basis-full shrink-0 pb-16 pt-12 lg:pb-24 lg:pt-16"
             >
               {d.contenido}
             </div>
