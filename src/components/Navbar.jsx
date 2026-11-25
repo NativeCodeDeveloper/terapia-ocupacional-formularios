@@ -208,12 +208,12 @@ export default function Navbar() {
           onClick={() => setAbierto(false)}
         >
           <Image
-            src="/images/logo-teraocupame.png"
+            src="/images/logo-teraocupame-superheroe.png"
             alt="Tera Ocupame"
-            width={620}
-            height={295}
+            width={1234}
+            height={1244}
             priority
-            className="h-10 w-auto lg:h-12"
+            className="h-10 w-auto lg:h-14"
           />
         </Link>
 
